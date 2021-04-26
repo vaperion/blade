@@ -3,8 +3,8 @@
 Blade is an easy to use command framework based on annotations. It currently only supports Bukkit, but it can be easily extended to more platforms.
 To use Blade, you simply have to include it as a dependency and shade it into your final jar.
 
-If you make any changes or improvements to the project, please consider making a pull request
-to merge your changes back into the upstream project.
+If you make any changes or improvements to the project, please consider making a pull request to merge your changes back into the upstream project.
+This project is in its early stages, if you find any issues please open an issue.
 
 ## TODO
 - [ ] Fix tab completion
