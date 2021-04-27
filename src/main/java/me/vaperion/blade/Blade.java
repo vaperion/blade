@@ -65,6 +65,8 @@ public class Blade {
                     binding.bind(blade.commandService);
                 }
 
+                blade.commandService.getTabCompleter().init(blade.commandService);
+
                 for (Map.Entry<Map.Entry<Class<?>, Class<? extends ProviderAnnotation>>, BladeProvider<?>> entry : blade.customProviderMap.entrySet()) {
                     //noinspection deprecation
                     blade.commandService.bindProviderUnsafely(entry.getKey().getKey(), entry.getValue(), entry.getKey().getValue());
