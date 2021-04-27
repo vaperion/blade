@@ -26,7 +26,9 @@ public class BladeCommandCompleter {
             arguments.removeAll(commandService.getCommandParser().parseFlags(command, arguments).keySet().stream().map(String::valueOf).collect(Collectors.toList()));
 
             if (command.getParameterProviders().size() < arguments.size()) return new Tuple<>();
-            return new Tuple<>(command.getParameterProviders().get(arguments.size() - 1), arguments.get(arguments.size() - 1));
+
+            int index = Math.max(0, arguments.size() - 1);
+            return new Tuple<>(command.getParameterProviders().get(index), arguments.get(index));
         } catch (BladeExitMessage ex) {
             throw ex;
         } catch (Exception ex) {

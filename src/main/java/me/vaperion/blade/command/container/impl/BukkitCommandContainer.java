@@ -64,7 +64,7 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
         SimplePluginManager simplePluginManager = (SimplePluginManager) Bukkit.getServer().getPluginManager();
         SimpleCommandMap simpleCommandMap = (SimpleCommandMap) COMMAND_MAP.get(simplePluginManager);
 
-        simpleCommandMap.register(Optional.ofNullable(this.commandService.getFallbackPrefix()).orElse(alias), this);
+        simpleCommandMap.register(this.commandService.getFallbackPrefix(), this);
     }
 
     @NotNull
@@ -208,13 +208,21 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
         return false;
     }
 
+    @NotNull
     @Override
-    public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
+    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
         if (!hasPermission(sender, args)) return Collections.emptyList();
 
         try {
-            BladeCommand command = resolveCommand(joinAliasToArgs(alias, args)).getLeft();
+            Tuple<BladeCommand, String> resolved = resolveCommand(joinAliasToArgs(alias, args));
+            BladeCommand command = resolved.getLeft();
+            String foundAlias = resolved.getRight();
             BladeContext context = new BladeContext(new BukkitSender(sender), alias, args);
+
+            if (foundAlias.contains(" ")) {
+                String[] remove = foundAlias.split(" ");
+                args = Arrays.copyOfRange(args, Math.min(args.length, remove.length - 1), args.length);
+            }
 
             Tuple<BladeProvider<?>, String> data = commandService.getCommandCompleter().getLastProvider(command, args);
             BladeProvider<?> provider = data == null ? null : data.getLeft();

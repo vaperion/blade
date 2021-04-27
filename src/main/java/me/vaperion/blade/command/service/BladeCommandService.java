@@ -24,7 +24,7 @@ public class BladeCommandService {
     final Map<String, List<BladeCommand>> aliasCommands = new LinkedHashMap<>();
     final Map<String, ICommandContainer> containerMap = new LinkedHashMap<>();
 
-    @Setter @Getter private String fallbackPrefix = null;
+    @Setter @Getter private String fallbackPrefix = "blade";
     @Setter @Getter private ContainerCreator<?> containerCreator = ContainerCreator.NONE;
 
     @Getter private final BladeCommandRegistrar commandRegistrar = new BladeCommandRegistrar(this);
