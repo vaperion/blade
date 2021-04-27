@@ -8,6 +8,7 @@ import me.vaperion.blade.command.context.WrappedSender;
 import me.vaperion.blade.command.exception.BladeExitMessage;
 import me.vaperion.blade.utils.Tuple;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Function;
@@ -18,25 +19,25 @@ public class BladeCommandCompleter {
 
     private final BladeCommandService commandService;
 
-    @NotNull
+    @Nullable
     public List<String> suggest(@NotNull String commandLine, @NotNull Supplier<WrappedSender<?>> senderSupplier, @NotNull Function<BladeCommand, Boolean> permissionFunction) {
         String[] commandParts = commandLine.split(" ");
 
         Tuple<BladeCommand, String> resolved = commandService.getCommandResolver().resolveCommand(commandParts);
-        if (resolved == null) return Collections.emptyList();
+        if (resolved == null) return null;
         if (!permissionFunction.apply(resolved.getLeft())) return Collections.emptyList();
 
         BladeCommand command = resolved.getLeft();
         String foundAlias = resolved.getRight();
 
         List<String> argList = new ArrayList<>(Arrays.asList(commandParts));
-        if (foundAlias.split(" ").length > 1) argList.subList(0, foundAlias.split(" ").length).clear();
+        argList.subList(0, Math.max(1, foundAlias.split(" ").length)).clear();
 
         if (commandLine.endsWith(" ")) argList.add("");
         String[] actualArguments = argList.toArray(new String[0]);
 
         BladeContext context = new BladeContext(senderSupplier.get(), foundAlias, actualArguments);
-        return commandService.getCommandCompleter().suggest(context, command, actualArguments);
+        return suggest(context, command, actualArguments);
     }
 
     @NotNull

@@ -35,7 +35,12 @@ public class ProtocolLibTabCompleter extends PacketAdapter implements TabComplet
 
         Player player = event.getPlayer();
         String commandLine = event.getPacket().getStrings().read(0);
+
+        if (!commandLine.startsWith("/")) return;
+        else commandLine = commandLine.substring(1);
+
         List<String> suggestions = commandService.getCommandCompleter().suggest(commandLine, () -> new BukkitSender(player), cmd -> hasPermission(player, cmd));
+        if (suggestions == null) return; // if command was not found
 
         try {
             event.setCancelled(true);
