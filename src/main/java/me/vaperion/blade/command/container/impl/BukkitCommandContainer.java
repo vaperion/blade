@@ -148,9 +148,10 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
     }
 
     private String[] joinAliasToArgs(String alias, String[] args) {
-        String[] argsWithAlias = new String[args.length + 1];
-        argsWithAlias[0] = alias;
-        System.arraycopy(args, 0, argsWithAlias, 1, args.length);
+        String[] aliasParts = alias.split(" ");
+        String[] argsWithAlias = new String[args.length + aliasParts.length];
+        System.arraycopy(aliasParts, 0, argsWithAlias, 0, aliasParts.length);
+        System.arraycopy(args, 0, argsWithAlias, aliasParts.length, args.length);
         return argsWithAlias;
     }
 
