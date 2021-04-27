@@ -64,6 +64,22 @@ public class ExamplePlugin extends JavaPlugin {
 }
 ```
 
+Setting a custom tab completer:
+```java
+Blade.of()
+        ...
+        .tabCompleter(new ProtocolLibTabCompleter(this))
+        ...;
+```
+
+Registering a type provider without Bindings:
+```java
+Blade.of()
+        ...
+        .bind(Example.class, new BladeProvider<Example>() {...})
+        ...;
+```
+
 Example commands:
 ```java
 import me.vaperion.blade.command.annotation.*;
@@ -92,19 +108,58 @@ public class ExampleCommand {
 }
 ```
 
-
-Setting a custom tab completer:
+Example custom tab completer with Netty:
 ```java
-Blade.of()
-        ...
-        .tabCompleter(new ProtocolLibTabCompleter(this))
-        ...;
-```
+import me.vaperion.blade.command.service.BladeCommandService;
+import me.vaperion.blade.completer.TabCompleter;
+import net.minecraft.server.v1_7_R4.PacketPlayInTabComplete;
+import net.minecraft.server.v1_7_R4.PacketPlayOutTabComplete;
+import net.minecraft.util.io.netty.channel.ChannelDuplexHandler;
+import net.minecraft.util.io.netty.channel.ChannelHandlerContext;
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.v1_7_R4.entity.CraftPlayer;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.plugin.java.JavaPlugin;
 
-Registering a type provider without Bindings:
-```java
-Blade.of()
-        ...
-        .bind(Example.class, new BladeProvider<Example>() {...})
-        ...;
+public class CustomTabCompleter implements TabCompleter, Listener {
+
+    private BladeCommandService commandService;
+
+    public CustomTabCompleter(JavaPlugin plugin) {
+        Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
+    }
+
+    @Override
+    public void init(@NotNull BladeCommandService bladeCommandService) {
+        this.commandService = bladeCommandService;
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        ((CraftPlayer) player).getHandle().playerConnection.networkManager.m.pipeline()
+                .addBefore("packet_handler", "blade_completer", new ChannelDuplexHandler() {
+                    @Override
+                    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                        if (msg instanceof PacketPlayInTabComplete) {
+                            String commandLine = ((PacketPlayInTabComplete) msg).c();
+                            if (commandLine.startsWith("/")) {
+                                commandLine = commandLine.substring(1);
+
+                                List<String> suggestions = commandService.getCommandCompleter().suggest(commandLine, () -> new BukkitSender(player), (cmd) -> hasPermission(player, cmd));
+                                if (suggestions != null) {
+                                    ctx.writeAndFlush(new PacketPlayOutTabComplete(suggestions.toArray(new String[0])));
+                                    return;
+                                }
+                            }
+                        }
+
+                        super.channelRead(ctx, msg);
+                    }
+                });
+    }
+}
 ```
