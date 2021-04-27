@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,7 +24,7 @@ public class BladeCommandResolver {
         String[] commandParts = Arrays.copyOf(input, input.length);
 
         String baseCommand = commandParts[0].toLowerCase();
-        List<BladeCommand> tree = commandService.aliasCommands.get(baseCommand);
+        List<BladeCommand> tree = commandService.aliasCommands.getOrDefault(baseCommand, new ArrayList<>());
 
         do {
             String checking = String.join(" ", commandParts);
