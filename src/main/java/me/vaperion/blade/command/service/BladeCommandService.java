@@ -9,6 +9,8 @@ import me.vaperion.blade.command.container.BladeCommand;
 import me.vaperion.blade.command.container.BladeProviderContainer;
 import me.vaperion.blade.command.container.ContainerCreator;
 import me.vaperion.blade.command.container.ICommandContainer;
+import me.vaperion.blade.completer.TabCompleter;
+import me.vaperion.blade.completer.impl.DefaultTabCompleter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,6 +28,7 @@ public class BladeCommandService {
 
     @Setter @Getter private String fallbackPrefix = "blade";
     @Setter @Getter private ContainerCreator<?> containerCreator = ContainerCreator.NONE;
+    @Setter @Getter private TabCompleter tabCompleter = new DefaultTabCompleter();
 
     @Getter private final BladeCommandRegistrar commandRegistrar = new BladeCommandRegistrar(this);
     @Getter private final BladeCommandResolver commandResolver = new BladeCommandResolver(this);

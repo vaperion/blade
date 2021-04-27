@@ -2,7 +2,6 @@ package me.vaperion.blade.command.container.impl;
 
 import lombok.Getter;
 import me.vaperion.blade.command.annotation.Flag;
-import me.vaperion.blade.command.argument.BladeProvider;
 import me.vaperion.blade.command.container.BladeCommand;
 import me.vaperion.blade.command.container.BladeParameter;
 import me.vaperion.blade.command.container.ContainerCreator;
@@ -212,6 +211,7 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
     @NotNull
     @Override
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
+        if (!commandService.getTabCompleter().isDefault()) return Collections.emptyList();
         if (!hasPermission(sender, args)) return Collections.emptyList();
 
         try {
@@ -221,22 +221,17 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
                 return Collections.emptyList();
             }
 
-            BladeContext context = new BladeContext(new BukkitSender(sender), alias, args);
             BladeCommand command = resolved.getLeft();
             String foundAlias = resolved.getRight();
 
             List<String> argList = new ArrayList<>(Arrays.asList(args));
-            if (foundAlias.split(" ").length > 1) {argList.subList(0, foundAlias.split(" ").length - 1).clear();}
+            if (foundAlias.split(" ").length > 1) argList.subList(0, foundAlias.split(" ").length - 1).clear();
 
             if (argList.isEmpty()) argList.add("");
             String[] actualArguments = argList.toArray(new String[0]);
 
-            Tuple<BladeProvider<?>, String> data = commandService.getCommandCompleter().getLastProvider(command, actualArguments);
-            BladeProvider<?> provider = data == null ? null : data.getLeft();
-            String argument = data == null ? null : data.getRight();
-            if (provider == null) return Collections.emptyList();
-
-            return provider.suggest(context, argument);
+            BladeContext context = new BladeContext(new BukkitSender(sender), foundAlias, actualArguments);
+            return commandService.getCommandCompleter().suggest(context, command, actualArguments);
         } catch (BladeExitMessage ex) {
             sender.sendMessage(ChatColor.RED + ex.getMessage());
         } catch (Exception ex) {
