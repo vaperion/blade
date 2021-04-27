@@ -28,7 +28,7 @@ public class BladeCommandCompleter {
             if (command.getParameterProviders().size() < arguments.size()) return new Tuple<>();
 
             int index = Math.max(0, arguments.size() - 1);
-            return new Tuple<>(command.getParameterProviders().get(index), arguments.get(index));
+            return new Tuple<>(command.getParameterProviders().get(index), index < arguments.size() ? arguments.get(index) : null);
         } catch (BladeExitMessage ex) {
             throw ex;
         } catch (Exception ex) {

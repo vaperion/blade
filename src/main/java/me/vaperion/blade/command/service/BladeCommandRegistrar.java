@@ -12,7 +12,6 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class BladeCommandRegistrar {
@@ -50,11 +49,8 @@ public class BladeCommandRegistrar {
         BladeCommand bladeCommand = new BladeCommand(commandService, instance, method, Arrays.stream(aliases).map(String::toLowerCase).toArray(String[]::new), command, permission);
         commandService.commands.add(bladeCommand);
 
-        List<String> aliasList = Arrays.stream(aliases).collect(Collectors.toCollection(LinkedList::new));
-
-        for (String alias : aliasList) {
-            String realAlias = alias;
-            if (alias.contains(" ")) realAlias = alias.split(" ")[0];
+        for (String alias : aliases) {
+            String realAlias = alias.split(" ")[0].toLowerCase();
 
             commandService.aliasCommands.computeIfAbsent(realAlias, $ -> new LinkedList<>()).add(bladeCommand);
 

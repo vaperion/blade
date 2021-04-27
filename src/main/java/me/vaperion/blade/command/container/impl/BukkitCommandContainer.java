@@ -70,7 +70,7 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
     @NotNull
     private Tuple<BladeCommand, String> resolveCommand(@NotNull String[] arguments) throws BladeExitMessage {
         return Optional
-                .ofNullable(commandService.getCommandResolver().resolveCommand(parentCommand, arguments))
+                .ofNullable(commandService.getCommandResolver().resolveCommand(arguments))
                 .orElseThrow(() -> new BladeExitMessage("This command failed to execute as we couldn't find it's registration."));
     }
 

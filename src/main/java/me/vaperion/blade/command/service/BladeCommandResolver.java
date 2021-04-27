@@ -11,8 +11,6 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 @RequiredArgsConstructor
 public class BladeCommandResolver {
@@ -20,39 +18,26 @@ public class BladeCommandResolver {
     private final BladeCommandService commandService;
 
     @Nullable
-    public Tuple<BladeCommand, String> resolveCommand(@NotNull BladeCommand parentCommand, @NotNull String[] arguments) {
-        String cmd = String.join(" ", arguments);
+    public Tuple<BladeCommand, String> resolveCommand(@NotNull String[] input) {
+        if (input.length == 0) return null;
+        String[] commandParts = Arrays.copyOf(input, input.length);
+
+        String baseCommand = commandParts[0].toLowerCase();
+        List<BladeCommand> tree = commandService.aliasCommands.get(baseCommand);
 
         do {
-            AtomicReference<BladeCommand> commandRef = new AtomicReference<>();
+            String checking = String.join(" ", commandParts);
 
-            for (String alias : parentCommand.getRealAliases()) {
-                final String finalCmd = cmd;
-
-                Optional.ofNullable(commandService.aliasCommands.get(alias))
-                        .ifPresent(list -> {
-                            if (commandRef.get() != null) return;
-
-                            list.forEach(command -> {
-                                for (String commandAlias : command.getAliases()) {
-                                    if (commandAlias.equalsIgnoreCase(finalCmd)) {
-                                        commandRef.set(command);
-                                        break;
-                                    }
-                                }
-                            });
-                        });
+            for (BladeCommand subCommand : tree) {
+                for (String commandAlias : subCommand.getAliases()) {
+                    if (commandAlias.equalsIgnoreCase(checking)) return new Tuple<>(subCommand, commandAlias);
+                }
             }
 
-            BladeCommand bladeCommand = commandRef.get();
-            if (bladeCommand != null) return new Tuple<>(bladeCommand, cmd);
+            commandParts = Arrays.copyOfRange(commandParts, 0, commandParts.length - 1);
+        } while (commandParts.length > 0);
 
-            String[] parts = cmd.split(" ");
-            if (parts.length <= 1) cmd = "";
-            else cmd = String.join(" ", Arrays.copyOfRange(parts, 0, parts.length - 1));
-        } while (!cmd.isEmpty());
-
-        return new Tuple<>(parentCommand, parentCommand.getRealAliases()[0]);
+        return null;
     }
 
     @SuppressWarnings("unchecked")
