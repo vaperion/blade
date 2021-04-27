@@ -56,7 +56,7 @@ public class BladeCommandRegistrar {
 
             System.out.println("Registering command alias '" + alias + "' (method: " + method.getName() + ")");
             commandService.aliasCommands.computeIfAbsent(realAlias, $ -> new LinkedList<>()).add(bladeCommand);
-            System.out.println("Map: " + commandService.aliasCommands.get(realAlias));
+            System.out.println("Real alias: '" + realAlias + "' Map: " + commandService.aliasCommands.get(realAlias));
 
             if (commandService.containerMap.containsKey(realAlias)) continue;
             commandService.containerMap.put(realAlias, commandService.getContainerCreator().create(commandService, bladeCommand, realAlias));
