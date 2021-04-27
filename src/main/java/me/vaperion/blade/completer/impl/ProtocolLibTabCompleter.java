@@ -5,7 +5,6 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import me.vaperion.blade.command.container.BladeCommand;
 import me.vaperion.blade.command.context.impl.BukkitSender;
 import me.vaperion.blade.command.service.BladeCommandService;
 import me.vaperion.blade.completer.TabCompleter;
@@ -51,11 +50,5 @@ public class ProtocolLibTabCompleter extends PacketAdapter implements TabComplet
             System.err.println("An exception was thrown while attempting to tab complete '" + commandLine + "' for player " + player.getName());
             ex.printStackTrace();
         }
-    }
-
-    private boolean hasPermission(@NotNull Player player, @NotNull BladeCommand command) {
-        if ("op".equals(command.getPermission())) return player.isOp();
-        if (command.getPermission() == null || command.getPermission().trim().isEmpty()) return true;
-        return player.hasPermission(command.getPermission());
     }
 }
