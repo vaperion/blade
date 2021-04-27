@@ -31,7 +31,7 @@ public class BladeCommand {
     private final boolean senderParameter;
 
     private final List<BladeParameter> parameters = new LinkedList<>();
-    private final List<BladeProvider<?>> providers = new LinkedList<>();
+    private final List<BladeProvider<?>> providers = new LinkedList<>(), parameterProviders = new LinkedList<>(), flagProviders = new LinkedList<>();
 
     public BladeCommand(BladeCommandService commandService, Object instance, Method method, String[] aliases, Command command, Permission permission) {
         this.commandService = commandService;
@@ -70,8 +70,16 @@ public class BladeCommand {
                     bladeParameter = new BladeParameter.CommandParameter(parameterName, parameter.getType(), parameter.getAnnotation(Optional.class), parameter.getAnnotation(Range.class), parameter.isAnnotationPresent(Combined.class));
                 }
 
+                BladeProvider<?> provider = commandService.getCommandResolver().resolveProvider(parameter.getType(), Arrays.asList(parameter.getAnnotations()));
+
                 parameters.add(bladeParameter);
-                providers.add(commandService.getCommandResolver().resolveProvider(parameter.getType(), Arrays.asList(parameter.getAnnotations())));
+                providers.add(provider);
+
+                if (bladeParameter instanceof BladeParameter.FlagParameter)
+                    flagProviders.add(provider);
+                else
+                    parameterProviders.add(provider);
+
                 i++;
             }
         }

@@ -3,15 +3,16 @@ package me.vaperion.blade.command.service;
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.command.argument.BladeProvider;
 import me.vaperion.blade.command.container.BladeCommand;
-import me.vaperion.blade.command.container.BladeParameter;
+import me.vaperion.blade.command.context.BladeContext;
+import me.vaperion.blade.command.context.WrappedSender;
 import me.vaperion.blade.command.exception.BladeExitMessage;
 import me.vaperion.blade.utils.Tuple;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 @RequiredArgsConstructor
 public class BladeCommandCompleter {
@@ -19,36 +20,48 @@ public class BladeCommandCompleter {
     private final BladeCommandService commandService;
 
     @Nullable
-    public Tuple<BladeProvider<?>, String> getLastProvider(@NotNull BladeCommand command, @NotNull String[] args) throws BladeExitMessage {
-        BladeProvider<?> lastProvider = null;
-        String lastArgument = null;
+    public List<String> suggest(@NotNull String commandLine, @NotNull Supplier<WrappedSender<?>> senderSupplier, @NotNull Function<BladeCommand, Boolean> permissionFunction) {
+        String[] commandParts = commandLine.split(" ");
 
+        Tuple<BladeCommand, String> resolved = commandService.getCommandResolver().resolveCommand(commandParts);
+        if (resolved == null) return null;
+        if (!permissionFunction.apply(resolved.getLeft())) return Collections.emptyList();
+
+        BladeCommand command = resolved.getLeft();
+        String foundAlias = resolved.getRight();
+
+        List<String> argList = new ArrayList<>(Arrays.asList(commandParts));
+        argList.subList(0, Math.max(1, foundAlias.split(" ").length)).clear();
+
+        if (commandLine.endsWith(" ")) argList.add("");
+        String[] actualArguments = argList.toArray(new String[0]);
+
+        BladeContext context = new BladeContext(senderSupplier.get(), foundAlias, actualArguments);
+        return suggest(context, command, actualArguments);
+    }
+
+    @NotNull
+    public List<String> suggest(@NotNull BladeContext context, @NotNull BladeCommand command, @NotNull String[] args) throws BladeExitMessage {
         try {
             List<String> argumentList = new ArrayList<>(Arrays.asList(args));
             List<String> arguments = command.isQuoted() ? commandService.getCommandParser().combineQuotedArguments(argumentList) : argumentList;
 
-            int argIndex = 0, providerIndex = 0;
-            for (BladeParameter parameter : command.getParameters()) {
-                boolean flag = false;
+            Map<Character, String> flags = commandService.getCommandParser().parseFlags(command, arguments);
+            for (Map.Entry<Character, String> entry : flags.entrySet()) {
+                arguments.remove("-" + entry.getKey());
 
-                if (parameter instanceof BladeParameter.FlagParameter) {
-                    flag = true;
-                } else {
-                    if (arguments.size() <= argIndex) return new Tuple<>(lastProvider, lastArgument);
-                }
-
-                BladeProvider<?> provider = command.getProviders().get(providerIndex);
-                if (provider == null)
-                    throw new BladeExitMessage("Could not find provider for type '" + parameter.getType().getCanonicalName() + "'.");
-
-                lastProvider = provider;
-                lastArgument = (arguments.size() - 1 >= argIndex) ? arguments.get(argIndex) : null;
-
-                if (!flag) argIndex++;
-                providerIndex++;
+                boolean isFlag = command.getFlagParameters().stream().anyMatch(flag -> flag.getFlag().value() == entry.getKey());
+                if (!isFlag || !"true".equals(entry.getValue())) arguments.remove(entry.getValue());
             }
 
-            return new Tuple<>(lastProvider, lastArgument);
+            if (arguments.size() == 0) return Collections.emptyList();
+            if (command.getParameterProviders().size() < arguments.size()) return Collections.emptyList();
+
+            int index = Math.max(0, arguments.size() - 1);
+            BladeProvider<?> parameterProvider = command.getParameterProviders().get(index);
+            String argument = index < arguments.size() ? arguments.get(index) : "";
+
+            return parameterProvider.suggest(context, argument);
         } catch (BladeExitMessage ex) {
             throw ex;
         } catch (Exception ex) {

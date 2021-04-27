@@ -8,6 +8,7 @@ import me.vaperion.blade.command.argument.ProviderAnnotation;
 import me.vaperion.blade.command.bindings.Binding;
 import me.vaperion.blade.command.container.ContainerCreator;
 import me.vaperion.blade.command.service.BladeCommandService;
+import me.vaperion.blade.completer.TabCompleter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,6 +23,7 @@ public class Blade {
     private final BladeCommandService commandService = new BladeCommandService();
     private final String fallbackPrefix;
     private final ContainerCreator<?> containerCreator;
+    private final TabCompleter tabCompleter;
 
     @Singular("bind0") private final Map<Map.Entry<Class<?>, Class<? extends ProviderAnnotation>>, BladeProvider<?>> customProviderMap;
     @Singular private final List<Binding> bindings;
@@ -56,9 +58,14 @@ public class Blade {
                 if (blade.fallbackPrefix != null)
                     blade.commandService.setFallbackPrefix(blade.fallbackPrefix);
 
+                if (blade.tabCompleter != null)
+                    blade.commandService.setTabCompleter(blade.tabCompleter);
+
                 for (Binding binding : blade.bindings) {
                     binding.bind(blade.commandService);
                 }
+
+                blade.commandService.getTabCompleter().init(blade.commandService);
 
                 for (Map.Entry<Map.Entry<Class<?>, Class<? extends ProviderAnnotation>>, BladeProvider<?>> entry : blade.customProviderMap.entrySet()) {
                     //noinspection deprecation

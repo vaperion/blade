@@ -129,7 +129,10 @@ public class BladeCommandParser {
 
         for (int i = 0; i < args.size(); i++) {
             String arg = args.get(i);
-            if (arg.isEmpty()) continue;
+            if (arg.isEmpty()) {
+                argList.add(arg);
+                continue;
+            }
 
             char c = arg.charAt(0);
             if (c == '"' || c == '\'') {
@@ -157,7 +160,7 @@ public class BladeCommandParser {
                 }
             }
 
-            if (!arg.isEmpty()) argList.add(arg);
+            argList.add(arg);
         }
 
         return argList;

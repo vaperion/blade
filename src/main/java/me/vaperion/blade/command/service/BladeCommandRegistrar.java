@@ -12,7 +12,6 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class BladeCommandRegistrar {
@@ -45,16 +44,15 @@ public class BladeCommandRegistrar {
     public void registerMethod(@Nullable Object instance, @NotNull Method method, @Nullable BladeCommand parentCommand) throws Exception {
         Command command = method.getAnnotation(Command.class);
         Permission permission = method.getAnnotation(Permission.class);
-        String[] aliases = parentCommand == null ? command.value() : mutateAliases(command.value(), parentCommand.getAliases());
 
-        BladeCommand bladeCommand = new BladeCommand(commandService, instance, method, Arrays.stream(aliases).map(String::toLowerCase).toArray(String[]::new), command, permission);
+        String[] aliases = parentCommand == null ? command.value() : mutateAliases(command.value(), parentCommand.getAliases());
+        aliases = Arrays.stream(aliases).map(String::toLowerCase).toArray(String[]::new);
+
+        BladeCommand bladeCommand = new BladeCommand(commandService, instance, method, aliases, command, permission);
         commandService.commands.add(bladeCommand);
 
-        List<String> aliasList = Arrays.stream(aliases).collect(Collectors.toCollection(LinkedList::new));
-
-        for (String alias : aliasList) {
-            String realAlias = alias;
-            if (alias.contains(" ")) realAlias = alias.split(" ")[0];
+        for (String alias : aliases) {
+            String realAlias = alias.split(" ")[0];
 
             commandService.aliasCommands.computeIfAbsent(realAlias, $ -> new LinkedList<>()).add(bladeCommand);
 
