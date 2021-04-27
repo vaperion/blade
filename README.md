@@ -6,9 +6,6 @@ To use Blade, you simply have to include it as a dependency and shade it into yo
 If you make any changes or improvements to the project, please consider making a pull request to merge your changes back into the upstream project.
 This project is in its early stages, if you find any issues please open an issue.
 
-## TODO
-- [ ] Fix tab completion
-
 ## Using Blade
 
 Maven
@@ -45,11 +42,12 @@ dependencies {
 
 ### Example code
 
-Initialize Blade:
+Initializing Blade:
 ```java
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.command.bindings.impl.BukkitBindings;
 import me.vaperion.blade.command.container.impl.BukkitCommandContainer;
+import me.vaperion.blade.completer.impl.ProtocolLibTabCompleter;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class ExamplePlugin extends JavaPlugin {
@@ -92,4 +90,21 @@ public class ExampleCommand {
         sender.sendMessage("Balance: " + balance);
     }
 }
+```
+
+
+Setting a custom tab completer:
+```java
+Blade.of()
+        ...
+        .tabCompleter(new ProtocolLibTabCompleter(this))
+        ...;
+```
+
+Registering a type provider without Bindings:
+```java
+Blade.of()
+        ...
+        .bind(Example.class, new BladeProvider<Example>() {...})
+        ...;
 ```
