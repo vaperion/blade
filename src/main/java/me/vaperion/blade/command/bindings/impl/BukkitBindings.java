@@ -8,6 +8,7 @@ import me.vaperion.blade.command.exception.BladeExitMessage;
 import me.vaperion.blade.command.service.BladeCommandService;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -81,6 +83,37 @@ public class BukkitBindings implements Binding {
 
             return offlinePlayer;
         });
+
+        commandService.bindProvider(GameMode.class, new BladeProvider<GameMode>() {
+            @Nullable
+            @Override
+            public GameMode provide(@NotNull BladeContext ctx, @NotNull BladeParameter param, @Nullable String input) throws BladeExitMessage {
+                if (input == null) return null;
+                input = input.trim();
+
+                GameMode mode = getGameMode(input);
+
+                if (mode == null)
+                    throw new BladeExitMessage("No game mode with name " + ChatColor.YELLOW + input + ChatColor.RED + " found.");
+
+                return mode;
+            }
+
+            @NotNull
+            @Override
+            public List<String> suggest(@NotNull BladeContext context, @NotNull String input) throws BladeExitMessage {
+                input = input.toUpperCase(Locale.ROOT);
+                List<String> completions = new ArrayList<>();
+
+                for (GameMode mode : GameMode.values()) {
+                    if (mode.name().startsWith(input)) {
+                        completions.add(mode.name().toLowerCase(Locale.ROOT));
+                    }
+                }
+
+                return completions;
+            }
+        });
     }
 
     private boolean isUUID(@NotNull String input) {
@@ -99,4 +132,16 @@ public class BukkitBindings implements Binding {
         return Bukkit.getOfflinePlayer(input);
     }
 
+    @Nullable
+    private GameMode getGameMode(String input) {
+        input = input.toUpperCase(Locale.ROOT);
+
+        for (GameMode mode : GameMode.values()) {
+            if (mode.name().startsWith(input) || input.equals(String.valueOf(mode.getValue()))) {
+                return mode;
+            }
+        }
+
+        return null;
+    }
 }
