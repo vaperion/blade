@@ -25,6 +25,9 @@ public class BladeCommandCompleter {
             List<String> arguments = command.isQuoted() ? commandService.getCommandParser().combineQuotedArguments(argumentList) : argumentList;
             arguments.removeAll(commandService.getCommandParser().parseFlags(command, arguments).keySet().stream().map(String::valueOf).collect(Collectors.toList()));
 
+            System.out.println(" - Parameter providers: " + command.getParameterProviders().size() + " -> " + command.getParameterProviders());
+            System.out.println(" - Arguments: " + arguments.size() + " -> " + arguments);
+
             if (command.getParameterProviders().size() < arguments.size()) return new Tuple<>();
 
             int index = Math.max(0, arguments.size() - 1);

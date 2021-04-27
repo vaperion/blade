@@ -67,11 +67,9 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
         simpleCommandMap.register(this.commandService.getFallbackPrefix(), this);
     }
 
-    @NotNull
+    @Nullable
     private Tuple<BladeCommand, String> resolveCommand(@NotNull String[] arguments) throws BladeExitMessage {
-        return Optional
-                .ofNullable(commandService.getCommandResolver().resolveCommand(arguments))
-                .orElseThrow(() -> new BladeExitMessage("This command failed to execute as we couldn't find it's registration."));
+        return commandService.getCommandResolver().resolveCommand(arguments);
     }
 
     @NotNull
@@ -170,6 +168,8 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
             if (!permissionResult.getLeft()) throw new BladeExitMessage(permissionResult.getRight());
 
             Tuple<BladeCommand, String> resolved = resolveCommand(joinAliasToArgs(alias, args));
+            if (resolved == null) throw new BladeExitMessage("This command failed to execute as we couldn't find it's registration.");
+
             command = resolved.getLeft();
             resolvedAlias = resolved.getRight();
             int offset = Math.min(args.length, resolvedAlias.split(" ").length - 1);
@@ -214,21 +214,21 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
         if (!hasPermission(sender, args)) return Collections.emptyList();
 
-        System.out.println("Alias: " + alias);
-        System.out.println("Args: " + Arrays.toString(args));
-
         try {
             Tuple<BladeCommand, String> resolved = resolveCommand(joinAliasToArgs(alias, args));
-            BladeCommand command = resolved.getLeft();
-            String foundAlias = resolved.getRight();
-            BladeContext context = new BladeContext(new BukkitSender(sender), alias, args);
-
-            if (foundAlias.contains(" ")) {
-                String[] remove = foundAlias.split(" ");
-                args = Arrays.copyOfRange(args, Math.min(args.length, remove.length - 1), args.length);
+            if (resolved == null) {
+                // maybe suggest subcommands?
+                return Collections.emptyList();
             }
 
-            Tuple<BladeProvider<?>, String> data = commandService.getCommandCompleter().getLastProvider(command, args);
+            BladeContext context = new BladeContext(new BukkitSender(sender), alias, args);
+            BladeCommand command = resolved.getLeft();
+            String foundAlias = resolved.getRight();
+
+            String[] actualArguments = Arrays.copyOfRange(args, Math.min(args.length, foundAlias.split(" ").length - 1), args.length);
+            if (actualArguments.length == 0) actualArguments = new String[]{""};
+
+            Tuple<BladeProvider<?>, String> data = commandService.getCommandCompleter().getLastProvider(command, actualArguments);
             BladeProvider<?> provider = data == null ? null : data.getLeft();
             String argument = data == null ? null : data.getRight();
             if (provider == null) return Collections.emptyList();
