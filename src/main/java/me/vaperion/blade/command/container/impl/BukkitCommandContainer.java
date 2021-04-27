@@ -156,12 +156,12 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
     }
 
     @Override
-    public boolean testPermissionSilent(CommandSender sender) {
+    public boolean testPermissionSilent(@NotNull CommandSender sender) {
         return hasPermission(sender, new String[0]);
     }
 
     @Override
-    public boolean execute(CommandSender sender, String alias, String[] args) {
+    public boolean execute(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
         BladeCommand command = null;
         String resolvedAlias = alias;
 
@@ -213,6 +213,9 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
     @Override
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
         if (!hasPermission(sender, args)) return Collections.emptyList();
+
+        System.out.println("Alias: " + alias);
+        System.out.println("Args: " + Arrays.toString(args));
 
         try {
             Tuple<BladeCommand, String> resolved = resolveCommand(joinAliasToArgs(alias, args));

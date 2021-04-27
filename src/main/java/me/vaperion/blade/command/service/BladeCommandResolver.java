@@ -23,20 +23,11 @@ public class BladeCommandResolver {
         if (input.length == 0) return null;
         String[] commandParts = Arrays.copyOf(input, input.length);
 
-        System.out.println("Looking up command (parts: " + Arrays.toString(commandParts) + ")");
-
         String baseCommand = commandParts[0].toLowerCase();
         List<BladeCommand> tree = commandService.aliasCommands.getOrDefault(baseCommand, new ArrayList<>());
 
-        System.out.println(" - Base command: '" + baseCommand + "'");
-        System.out.println(" - Tree: " + tree);
-        System.out.println(" - Alias map keys: " + commandService.aliasCommands.keySet());
-        System.out.println(" - Alias map values: " + commandService.aliasCommands.values());
-
         do {
             String checking = String.join(" ", commandParts);
-
-            System.out.println(" - Checking: '" + checking + "'");
 
             for (BladeCommand subCommand : tree) {
                 for (String commandAlias : subCommand.getAliases()) {
