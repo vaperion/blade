@@ -225,8 +225,11 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
             BladeCommand command = resolved.getLeft();
             String foundAlias = resolved.getRight();
 
-            String[] actualArguments = Arrays.copyOfRange(args, Math.min(args.length, foundAlias.split(" ").length - 1), args.length);
-            if (actualArguments.length == 0) actualArguments = new String[]{""};
+            List<String> argList = new ArrayList<>(Arrays.asList(args));
+            if (foundAlias.split(" ").length > 1) {argList.subList(0, foundAlias.split(" ").length - 1).clear();}
+
+            if (argList.isEmpty()) argList.add("");
+            String[] actualArguments = argList.toArray(new String[0]);
 
             Tuple<BladeProvider<?>, String> data = commandService.getCommandCompleter().getLastProvider(command, actualArguments);
             BladeProvider<?> provider = data == null ? null : data.getLeft();

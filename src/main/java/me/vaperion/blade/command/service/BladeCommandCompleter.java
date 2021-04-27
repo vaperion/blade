@@ -22,17 +22,15 @@ public class BladeCommandCompleter {
     public Tuple<BladeProvider<?>, String> getLastProvider(@NotNull BladeCommand command, @NotNull String[] args) throws BladeExitMessage {
         try {
             List<String> argumentList = new ArrayList<>(Arrays.asList(args));
-            System.out.println("Argument list: " + argumentList);
             List<String> arguments = command.isQuoted() ? commandService.getCommandParser().combineQuotedArguments(argumentList) : argumentList;
-            System.out.println("Argument list 2: " + arguments);
 
             Map<Character, String> flags = commandService.getCommandParser().parseFlags(command, arguments);
             for (Map.Entry<Character, String> entry : flags.entrySet()) {
-                arguments.remove(String.valueOf(entry.getKey()));
-                if (!"true".equals(entry.getValue())) arguments.remove(entry.getValue());
-            }
+                arguments.remove("-" + entry.getKey());
 
-            System.out.println("Argument list 3: " + argumentList);
+                boolean isFlag = command.getFlagParameters().stream().anyMatch(flag -> flag.getFlag().value() == entry.getKey());
+                if (!isFlag || !"true".equals(entry.getValue())) arguments.remove(entry.getValue());
+            }
 
             if (arguments.size() == 0) return new Tuple<>();
             if (command.getParameterProviders().size() < arguments.size()) return new Tuple<>();
