@@ -22,6 +22,8 @@ import org.bukkit.plugin.SimplePluginManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -40,9 +42,9 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
             field = SimplePluginManager.class.getDeclaredField("commandMap");
             field.setAccessible(true);
 
-            Field modifiers = Field.class.getDeclaredField("modifiers");
-            modifiers.setAccessible(true);
-            modifiers.setInt(field, modifiers.getInt(field) & ~Modifier.FINAL);
+            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(Field.class, MethodHandles.lookup());
+            VarHandle handle = lookup.findVarHandle(Field.class, "modifiers", int.class);
+            handle.set(field, field.getModifiers() & ~Modifier.FINAL);
         } catch (Exception ex) {
             System.err.println("Failed to grab commandMap from the plugin manager.");
             ex.printStackTrace();
