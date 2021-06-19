@@ -14,10 +14,7 @@ import me.vaperion.blade.completer.impl.DefaultTabCompleter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class BladeCommandService {
 
@@ -26,6 +23,7 @@ public class BladeCommandService {
     final Map<String, List<BladeCommand>> aliasCommands = new LinkedHashMap<>();
     final Map<String, ICommandContainer> containerMap = new LinkedHashMap<>();
 
+    @Setter @Getter private boolean overrideCommands = false;
     @Setter @Getter private String fallbackPrefix = "blade";
     @Setter @Getter private ContainerCreator<?> containerCreator = ContainerCreator.NONE;
     @Setter @Getter private TabCompleter tabCompleter = new DefaultTabCompleter();
@@ -37,6 +35,11 @@ public class BladeCommandService {
 
     public BladeCommandService() {
         new DefaultBindings().bind(this);
+    }
+
+    @NotNull
+    public Map<String, ICommandContainer> getRegisteredCommands() {
+        return Collections.unmodifiableMap(this.containerMap);
     }
 
     public <T> void bindProvider(@NotNull Class<T> clazz, @NotNull BladeProvider<T> provider) {

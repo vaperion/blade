@@ -21,6 +21,7 @@ import java.util.Map;
 @Builder(builderMethodName = "of")
 public class Blade {
     private final BladeCommandService commandService = new BladeCommandService();
+    private final boolean overrideCommands;
     private final String fallbackPrefix;
     private final ContainerCreator<?> containerCreator;
     private final TabCompleter tabCompleter;
@@ -49,6 +50,8 @@ public class Blade {
             @Override
             public Blade build() {
                 Blade blade = super.build();
+
+                blade.commandService.setOverrideCommands(true);
 
                 if (blade.containerCreator == null)
                     throw new NullPointerException();

@@ -30,31 +30,37 @@ import java.util.*;
 @Getter
 public class BukkitCommandContainer extends Command implements ICommandContainer {
 
-    private static final Field COMMAND_MAP;
+    private static final Field COMMAND_MAP, KNOWN_COMMANDS;
     public static final ContainerCreator<BukkitCommandContainer> CREATOR = BukkitCommandContainer::new;
 
     static {
-        Field field = null;
+        Field mapField = null, commansField = null;
 
         try {
-            field = SimplePluginManager.class.getDeclaredField("commandMap");
-            field.setAccessible(true);
+            mapField = SimplePluginManager.class.getDeclaredField("commandMap");
+            mapField.setAccessible(true);
+            commansField = SimpleCommandMap.class.getDeclaredField("knownCommands");
+            commansField.setAccessible(true);
 
             Field modifiers = Field.class.getDeclaredField("modifiers");
             modifiers.setAccessible(true);
-            modifiers.setInt(field, modifiers.getInt(field) & ~Modifier.FINAL);
+
+            modifiers.setInt(mapField, modifiers.getInt(mapField) & ~Modifier.FINAL);
+            modifiers.setInt(commansField, modifiers.getInt(commansField) & ~Modifier.FINAL);
         } catch (Exception ex) {
             System.err.println("Failed to grab commandMap from the plugin manager.");
             ex.printStackTrace();
         }
 
-        COMMAND_MAP = field;
+        COMMAND_MAP = mapField;
+        KNOWN_COMMANDS = commansField;
     }
 
     private final BladeCommandService commandService;
     private final BladeCommand parentCommand;
 
-    public BukkitCommandContainer(@NotNull BladeCommandService service, @NotNull BladeCommand command, @NotNull String alias) throws Exception {
+    @SuppressWarnings("unchecked")
+    private BukkitCommandContainer(@NotNull BladeCommandService service, @NotNull BladeCommand command, @NotNull String alias) throws Exception {
         super(alias, command.getDescription(), "/" + alias, new ArrayList<>());
 
         this.commandService = service;
@@ -63,7 +69,27 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
         SimplePluginManager simplePluginManager = (SimplePluginManager) Bukkit.getServer().getPluginManager();
         SimpleCommandMap simpleCommandMap = (SimpleCommandMap) COMMAND_MAP.get(simplePluginManager);
 
+        if (service.isOverrideCommands()) {
+            Map<String, Command> knownCommands = (Map<String, Command>) KNOWN_COMMANDS.get(simpleCommandMap);
+            for (Command registeredCommand : new ArrayList<>(knownCommands.values())) {
+                if (doesBukkitCommandConflict(registeredCommand, alias, command)) {
+                    registeredCommand.unregister(simpleCommandMap);
+                    knownCommands.remove(registeredCommand.getName().toLowerCase(Locale.ENGLISH));
+                }
+            }
+            KNOWN_COMMANDS.set(simpleCommandMap, knownCommands);
+        }
+
         simpleCommandMap.register(this.commandService.getFallbackPrefix(), this);
+    }
+
+    private boolean doesBukkitCommandConflict(@NotNull Command bukkitCommand, @NotNull String alias, @NotNull BladeCommand bladeCommand) {
+        if (bukkitCommand instanceof BukkitCommandContainer) return false; // don't override our own commands
+        if (bukkitCommand.getName().equalsIgnoreCase(alias) || bukkitCommand.getAliases().stream().anyMatch(a -> a.equalsIgnoreCase(alias))) return true;
+        for (String realAlias : bladeCommand.getRealAliases()) {
+            if (bukkitCommand.getName().equalsIgnoreCase(realAlias) || bukkitCommand.getAliases().stream().anyMatch(a -> a.equalsIgnoreCase(realAlias))) return true;
+        }
+        return false;
     }
 
     @Nullable
