@@ -6,6 +6,8 @@ To use Blade, you simply have to include it as a dependency and shade it into yo
 If you make any changes or improvements to the project, please consider making a pull request to merge your changes back into the upstream project.
 This project is in its early stages, if you find any issues please open an issue.
 
+This project follows [Semantic Versioning](https://semver.org/).
+
 ## Using Blade
 
 Maven
@@ -21,7 +23,7 @@ Maven
     <dependency>
         <groupId>com.github.vaperion</groupId>
         <artifactId>blade</artifactId>
-        <version>1.1.0</version>
+        <version>1.2.0</version>
         <scope>compile</scope>
     </dependency>
 </dependencies>
@@ -36,7 +38,7 @@ allprojects {
 }
 
 dependencies {
-    implementation 'com.github.vaperion:blade:1.1.0'
+    implementation 'com.github.vaperion:blade:1.2.0'
 }
 ```
 
@@ -62,6 +64,14 @@ public class ExamplePlugin extends JavaPlugin {
                 .register(ExampleCommand.class);
     }
 }
+```
+
+Overriding bukkit commands:
+```java
+Blade.of()
+        ...
+        .overrideCommands(true)
+        ...;
 ```
 
 Setting a custom tab completer:
