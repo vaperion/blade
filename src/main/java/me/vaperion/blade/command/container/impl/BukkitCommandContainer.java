@@ -34,26 +34,26 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
     public static final ContainerCreator<BukkitCommandContainer> CREATOR = BukkitCommandContainer::new;
 
     static {
-        Field mapField = null, commansField = null;
+        Field mapField = null, commandsField = null;
 
         try {
             mapField = SimplePluginManager.class.getDeclaredField("commandMap");
             mapField.setAccessible(true);
-            commansField = SimpleCommandMap.class.getDeclaredField("knownCommands");
-            commansField.setAccessible(true);
+            commandsField = SimpleCommandMap.class.getDeclaredField("knownCommands");
+            commandsField.setAccessible(true);
 
             Field modifiers = Field.class.getDeclaredField("modifiers");
             modifiers.setAccessible(true);
 
             modifiers.setInt(mapField, modifiers.getInt(mapField) & ~Modifier.FINAL);
-            modifiers.setInt(commansField, modifiers.getInt(commansField) & ~Modifier.FINAL);
+            modifiers.setInt(commandsField, modifiers.getInt(commandsField) & ~Modifier.FINAL);
         } catch (Exception ex) {
             System.err.println("Failed to grab commandMap from the plugin manager.");
             ex.printStackTrace();
         }
 
         COMMAND_MAP = mapField;
-        KNOWN_COMMANDS = commansField;
+        KNOWN_COMMANDS = commandsField;
     }
 
     private final BladeCommandService commandService;

@@ -5,6 +5,7 @@ import me.vaperion.blade.command.bindings.Binding;
 import me.vaperion.blade.command.container.BladeParameter;
 import me.vaperion.blade.command.context.BladeContext;
 import me.vaperion.blade.command.exception.BladeExitMessage;
+import me.vaperion.blade.command.exception.BladeUsageMessage;
 import me.vaperion.blade.command.service.BladeCommandService;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -35,8 +36,10 @@ public class BukkitBindings implements Binding {
 
                 Player player = ctx.sender().parseAs(Player.class);
 
-                if (player != null && (input.isEmpty() || input.equalsIgnoreCase("self")))
-                    return player;
+                if (input.isEmpty() || input.equalsIgnoreCase("self")) {
+                    if (player != null) return player;
+                    else throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
+                }
 
                 if (input.length() < 3 || (!isUUID(input) && input.length() > 16))
                     throw new BladeExitMessage(ChatColor.YELLOW + input + ChatColor.RED + " is not a valid username.");
@@ -70,8 +73,10 @@ public class BukkitBindings implements Binding {
 
             Player player = ctx.sender().parseAs(Player.class);
 
-            if (player != null && (input.isEmpty() || input.equalsIgnoreCase("self")))
-                return player;
+            if (input.isEmpty() || input.equalsIgnoreCase("self")) {
+                if (player != null) return player;
+                else throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
+            }
 
             if (input.length() < 3 || (!isUUID(input) && input.length() > 16))
                 throw new BladeExitMessage(ChatColor.YELLOW + input + ChatColor.RED + " is not a valid username.");
