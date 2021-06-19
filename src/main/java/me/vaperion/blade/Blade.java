@@ -51,7 +51,7 @@ public class Blade {
             public Blade build() {
                 Blade blade = super.build();
 
-                blade.commandService.setOverrideCommands(true);
+                blade.commandService.setOverrideCommands(blade.overrideCommands);
 
                 if (blade.containerCreator == null)
                     throw new NullPointerException();
