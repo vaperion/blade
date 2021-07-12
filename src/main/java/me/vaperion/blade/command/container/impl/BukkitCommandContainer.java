@@ -155,15 +155,21 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
                     }
                 });
 
+        if (command.getExtraUsageData() != null && !command.getExtraUsageData().trim().isEmpty()) {
+            builder.append(" ");
+            builder.append(ChatColor.RED + command.getExtraUsageData());
+        }
+
         builder.sendTo(sender);
     }
 
     private boolean hasPermission(@NotNull CommandSender sender, String[] args) throws BladeExitMessage {
-        return checkPermission(sender, args).getLeft();
+        Tuple<BladeCommand, String> command = resolveCommand(joinAliasToArgs(this.parentCommand.getAliases()[0], args));
+        return checkPermission(sender, command == null ? null : command.getLeft()).getLeft();
     }
 
-    private Tuple<Boolean, String> checkPermission(@NotNull CommandSender sender, @NotNull String[] args) throws BladeExitMessage {
-        BladeCommand command = resolveCommand(joinAliasToArgs(this.parentCommand.getAliases()[0], args)).getLeft();
+    private Tuple<Boolean, String> checkPermission(@NotNull CommandSender sender, @Nullable BladeCommand command) throws BladeExitMessage {
+        if (command == null) return new Tuple<>(false, "This command failed to execute as we couldn't find it's registration.");
         if ("op".equals(command.getPermission())) return new Tuple<>(sender.isOp(), command.getPermissionMessage());
         if (command.getPermission() == null || command.getPermission().trim().isEmpty())
             return new Tuple<>(true, command.getPermissionMessage());
@@ -189,11 +195,12 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
         String resolvedAlias = alias;
 
         try {
-            Tuple<Boolean, String> permissionResult = checkPermission(sender, args);
-            if (!permissionResult.getLeft()) throw new BladeExitMessage(permissionResult.getRight());
 
             Tuple<BladeCommand, String> resolved = resolveCommand(joinAliasToArgs(alias, args));
             if (resolved == null) throw new BladeExitMessage("This command failed to execute as we couldn't find it's registration.");
+
+            Tuple<Boolean, String> permissionResult = checkPermission(sender, resolved.getLeft());
+            if (!permissionResult.getLeft()) throw new BladeExitMessage(permissionResult.getRight());
 
             command = resolved.getLeft();
             resolvedAlias = resolved.getRight();

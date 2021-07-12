@@ -15,4 +15,9 @@ public @interface Command {
     boolean quoted() default true;
 
     String description() default "";
+
+    /**
+     * This data will get appended to the end of the usage message.
+     */
+    String extraUsageData() default "";
 }

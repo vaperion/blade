@@ -34,7 +34,7 @@ public class BladeCommandParser {
                 for (BladeParameter parameter : realParameters.subList(arguments.size(), realParameters.size())) {
                     String defaultValue = parameter.getDefault();
                     if (defaultValue == null && parameter.getType() == String.class) continue;
-                    if (parameter.isCombined()) continue;
+//                    if (parameter.isCombined()) continue;
 
                     arguments.add(defaultValue);
                 }

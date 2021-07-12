@@ -21,7 +21,7 @@ public class BladeCommand {
     private final Object instance;
     private final Method method;
     private final String[] aliases, realAliases;
-    private final String description;
+    private final String description, extraUsageData;
     private final String permission, permissionMessage;
     private final boolean async, quoted;
 
@@ -41,6 +41,7 @@ public class BladeCommand {
         this.aliases = aliases;
         this.realAliases = Arrays.stream(aliases).map(String::toLowerCase).map(s -> s.split(" ")[0]).distinct().toArray(String[]::new);
         this.description = command.description();
+        this.extraUsageData = command.extraUsageData();
         this.async = command.async();
         this.quoted = command.quoted();
 
