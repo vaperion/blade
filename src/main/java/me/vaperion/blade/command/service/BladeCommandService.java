@@ -9,12 +9,15 @@ import me.vaperion.blade.command.container.BladeCommand;
 import me.vaperion.blade.command.container.BladeProviderContainer;
 import me.vaperion.blade.command.container.ContainerCreator;
 import me.vaperion.blade.command.container.ICommandContainer;
+import me.vaperion.blade.command.help.HelpGenerator;
+import me.vaperion.blade.command.help.impl.DefaultHelpGenerator;
 import me.vaperion.blade.completer.TabCompleter;
 import me.vaperion.blade.completer.impl.DefaultTabCompleter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class BladeCommandService {
 
@@ -27,6 +30,7 @@ public class BladeCommandService {
     @Setter @Getter private String fallbackPrefix = "blade";
     @Setter @Getter private ContainerCreator<?> containerCreator = ContainerCreator.NONE;
     @Setter @Getter private TabCompleter tabCompleter = new DefaultTabCompleter();
+    @Setter @Getter private HelpGenerator helpGenerator = new DefaultHelpGenerator();
 
     @Getter private final BladeCommandRegistrar commandRegistrar = new BladeCommandRegistrar(this);
     @Getter private final BladeCommandResolver commandResolver = new BladeCommandResolver(this);
@@ -35,6 +39,11 @@ public class BladeCommandService {
 
     public BladeCommandService() {
         new DefaultBindings().bind(this);
+    }
+
+    @NotNull
+    public List<BladeCommand> getAllBladeCommands() {
+        return Collections.unmodifiableList(this.aliasCommands.values().stream().flatMap(List::stream).collect(Collectors.toList()));
     }
 
     @NotNull

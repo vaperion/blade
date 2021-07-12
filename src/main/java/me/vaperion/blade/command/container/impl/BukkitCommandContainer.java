@@ -26,6 +26,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Getter
 public class BukkitCommandContainer extends Command implements ICommandContainer {
@@ -195,9 +196,24 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
         String resolvedAlias = alias;
 
         try {
+            String[] joined = joinAliasToArgs(alias, args);
+            String joinedStr = String.join(" ", joined);
 
-            Tuple<BladeCommand, String> resolved = resolveCommand(joinAliasToArgs(alias, args));
-            if (resolved == null) throw new BladeExitMessage("This command failed to execute as we couldn't find it's registration.");
+            BladeContext context = new BladeContext(new BukkitSender(sender), alias, args);
+
+            Tuple<BladeCommand, String> resolved = resolveCommand(joined);
+            if (resolved == null) {
+                List<BladeCommand> availableCommands = commandService.getAllBladeCommands()
+                        .stream().filter(c -> Arrays.stream(c.getAliases()).anyMatch(a -> a.toLowerCase().startsWith(joinedStr)))
+                        .filter(c -> this.checkPermission(sender, c).getLeft())
+                        .collect(Collectors.toList());
+
+                for (String line : commandService.getHelpGenerator().generate(context, availableCommands)) {
+                    sender.sendMessage(line);
+                }
+
+                return true;
+            }
 
             Tuple<Boolean, String> permissionResult = checkPermission(sender, resolved.getLeft());
             if (!permissionResult.getLeft()) throw new BladeExitMessage(permissionResult.getRight());
@@ -205,8 +221,6 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
             command = resolved.getLeft();
             resolvedAlias = resolved.getRight();
             int offset = Math.min(args.length, resolvedAlias.split(" ").length - 1);
-
-            BladeContext context = new BladeContext(new BukkitSender(sender), alias, args);
 
             if (command.isSenderParameter() && !command.getSenderType().isInstance(sender))
                 throw new BladeExitMessage("This command can only be executed by " + getSenderType(command.getSenderType()) + ".");

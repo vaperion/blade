@@ -7,6 +7,7 @@ import me.vaperion.blade.command.argument.BladeProvider;
 import me.vaperion.blade.command.argument.ProviderAnnotation;
 import me.vaperion.blade.command.bindings.Binding;
 import me.vaperion.blade.command.container.ContainerCreator;
+import me.vaperion.blade.command.help.HelpGenerator;
 import me.vaperion.blade.command.service.BladeCommandService;
 import me.vaperion.blade.completer.TabCompleter;
 import org.jetbrains.annotations.NotNull;
@@ -25,6 +26,7 @@ public class Blade {
     private final String fallbackPrefix;
     private final ContainerCreator<?> containerCreator;
     private final TabCompleter tabCompleter;
+    private final HelpGenerator helpGenerator;
 
     @Singular("bind0") private final Map<Map.Entry<Class<?>, Class<? extends ProviderAnnotation>>, BladeProvider<?>> customProviderMap;
     @Singular private final List<Binding> bindings;
@@ -63,6 +65,9 @@ public class Blade {
 
                 if (blade.tabCompleter != null)
                     blade.commandService.setTabCompleter(blade.tabCompleter);
+
+                if (blade.helpGenerator != null)
+                    blade.commandService.setHelpGenerator(blade.helpGenerator);
 
                 for (Binding binding : blade.bindings) {
                     binding.bind(blade.commandService);
