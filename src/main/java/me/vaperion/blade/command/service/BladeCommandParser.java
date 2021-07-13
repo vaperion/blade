@@ -26,11 +26,10 @@ public class BladeCommandParser {
             List<String> arguments = command.isQuoted() ? combineQuotedArguments(argumentList) : argumentList;
             Map<Character, String> flags = parseFlags(command, arguments);
 
-            if (arguments.size() < command.getParameters().size()) { // append default values to the end
-                List<BladeParameter> realParameters = command.getParameters().stream()
-                        .filter(p -> !(p instanceof BladeParameter.FlagParameter))
-                        .collect(Collectors.toList());
-
+            List<BladeParameter> realParameters = command.getParameters().stream()
+                    .filter(p -> !(p instanceof BladeParameter.FlagParameter))
+                    .collect(Collectors.toList());
+            if (arguments.size() < realParameters.size()) { // append default values to the end
                 for (BladeParameter parameter : realParameters.subList(arguments.size(), realParameters.size())) {
                     String defaultValue = parameter.getDefault();
                     if (defaultValue == null && parameter.getType() == String.class) continue;
