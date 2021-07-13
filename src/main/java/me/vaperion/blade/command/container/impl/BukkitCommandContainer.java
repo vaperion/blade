@@ -114,18 +114,21 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
 
     private void sendUsageMessage(@NotNull CommandSender sender, @NotNull String alias, @Nullable BladeCommand command) {
         if (command == null) return;
+        boolean hasDesc = command.getDescription() != null && !command.getDescription().trim().isEmpty();
 
         MessageBuilder builder = new MessageBuilder(ChatColor.RED + "Usage: /").append(ChatColor.RED + alias);
-        builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription()));
+        if (hasDesc) builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription()));
 
         Optional.of(command.getFlagParameters())
                 .ifPresent(flagParameters -> {
                     if (!flagParameters.isEmpty()) {
                         builder.append(" ").append(ChatColor.RED + "(");
+                        if (hasDesc) builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
 
                         int i = 0;
                         for (BladeParameter.FlagParameter flagParameter : flagParameters) {
                             builder.append(i++ == 0 ? "" : (ChatColor.GRAY + " | ")).reset();
+                            if (hasDesc) builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
 
                             Flag flag = flagParameter.getFlag();
 
@@ -136,6 +139,7 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
                         }
 
                         builder.append(ChatColor.RED + ")");
+                        if (hasDesc) builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
                     }
                 });
 
@@ -143,7 +147,7 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
                 .ifPresent(commandParameters -> {
                     if (!commandParameters.isEmpty()) {
                         builder.append(" ");
-                        builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
+                        if (hasDesc) builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
 
                         int i = 0;
                         for (BladeParameter.CommandParameter commandParameter : commandParameters) {
@@ -159,6 +163,7 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
         if (command.getExtraUsageData() != null && !command.getExtraUsageData().trim().isEmpty()) {
             builder.append(" ");
             builder.append(ChatColor.RED + command.getExtraUsageData());
+            if (hasDesc) builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
         }
 
         builder.sendTo(sender);
@@ -197,14 +202,13 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
 
         try {
             String[] joined = joinAliasToArgs(alias, args);
-            String joinedStr = String.join(" ", joined);
 
             BladeContext context = new BladeContext(new BukkitSender(sender), alias, args);
 
             Tuple<BladeCommand, String> resolved = resolveCommand(joined);
             if (resolved == null) {
                 List<BladeCommand> availableCommands = commandService.getAllBladeCommands()
-                        .stream().filter(c -> Arrays.stream(c.getAliases()).anyMatch(a -> a.toLowerCase().startsWith(joinedStr)))
+                        .stream().filter(c -> Arrays.stream(c.getAliases()).anyMatch(a -> a.toLowerCase().startsWith(alias.toLowerCase(Locale.ROOT) + " ") || a.equalsIgnoreCase(alias)))
                         .filter(c -> this.checkPermission(sender, c).getLeft())
                         .collect(Collectors.toList());
 
