@@ -86,9 +86,11 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
 
     private boolean doesBukkitCommandConflict(@NotNull Command bukkitCommand, @NotNull String alias, @NotNull BladeCommand bladeCommand) {
         if (bukkitCommand instanceof BukkitCommandContainer) return false; // don't override our own commands
-        if (bukkitCommand.getName().equalsIgnoreCase(alias) || bukkitCommand.getAliases().stream().anyMatch(a -> a.equalsIgnoreCase(alias))) return true;
+        if (bukkitCommand.getName().equalsIgnoreCase(alias) || bukkitCommand.getAliases().stream().anyMatch(a -> a.equalsIgnoreCase(alias)))
+            return true;
         for (String realAlias : bladeCommand.getRealAliases()) {
-            if (bukkitCommand.getName().equalsIgnoreCase(realAlias) || bukkitCommand.getAliases().stream().anyMatch(a -> a.equalsIgnoreCase(realAlias))) return true;
+            if (bukkitCommand.getName().equalsIgnoreCase(realAlias) || bukkitCommand.getAliases().stream().anyMatch(a -> a.equalsIgnoreCase(realAlias)))
+                return true;
         }
         return false;
     }
@@ -250,11 +252,17 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
                     sender.sendMessage(ChatColor.RED + ex.getMessage());
                 } catch (InvocationTargetException ex) {
                     if (ex.getTargetException() != null) {
-                        if (ex.getTargetException() instanceof BladeUsageMessage)
+                        if (ex.getTargetException() instanceof BladeUsageMessage) {
                             sendUsageMessage(sender, finalResolvedAlias, finalCommand);
-                        else if (ex.getTargetException() instanceof BladeExitMessage)
+                            return;
+                        } else if (ex.getTargetException() instanceof BladeExitMessage) {
                             sender.sendMessage(ChatColor.RED + ex.getTargetException().getMessage());
+                            return;
+                        }
                     }
+
+                    ex.printStackTrace();
+                    sender.sendMessage(ChatColor.RED + "An exception was thrown while executing this command.");
                 } catch (Throwable t) {
                     t.printStackTrace();
                     sender.sendMessage(ChatColor.RED + "An exception was thrown while executing this command.");
