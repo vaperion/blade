@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class BladeCommandService {
@@ -31,6 +32,7 @@ public class BladeCommandService {
     @Setter @Getter private ContainerCreator<?> containerCreator = ContainerCreator.NONE;
     @Setter @Getter private TabCompleter tabCompleter = new DefaultTabCompleter();
     @Setter @Getter private HelpGenerator helpGenerator = new DefaultHelpGenerator();
+    @Setter @Getter private Consumer<Runnable> asyncExecutor = Runnable::run;
 
     @Getter private final BladeCommandRegistrar commandRegistrar = new BladeCommandRegistrar(this);
     @Getter private final BladeCommandResolver commandResolver = new BladeCommandResolver(this);

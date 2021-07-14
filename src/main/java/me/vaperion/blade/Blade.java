@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 @SuppressWarnings("UnusedReturnValue")
 @Getter
@@ -27,6 +28,7 @@ public class Blade {
     private final ContainerCreator<?> containerCreator;
     private final TabCompleter tabCompleter;
     private final HelpGenerator helpGenerator;
+    private final Consumer<Runnable> asyncExecutor;
 
     @Singular("bind0") private final Map<Map.Entry<Class<?>, Class<? extends ProviderAnnotation>>, BladeProvider<?>> customProviderMap;
     @Singular private final List<Binding> bindings;
@@ -68,6 +70,9 @@ public class Blade {
 
                 if (blade.helpGenerator != null)
                     blade.commandService.setHelpGenerator(blade.helpGenerator);
+
+                if (blade.asyncExecutor != null)
+                    blade.commandService.setAsyncExecutor(blade.asyncExecutor);
 
                 for (Binding binding : blade.bindings) {
                     binding.bind(blade.commandService);

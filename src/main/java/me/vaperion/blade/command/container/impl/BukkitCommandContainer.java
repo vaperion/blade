@@ -229,23 +229,40 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
             if (command.isSenderParameter() && !command.getSenderType().isInstance(sender))
                 throw new BladeExitMessage("This command can only be executed by " + getSenderType(command.getSenderType()) + ".");
 
-            List<Object> parsed;
-            if (command.isContextBased()) {
-                parsed = Collections.singletonList(context);
-            } else {
-                parsed = commandService.getCommandParser().parseArguments(command, context, Arrays.copyOfRange(args, offset, args.length));
-                if (command.isSenderParameter()) parsed.add(0, sender);
-            }
+            final BladeCommand finalCommand = command;
+            final String finalResolvedAlias = resolvedAlias;
 
-            try {
-                command.getMethod().setAccessible(true);
-                command.getMethod().invoke(command.getInstance(), parsed.toArray(new Object[0]));
-            } catch (InvocationTargetException ex) {
-                if (ex.getTargetException() != null && ex.getTargetException() instanceof BladeUsageMessage)
-                    throw ex.getTargetException();
-                throw ex;
-            }
+            Runnable runnable = () -> {
+                try {
+                    List<Object> parsed;
+                    if (finalCommand.isContextBased()) {
+                        parsed = Collections.singletonList(context);
+                    } else {
+                        parsed = commandService.getCommandParser().parseArguments(finalCommand, context, Arrays.copyOfRange(args, offset, args.length));
+                        if (finalCommand.isSenderParameter()) parsed.add(0, sender);
+                    }
 
+                    finalCommand.getMethod().setAccessible(true);
+                    finalCommand.getMethod().invoke(finalCommand.getInstance(), parsed.toArray(new Object[0]));
+                } catch (BladeUsageMessage ex) {
+                    sendUsageMessage(sender, finalResolvedAlias, finalCommand);
+                } catch (BladeExitMessage ex) {
+                    sender.sendMessage(ChatColor.RED + ex.getMessage());
+                } catch (InvocationTargetException ex) {
+                    if (ex.getTargetException() != null) {
+                        if (ex.getTargetException() instanceof BladeUsageMessage)
+                            sendUsageMessage(sender, finalResolvedAlias, finalCommand);
+                        else if (ex.getTargetException() instanceof BladeExitMessage)
+                            sender.sendMessage(ChatColor.RED + ex.getTargetException().getMessage());
+                    }
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                    sender.sendMessage(ChatColor.RED + "An exception was thrown while executing this command.");
+                }
+            };
+
+            if (command.isAsync()) command.getCommandService().getAsyncExecutor().accept(runnable);
+            else runnable.run();
             return true;
         } catch (BladeUsageMessage ex) {
             sendUsageMessage(sender, resolvedAlias, command);
