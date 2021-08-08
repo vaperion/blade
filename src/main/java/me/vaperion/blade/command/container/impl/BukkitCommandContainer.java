@@ -124,7 +124,7 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
         Optional.of(command.getFlagParameters())
                 .ifPresent(flagParameters -> {
                     if (!flagParameters.isEmpty()) {
-                        builder.append(" ").append(ChatColor.RED + "(");
+                        builder.append(" ").append(ChatColor.RED + "(").reset();
                         if (hasDesc) builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
 
                         int i = 0;
@@ -140,7 +140,7 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
                                 builder.hover(Collections.singletonList(ChatColor.YELLOW + flag.description().trim()));
                         }
 
-                        builder.append(ChatColor.RED + ")");
+                        builder.append(ChatColor.RED + ")").reset();
                         if (hasDesc) builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
                     }
                 });

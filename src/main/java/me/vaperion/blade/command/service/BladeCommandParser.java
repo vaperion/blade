@@ -46,7 +46,7 @@ public class BladeCommandParser {
 
                 if (parameter instanceof BladeParameter.FlagParameter) {
                     data = ((BladeParameter.FlagParameter) parameter).extractFrom(flags);
-                    flag = true;
+                    flag = ((BladeParameter.FlagParameter) parameter).isBooleanFlag();
                 } else {
                     if (arguments.size() <= argIndex) throw new BladeUsageMessage();
 
