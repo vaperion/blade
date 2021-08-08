@@ -66,7 +66,7 @@ public class BladeCommand {
 
                 if (parameter.isAnnotationPresent(Flag.class)) {
                     Flag flag = parameter.getAnnotation(Flag.class);
-                    bladeParameter = new BladeParameter.FlagParameter(parameterName, parameter.getType(), flag);
+                    bladeParameter = new BladeParameter.FlagParameter(parameterName, parameter.getType(), parameter.getAnnotation(Optional.class), flag);
                 } else {
                     bladeParameter = new BladeParameter.CommandParameter(parameterName, parameter.getType(), parameter.getAnnotation(Optional.class), parameter.getAnnotation(Range.class), parameter.isAnnotationPresent(Combined.class));
                 }

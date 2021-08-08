@@ -43,8 +43,8 @@ public abstract class BladeParameter {
     public static class FlagParameter extends BladeParameter {
         @Getter private final Flag flag;
 
-        public FlagParameter(String name, Class<?> type, Flag flag) {
-            super(name, type, null, null, false);
+        public FlagParameter(String name, Class<?> type, Optional optional, Flag flag) {
+            super(name, type, optional, null, false);
 
             this.flag = flag;
         }
@@ -54,7 +54,11 @@ public abstract class BladeParameter {
         }
 
         public String extractFrom(Map<Character, String> flagMap) {
-            if (!flagMap.containsKey(flag.value())) return isBooleanFlag() ? "false" : null;
+            if (!flagMap.containsKey(flag.value())) {
+                if (this.optional != null) return this.optional.value();
+                return isBooleanFlag() ? "false" : null;
+            }
+
             return flagMap.get(flag.value());
         }
     }
