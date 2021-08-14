@@ -1,5 +1,6 @@
 package me.vaperion.blade.command.container.impl;
 
+import com.google.common.collect.ImmutableSet;
 import lombok.Getter;
 import me.vaperion.blade.command.annotation.Flag;
 import me.vaperion.blade.command.container.BladeCommand;
@@ -16,6 +17,7 @@ import me.vaperion.blade.utils.Tuple;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
+import org.bukkit.command.CommandMap;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.plugin.SimplePluginManager;
@@ -72,26 +74,42 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
 
         if (service.isOverrideCommands()) {
             Map<String, Command> knownCommands = (Map<String, Command>) KNOWN_COMMANDS.get(simpleCommandMap);
-            for (Command registeredCommand : new ArrayList<>(knownCommands.values())) {
+
+            for (Map.Entry<String, Command> entry : ImmutableSet.copyOf(knownCommands.entrySet())) {
+                String key = entry.getKey();
+                Command registeredCommand = entry.getValue();
+
                 if (doesBukkitCommandConflict(registeredCommand, alias, command)) {
                     registeredCommand.unregister(simpleCommandMap);
-                    knownCommands.remove(registeredCommand.getName().toLowerCase(Locale.ENGLISH));
+                    knownCommands.remove(key);
                 }
             }
+
             KNOWN_COMMANDS.set(simpleCommandMap, knownCommands);
         }
 
-        simpleCommandMap.register(this.commandService.getFallbackPrefix(), this);
+        simpleCommandMap.register(commandService.getFallbackPrefix(), this);
+    }
+
+    @Override
+    public boolean unregister(@NotNull CommandMap commandMap) {
+        commandService.getCommandRegistrar().unregister(this);
+        return super.unregister(commandMap);
     }
 
     private boolean doesBukkitCommandConflict(@NotNull Command bukkitCommand, @NotNull String alias, @NotNull BladeCommand bladeCommand) {
-        if (bukkitCommand instanceof BukkitCommandContainer) return false; // don't override our own commands
+        if (!commandService.isOverrideBladeCommands()) {
+            if (bukkitCommand instanceof BukkitCommandContainer) return false; // don't override our own commands
+        }
+
         if (bukkitCommand.getName().equalsIgnoreCase(alias) || bukkitCommand.getAliases().stream().anyMatch(a -> a.equalsIgnoreCase(alias)))
             return true;
+
         for (String realAlias : bladeCommand.getRealAliases()) {
             if (bukkitCommand.getName().equalsIgnoreCase(realAlias) || bukkitCommand.getAliases().stream().anyMatch(a -> a.equalsIgnoreCase(realAlias)))
                 return true;
         }
+
         return false;
     }
 

@@ -4,11 +4,13 @@ import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.command.annotation.Command;
 import me.vaperion.blade.command.annotation.Permission;
 import me.vaperion.blade.command.container.BladeCommand;
+import me.vaperion.blade.command.container.ICommandContainer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -58,6 +60,18 @@ public class BladeCommandRegistrar {
 
             if (commandService.containerMap.containsKey(realAlias)) continue;
             commandService.containerMap.put(realAlias, commandService.getContainerCreator().create(commandService, bladeCommand, realAlias));
+        }
+    }
+
+    public void unregister(@NotNull ICommandContainer commandContainer) {
+        BladeCommand bladeCommand = commandContainer.getParentCommand();
+        commandService.commands.remove(bladeCommand);
+
+        for (String alias : bladeCommand.getAliases()) {
+            String realAlias = alias.split(" ")[0];
+
+            commandService.aliasCommands.getOrDefault(realAlias, new ArrayList<>()).remove(bladeCommand);
+            commandService.containerMap.remove(realAlias, commandContainer);
         }
     }
 
