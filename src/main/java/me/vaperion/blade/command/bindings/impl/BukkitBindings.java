@@ -41,9 +41,6 @@ public class BukkitBindings implements Binding {
                     else throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
                 }
 
-                if (input.length() < 3 || (!isUUID(input) && input.length() > 16))
-                    throw new BladeExitMessage(ChatColor.YELLOW + input + ChatColor.RED + " is not a valid username.");
-
                 Player onlinePlayer = getPlayer(input);
 
                 if (onlinePlayer == null)
@@ -77,9 +74,6 @@ public class BukkitBindings implements Binding {
                 if (player != null) return player;
                 else throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
             }
-
-            if (input.length() < 3 || (!isUUID(input) && input.length() > 16))
-                throw new BladeExitMessage(ChatColor.YELLOW + input + ChatColor.RED + " is not a valid username.");
 
             OfflinePlayer offlinePlayer = getOfflinePlayer(input);
 
