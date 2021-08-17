@@ -1,5 +1,6 @@
 package me.vaperion.blade;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
@@ -16,6 +17,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 @SuppressWarnings("UnusedReturnValue")
@@ -30,8 +33,10 @@ public class Blade {
     private final HelpGenerator helpGenerator;
     private final Consumer<Runnable> asyncExecutor;
 
-    @Singular("bind0") private final Map<Map.Entry<Class<?>, Class<? extends ProviderAnnotation>>, BladeProvider<?>> customProviderMap;
-    @Singular private final List<Binding> bindings;
+    @Singular("bind0")
+    private final Map<Map.Entry<Class<?>, Class<? extends ProviderAnnotation>>, BladeProvider<?>> customProviderMap;
+    @Singular
+    private final List<Binding> bindings;
 
     private void register(@Nullable Object instance, @NotNull Class<?> clazz) {
         commandService.getCommandRegistrar().registerClass(instance, clazz);
@@ -71,8 +76,14 @@ public class Blade {
                 if (blade.helpGenerator != null)
                     blade.commandService.setHelpGenerator(blade.helpGenerator);
 
-                if (blade.asyncExecutor != null)
+                if (blade.asyncExecutor != null) {
                     blade.commandService.setAsyncExecutor(blade.asyncExecutor);
+                } else {
+                    ExecutorService service = Executors.newCachedThreadPool(
+                            new ThreadFactoryBuilder().setNameFormat("blade-async-executor-%d").build()
+                    );
+                    blade.commandService.setAsyncExecutor(service::execute);
+                }
 
                 for (Binding binding : blade.bindings) {
                     binding.bind(blade.commandService);
