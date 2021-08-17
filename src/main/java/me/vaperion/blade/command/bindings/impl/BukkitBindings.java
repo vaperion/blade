@@ -75,12 +75,7 @@ public class BukkitBindings implements Binding {
                 else throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
             }
 
-            OfflinePlayer offlinePlayer = getOfflinePlayer(input);
-
-            if (offlinePlayer == null)
-                throw new BladeExitMessage("No offline player with name or UUID " + ChatColor.YELLOW + input + ChatColor.RED + " found.");
-
-            return offlinePlayer;
+            return getOfflinePlayer(input);
         });
 
         commandService.bindProvider(GameMode.class, new BladeProvider<GameMode>() {
@@ -125,7 +120,7 @@ public class BukkitBindings implements Binding {
         return Bukkit.getPlayer(input);
     }
 
-    @Nullable
+    @NotNull
     private OfflinePlayer getOfflinePlayer(@NotNull String input) {
         if (isUUID(input)) return Bukkit.getOfflinePlayer(UUID.fromString(input));
         return Bukkit.getOfflinePlayer(input);
