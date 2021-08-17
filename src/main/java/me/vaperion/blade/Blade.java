@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 @Builder(builderMethodName = "of")
 public class Blade {
     private final BladeCommandService commandService = new BladeCommandService();
-    private final boolean overrideCommands, overrideBladeCommands;
+    private final boolean overrideCommands;
     private final String fallbackPrefix;
     private final ContainerCreator<?> containerCreator;
     private final TabCompleter tabCompleter;
@@ -56,7 +56,6 @@ public class Blade {
                 Blade blade = super.build();
 
                 blade.commandService.setOverrideCommands(blade.overrideCommands);
-                blade.commandService.setOverrideBladeCommands(blade.overrideBladeCommands);
 
                 if (blade.containerCreator == null)
                     throw new NullPointerException();
