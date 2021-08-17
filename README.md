@@ -115,6 +115,16 @@ public class ExampleCommand {
         sender.sendMessage("Age: " + age);
         sender.sendMessage("Balance: " + balance);
     }
+
+    @Command({"balance", "bal"})
+    public static void balance(@Sender Player sender,
+                               @Optional Player target) {
+        if (target == null) {
+            sender.sendMessage("Your balance is: $100");
+        } else {
+            sender.sendMessage(target.getName() + "'s balance is: $100");
+        }
+    }
 }
 ```
 
