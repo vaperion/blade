@@ -125,23 +125,27 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
                 .ifPresent(flagParameters -> {
                     if (!flagParameters.isEmpty()) {
                         builder.append(" ").append(ChatColor.RED + "(").reset();
-                        if (hasDesc) builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
+                        if (hasDesc)
+                            builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
 
                         int i = 0;
                         for (BladeParameter.FlagParameter flagParameter : flagParameters) {
                             builder.append(i++ == 0 ? "" : (ChatColor.GRAY + " | ")).reset();
-                            if (hasDesc) builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
+                            if (hasDesc)
+                                builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
 
                             Flag flag = flagParameter.getFlag();
 
                             builder.append(ChatColor.AQUA + "-" + flag.value());
-                            if (!flagParameter.isBooleanFlag()) builder.append(ChatColor.AQUA + " <" + flagParameter.getName() + ">");
+                            if (!flagParameter.isBooleanFlag())
+                                builder.append(ChatColor.AQUA + " <" + flagParameter.getName() + ">");
                             if (!flag.description().trim().isEmpty())
                                 builder.hover(Collections.singletonList(ChatColor.YELLOW + flag.description().trim()));
                         }
 
                         builder.append(ChatColor.RED + ")").reset();
-                        if (hasDesc) builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
+                        if (hasDesc)
+                            builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
                     }
                 });
 
@@ -149,7 +153,8 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
                 .ifPresent(commandParameters -> {
                     if (!commandParameters.isEmpty()) {
                         builder.append(" ");
-                        if (hasDesc) builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
+                        if (hasDesc)
+                            builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
 
                         int i = 0;
                         for (BladeParameter.CommandParameter commandParameter : commandParameters) {
@@ -177,7 +182,8 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
     }
 
     private Tuple<Boolean, String> checkPermission(@NotNull CommandSender sender, @Nullable BladeCommand command) throws BladeExitMessage {
-        if (command == null) return new Tuple<>(false, "This command failed to execute as we couldn't find it's registration.");
+        if (command == null)
+            return new Tuple<>(false, "This command failed to execute as we couldn't find it's registration.");
         if ("op".equals(command.getPermission())) return new Tuple<>(sender.isOp(), command.getPermissionMessage());
         if (command.getPermission() == null || command.getPermission().trim().isEmpty())
             return new Tuple<>(true, command.getPermissionMessage());
@@ -269,8 +275,24 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
                 }
             };
 
-            if (command.isAsync()) command.getCommandService().getAsyncExecutor().accept(runnable);
-            else runnable.run();
+            if (command.isAsync()) {
+                commandService.getAsyncExecutor().accept(runnable);
+            } else {
+                long time = System.nanoTime();
+                runnable.run();
+                long elapsed = (System.nanoTime() - time) / 1000000;
+
+                if (elapsed >= commandService.getExecutionTimeWarningThreshold()) {
+                    Bukkit.getLogger().warning(String.format(
+                            "[Blade] Command '%s' (%s#%s) took %d milliseconds to execute!",
+                            finalResolvedAlias,
+                            finalCommand.getMethod().getDeclaringClass().getName(),
+                            finalCommand.getMethod().getName(),
+                            elapsed
+                    ));
+                }
+            }
+
             return true;
         } catch (BladeUsageMessage ex) {
             sendUsageMessage(sender, resolvedAlias, command);

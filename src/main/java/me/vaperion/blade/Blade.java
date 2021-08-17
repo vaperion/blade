@@ -32,6 +32,8 @@ public class Blade {
     private final TabCompleter tabCompleter;
     private final HelpGenerator helpGenerator;
     private final Consumer<Runnable> asyncExecutor;
+    @Builder.Default
+    private final long executionTimeWarningThreshold = 5;
 
     @Singular("bind0")
     private final Map<Map.Entry<Class<?>, Class<? extends ProviderAnnotation>>, BladeProvider<?>> customProviderMap;
@@ -84,6 +86,8 @@ public class Blade {
                     );
                     blade.commandService.setAsyncExecutor(service::execute);
                 }
+
+                blade.commandService.setExecutionTimeWarningThreshold(blade.executionTimeWarningThreshold);
 
                 for (Binding binding : blade.bindings) {
                     binding.bind(blade.commandService);

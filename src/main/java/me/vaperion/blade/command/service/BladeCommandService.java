@@ -33,6 +33,7 @@ public class BladeCommandService {
     @Setter @Getter private TabCompleter tabCompleter = new DefaultTabCompleter();
     @Setter @Getter private HelpGenerator helpGenerator = new DefaultHelpGenerator();
     @Setter @Getter private Consumer<Runnable> asyncExecutor = Runnable::run;
+    @Setter @Getter private long executionTimeWarningThreshold = 5;
 
     @Getter private final BladeCommandRegistrar commandRegistrar = new BladeCommandRegistrar(this);
     @Getter private final BladeCommandResolver commandResolver = new BladeCommandResolver(this);
