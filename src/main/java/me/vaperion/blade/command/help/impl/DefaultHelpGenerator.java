@@ -13,6 +13,6 @@ public class DefaultHelpGenerator implements HelpGenerator {
     @NotNull
     @Override
     public List<String> generate(@NotNull BladeContext context, @NotNull List<BladeCommand> commands) {
-        throw new BladeExitMessage("This command failed to execute as we couldn't find it's registration.");
+        throw new BladeExitMessage("This command failed to execute as we couldn't find its registration.");
     }
 }

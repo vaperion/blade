@@ -183,7 +183,7 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
 
     private Tuple<Boolean, String> checkPermission(@NotNull CommandSender sender, @Nullable BladeCommand command) throws BladeExitMessage {
         if (command == null)
-            return new Tuple<>(false, "This command failed to execute as we couldn't find it's registration.");
+            return new Tuple<>(false, "This command failed to execute as we couldn't find its registration.");
         if ("op".equals(command.getPermission())) return new Tuple<>(sender.isOp(), command.getPermissionMessage());
         if (command.getPermission() == null || command.getPermission().trim().isEmpty())
             return new Tuple<>(true, command.getPermissionMessage());
