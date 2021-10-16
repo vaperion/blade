@@ -22,6 +22,7 @@ public class BladeCommandResolver {
     public Tuple<BladeCommand, String> resolveCommand(@NotNull String[] input) {
         if (input.length == 0) return null;
         String[] commandParts = Arrays.copyOf(input, input.length);
+        if (commandParts[0].contains(":")) commandParts[0] = commandParts[0].split(":", 2)[1];
 
         String baseCommand = commandParts[0].toLowerCase();
         List<BladeCommand> tree = commandService.aliasCommands.getOrDefault(baseCommand, new ArrayList<>());
