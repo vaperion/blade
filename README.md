@@ -23,7 +23,7 @@ Maven
     <dependency>
         <groupId>com.github.vaperion</groupId>
         <artifactId>blade</artifactId>
-        <version>1.2.9</version>
+        <version>1.2.10</version>
         <scope>compile</scope>
     </dependency>
 </dependencies>
@@ -38,7 +38,7 @@ allprojects {
 }
 
 dependencies {
-    implementation 'com.github.vaperion:blade:1.2.9'
+    implementation 'com.github.vaperion:blade:1.2.10'
 }
 ```
 
