@@ -29,9 +29,9 @@ public abstract class BladeParameter {
         return range != null;
     }
 
-    public boolean allowsNull() {
+    public boolean defaultsToNull() {
         if (!isOptional()) return false;
-        return optional.value().equalsIgnoreCase("null") || optional.value().equals("") || optional.value().equals("none");
+        return "null".equals(optional.value());
     }
 
     public static class CommandParameter extends BladeParameter {

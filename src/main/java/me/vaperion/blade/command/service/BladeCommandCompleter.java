@@ -1,6 +1,7 @@
 package me.vaperion.blade.command.service;
 
 import lombok.RequiredArgsConstructor;
+import me.vaperion.blade.command.argument.BladeArgument;
 import me.vaperion.blade.command.argument.BladeProvider;
 import me.vaperion.blade.command.container.BladeCommand;
 import me.vaperion.blade.command.context.BladeContext;
@@ -61,7 +62,11 @@ public class BladeCommandCompleter {
             BladeProvider<?> parameterProvider = command.getParameterProviders().get(index);
             String argument = index < arguments.size() ? arguments.get(index) : "";
 
-            return parameterProvider.suggest(context, argument);
+            BladeArgument bladeArgument = new BladeArgument(null);
+            bladeArgument.setType(index < arguments.size() ? BladeArgument.Type.PROVIDED : BladeArgument.Type.OPTIONAL);
+            bladeArgument.setString(argument);
+
+            return parameterProvider.suggest(context, bladeArgument);
         } catch (BladeExitMessage ex) {
             throw ex;
         } catch (Exception ex) {

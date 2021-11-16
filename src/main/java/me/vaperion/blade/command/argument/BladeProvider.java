@@ -1,6 +1,5 @@
 package me.vaperion.blade.command.argument;
 
-import me.vaperion.blade.command.container.BladeParameter;
 import me.vaperion.blade.command.context.BladeContext;
 import me.vaperion.blade.command.exception.BladeExitMessage;
 import org.jetbrains.annotations.NotNull;
@@ -13,10 +12,10 @@ import java.util.List;
 public interface BladeProvider<T> {
 
     @Nullable
-    T provide(@NotNull BladeContext context, @NotNull BladeParameter parameter, @Nullable String input) throws BladeExitMessage;
+    T provide(@NotNull BladeContext context, @NotNull BladeArgument argument) throws BladeExitMessage;
 
     @NotNull
-    default List<String> suggest(@NotNull BladeContext context, @NotNull String input) throws BladeExitMessage {
+    default List<String> suggest(@NotNull BladeContext context, @NotNull BladeArgument argument) throws BladeExitMessage {
         return Collections.emptyList();
     }
 

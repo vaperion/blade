@@ -1,6 +1,7 @@
 package me.vaperion.blade.command.service;
 
 import lombok.RequiredArgsConstructor;
+import me.vaperion.blade.command.argument.BladeArgument;
 import me.vaperion.blade.command.argument.BladeProvider;
 import me.vaperion.blade.command.container.BladeCommand;
 import me.vaperion.blade.command.container.BladeParameter;
@@ -18,22 +19,22 @@ public class BladeCommandParser {
     private final BladeCommandService commandService;
 
     @NotNull
-    public List<Object> parseArguments(@NotNull BladeCommand command, @NotNull BladeContext context, @NotNull String[] args) throws BladeExitMessage {
+    public List<Object> parseArguments(@NotNull BladeCommand command, @NotNull BladeContext context, @NotNull String[] argArray) throws BladeExitMessage {
+        List<String> args = Arrays.asList(argArray);
         List<Object> result = new ArrayList<>(command.getParameters().size());
 
         try {
-            List<String> argumentList = new ArrayList<>(Arrays.asList(args));
-            List<String> arguments = command.isQuoted() ? combineQuotedArguments(argumentList) : argumentList;
+            List<String> arguments = command.isQuoted() ? combineQuotedArguments(args) : args;
             Map<Character, String> flags = parseFlags(command, arguments);
 
             List<BladeParameter> realParameters = command.getParameters().stream()
-                    .filter(p -> !(p instanceof BladeParameter.FlagParameter))
-                    .collect(Collectors.toList());
-            if (arguments.size() < realParameters.size()) { // append default values to the end
+                  .filter(p -> !(p instanceof BladeParameter.FlagParameter))
+                  .collect(Collectors.toList());
+
+            if (arguments.size() < realParameters.size()) {
                 for (BladeParameter parameter : realParameters.subList(arguments.size(), realParameters.size())) {
                     String defaultValue = parameter.getDefault();
                     if (defaultValue == null && parameter.getType() == String.class) continue;
-//                    if (parameter.isCombined()) continue;
 
                     arguments.add(defaultValue);
                 }
@@ -41,28 +42,37 @@ public class BladeCommandParser {
 
             int argIndex = 0, providerIndex = 0;
             for (BladeParameter parameter : command.getParameters()) {
+                boolean flag = parameter instanceof BladeParameter.FlagParameter;
+                BladeArgument bladeArgument = new BladeArgument(parameter);
+
                 String data;
-                boolean flag = false;
+                if (!flag) {
+                    if (arguments.size() >= argIndex) {
+                        data = arguments.get(argIndex);
+                        bladeArgument.setType(BladeArgument.Type.PROVIDED);
+                    } else if (parameter.isOptional()) {
+                        data = parameter.getDefault();
+                        bladeArgument.setType(BladeArgument.Type.OPTIONAL);
+                    } else throw new BladeUsageMessage();
 
-                if (parameter instanceof BladeParameter.FlagParameter) {
-                    data = ((BladeParameter.FlagParameter) parameter).extractFrom(flags);
-                    flag = true;
-                } else {
-                    if (arguments.size() <= argIndex) throw new BladeUsageMessage();
-
-                    if (parameter.isCombined()) data = String.join(" ", arguments.subList(argIndex, arguments.size()));
-                    else data = arguments.get(argIndex);
-                }
+                    if (parameter.isCombined())
+                        data = arguments.size() >= argIndex ? String.join(" ", arguments.subList(argIndex, arguments.size())) : data;
+                } else data = ((BladeParameter.FlagParameter) parameter).extractFrom(flags);
+                bladeArgument.setString(data);
 
                 try {
                     BladeProvider<?> provider = command.getProviders().get(providerIndex);
                     if (provider == null)
                         throw new BladeExitMessage("Could not find provider for type '" + parameter.getType().getCanonicalName() + "'.");
 
-                    Object parsed = provider.provide(context, parameter, data);
+                    Object parsed;
+                    if (bladeArgument.getType() == BladeArgument.Type.OPTIONAL && bladeArgument.getParameter().defaultsToNull())
+                        parsed = null;
+                    else
+                        parsed = provider.provide(context, bladeArgument);
                     result.add(parsed);
 
-                    if (parsed == null && !parameter.allowsNull())
+                    if (parsed == null && !parameter.defaultsToNull())
                         throw new BladeUsageMessage();
 
                     if (!flag) argIndex++;
@@ -97,8 +107,8 @@ public class BladeCommandParser {
                 char flag = arg.charAt(1);
 
                 BladeParameter.FlagParameter flagParameter = command.getFlagParameters().stream()
-                        .filter(param -> param.getFlag().value() == flag)
-                        .findFirst().orElse(null);
+                      .filter(param -> param.getFlag().value() == flag)
+                      .findFirst().orElse(null);
                 if (flagParameter == null) continue;
 
                 it.remove();

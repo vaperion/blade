@@ -1,4 +1,4 @@
-package me.vaperion.blade.completer;
+package me.vaperion.blade.command.tabcompleter;
 
 import me.vaperion.blade.command.container.BladeCommand;
 import me.vaperion.blade.command.service.BladeCommandService;

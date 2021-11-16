@@ -26,7 +26,7 @@ public class BladeCommandRegistrar {
                 Command command = clazz.getAnnotation(Command.class);
                 Permission permission = clazz.getAnnotation(Permission.class);
                 parent = new BladeCommand(commandService, instance, null,
-                                          Arrays.stream(command.value()).map(String::toLowerCase).toArray(String[]::new), command, permission);
+                      Arrays.stream(command.value()).map(String::toLowerCase).toArray(String[]::new), command, permission);
             }
 
             for (Method method : clazz.getMethods()) {

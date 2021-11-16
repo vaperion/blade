@@ -122,50 +122,50 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
         if (hasDesc) builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription()));
 
         Optional.of(command.getFlagParameters())
-                .ifPresent(flagParameters -> {
-                    if (!flagParameters.isEmpty()) {
-                        builder.append(" ").append(ChatColor.RED + "(").reset();
-                        if (hasDesc)
-                            builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
+              .ifPresent(flagParameters -> {
+                  if (!flagParameters.isEmpty()) {
+                      builder.append(" ").append(ChatColor.RED + "(").reset();
+                      if (hasDesc)
+                          builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
 
-                        int i = 0;
-                        for (BladeParameter.FlagParameter flagParameter : flagParameters) {
-                            builder.append(i++ == 0 ? "" : (ChatColor.GRAY + " | ")).reset();
-                            if (hasDesc)
-                                builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
+                      int i = 0;
+                      for (BladeParameter.FlagParameter flagParameter : flagParameters) {
+                          builder.append(i++ == 0 ? "" : (ChatColor.GRAY + " | ")).reset();
+                          if (hasDesc)
+                              builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
 
-                            Flag flag = flagParameter.getFlag();
+                          Flag flag = flagParameter.getFlag();
 
-                            builder.append(ChatColor.AQUA + "-" + flag.value());
-                            if (!flagParameter.isBooleanFlag())
-                                builder.append(ChatColor.AQUA + " <" + flagParameter.getName() + ">");
-                            if (!flag.description().trim().isEmpty())
-                                builder.hover(Collections.singletonList(ChatColor.YELLOW + flag.description().trim()));
-                        }
+                          builder.append(ChatColor.AQUA + "-" + flag.value());
+                          if (!flagParameter.isBooleanFlag())
+                              builder.append(ChatColor.AQUA + " <" + flagParameter.getName() + ">");
+                          if (!flag.description().trim().isEmpty())
+                              builder.hover(Collections.singletonList(ChatColor.YELLOW + flag.description().trim()));
+                      }
 
-                        builder.append(ChatColor.RED + ")").reset();
-                        if (hasDesc)
-                            builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
-                    }
-                });
+                      builder.append(ChatColor.RED + ")").reset();
+                      if (hasDesc)
+                          builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
+                  }
+              });
 
         Optional.of(command.getCommandParameters())
-                .ifPresent(commandParameters -> {
-                    if (!commandParameters.isEmpty()) {
-                        builder.append(" ");
-                        if (hasDesc)
-                            builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
+              .ifPresent(commandParameters -> {
+                  if (!commandParameters.isEmpty()) {
+                      builder.append(" ");
+                      if (hasDesc)
+                          builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
 
-                        int i = 0;
-                        for (BladeParameter.CommandParameter commandParameter : commandParameters) {
-                            builder.append(i++ == 0 ? "" : " ");
+                      int i = 0;
+                      for (BladeParameter.CommandParameter commandParameter : commandParameters) {
+                          builder.append(i++ == 0 ? "" : " ");
 
-                            builder.append(ChatColor.RED + (commandParameter.isOptional() ? "(" : "<"));
-                            builder.append(ChatColor.RED + commandParameter.getName());
-                            builder.append(ChatColor.RED + (commandParameter.isOptional() ? ")" : ">"));
-                        }
-                    }
-                });
+                          builder.append(ChatColor.RED + (commandParameter.isOptional() ? "(" : "<"));
+                          builder.append(ChatColor.RED + commandParameter.getName());
+                          builder.append(ChatColor.RED + (commandParameter.isOptional() ? ")" : ">"));
+                      }
+                  }
+              });
 
         if (command.getExtraUsageData() != null && !command.getExtraUsageData().trim().isEmpty()) {
             builder.append(" ");
@@ -216,9 +216,9 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
             Tuple<BladeCommand, String> resolved = resolveCommand(joined);
             if (resolved == null) {
                 List<BladeCommand> availableCommands = commandService.getAllBladeCommands()
-                        .stream().filter(c -> Arrays.stream(c.getAliases()).anyMatch(a -> a.toLowerCase().startsWith(alias.toLowerCase(Locale.ROOT) + " ") || a.equalsIgnoreCase(alias)))
-                        .filter(c -> this.checkPermission(sender, c).getLeft())
-                        .collect(Collectors.toList());
+                      .stream().filter(c -> Arrays.stream(c.getAliases()).anyMatch(a -> a.toLowerCase().startsWith(alias.toLowerCase(Locale.ROOT) + " ") || a.equalsIgnoreCase(alias)))
+                      .filter(c -> this.checkPermission(sender, c).getLeft())
+                      .collect(Collectors.toList());
 
                 for (String line : commandService.getHelpGenerator().generate(context, availableCommands)) {
                     sender.sendMessage(line);
@@ -284,11 +284,11 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
 
                 if (elapsed >= commandService.getExecutionTimeWarningThreshold()) {
                     Bukkit.getLogger().warning(String.format(
-                            "[Blade] Command '%s' (%s#%s) took %d milliseconds to execute!",
-                            finalResolvedAlias,
-                            finalCommand.getMethod().getDeclaringClass().getName(),
-                            finalCommand.getMethod().getName(),
-                            elapsed
+                          "[Blade] Command '%s' (%s#%s) took %d milliseconds to execute!",
+                          finalResolvedAlias,
+                          finalCommand.getMethod().getDeclaringClass().getName(),
+                          finalCommand.getMethod().getName(),
+                          elapsed
                     ));
                 }
             }

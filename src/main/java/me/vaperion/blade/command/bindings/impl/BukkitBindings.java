@@ -1,14 +1,13 @@
 package me.vaperion.blade.command.bindings.impl;
 
+import me.vaperion.blade.command.argument.BladeArgument;
 import me.vaperion.blade.command.argument.BladeProvider;
 import me.vaperion.blade.command.bindings.Binding;
-import me.vaperion.blade.command.container.BladeParameter;
 import me.vaperion.blade.command.context.BladeContext;
 import me.vaperion.blade.command.exception.BladeExitMessage;
 import me.vaperion.blade.command.exception.BladeUsageMessage;
 import me.vaperion.blade.command.service.BladeCommandService;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -30,33 +29,32 @@ public class BukkitBindings implements Binding {
         commandService.bindProvider(Player.class, new BladeProvider<Player>() {
             @Nullable
             @Override
-            public Player provide(@NotNull BladeContext ctx, @NotNull BladeParameter param, @Nullable String input) throws BladeExitMessage {
-                if (input == null) return null;
-                input = input.trim();
-
+            public Player provide(@NotNull BladeContext ctx, @NotNull BladeArgument arg) throws BladeExitMessage {
                 Player player = ctx.sender().parseAs(Player.class);
 
-                if (input.isEmpty() || input.equalsIgnoreCase("self")) {
+                if (arg.getType() == BladeArgument.Type.OPTIONAL && "self".equals(arg.getString())) {
                     if (player != null) return player;
-                    else throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
+                    else
+                        throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
                 }
 
-                Player onlinePlayer = getPlayer(input);
-
-                if (onlinePlayer == null)
-                    throw new BladeExitMessage("No online player with name or UUID " + ChatColor.YELLOW + input + ChatColor.RED + " found.");
+                Player onlinePlayer = getPlayer(arg.getString().trim());
+                if (onlinePlayer == null && !arg.getParameter().defaultsToNull())
+                    throw new BladeExitMessage("Error: No online player with name or UUID '" + arg.getString() + "' found.");
 
                 return onlinePlayer;
             }
 
             @NotNull
             @Override
-            public List<String> suggest(@NotNull BladeContext context, @NotNull String input) throws BladeExitMessage {
+            public List<String> suggest(@NotNull BladeContext context, @NotNull BladeArgument arg) throws BladeExitMessage {
                 Player sender = context.sender().parseAs(Player.class);
                 List<String> completions = new ArrayList<>();
 
+                String input = arg.getString().trim();
+
                 for (Player player : Bukkit.getServer().getOnlinePlayers()) {
-                    if ((input.trim().isEmpty() || player.getName().toLowerCase().startsWith(input.toLowerCase())) && (sender == null || sender.canSee(player)))
+                    if ((input.isEmpty() || player.getName().toLowerCase().startsWith(input.toLowerCase())) && (sender == null || sender.canSee(player)))
                         completions.add(player.getName());
                 }
 
@@ -64,39 +62,54 @@ public class BukkitBindings implements Binding {
             }
         });
 
-        commandService.bindProvider(OfflinePlayer.class, (ctx, param, input) -> {
-            if (input == null) return null;
-            input = input.trim();
+        commandService.bindProvider(OfflinePlayer.class, new BladeProvider<OfflinePlayer>() {
+            @Nullable
+            @Override
+            public OfflinePlayer provide(@NotNull BladeContext ctx, @NotNull BladeArgument arg) throws BladeExitMessage {
+                Player player = ctx.sender().parseAs(Player.class);
 
-            Player player = ctx.sender().parseAs(Player.class);
+                if (arg.getType() == BladeArgument.Type.OPTIONAL && "self".equals(arg.getString())) {
+                    if (player != null) return player;
+                    else
+                        throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
+                }
 
-            if (input.isEmpty() || input.equalsIgnoreCase("self")) {
-                if (player != null) return player;
-                else throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
+                return getOfflinePlayer(arg.getString());
             }
 
-            return getOfflinePlayer(input);
+            @NotNull
+            @Override
+            public List<String> suggest(@NotNull BladeContext context, @NotNull BladeArgument arg) throws BladeExitMessage {
+                Player sender = context.sender().parseAs(Player.class);
+                List<String> completions = new ArrayList<>();
+
+                String input = arg.getString().trim();
+
+                for (Player player : Bukkit.getServer().getOnlinePlayers()) {
+                    if ((input.isEmpty() || player.getName().toLowerCase().startsWith(input.toLowerCase())) && (sender == null || sender.canSee(player)))
+                        completions.add(player.getName());
+                }
+
+                return completions;
+            }
         });
 
         commandService.bindProvider(GameMode.class, new BladeProvider<GameMode>() {
             @Nullable
             @Override
-            public GameMode provide(@NotNull BladeContext ctx, @NotNull BladeParameter param, @Nullable String input) throws BladeExitMessage {
-                if (input == null) return null;
-                input = input.trim();
+            public GameMode provide(@NotNull BladeContext ctx, @NotNull BladeArgument arg) throws BladeExitMessage {
+                GameMode mode = getGameMode(arg.getString().trim());
 
-                GameMode mode = getGameMode(input);
-
-                if (mode == null)
-                    throw new BladeExitMessage("No game mode with name " + ChatColor.YELLOW + input + ChatColor.RED + " found.");
+                if (mode == null && !arg.getParameter().defaultsToNull())
+                    throw new BladeExitMessage("Error: '" + arg.getString() + "' is not a valid gamemode.");
 
                 return mode;
             }
 
             @NotNull
             @Override
-            public List<String> suggest(@NotNull BladeContext context, @NotNull String input) throws BladeExitMessage {
-                input = input.toUpperCase(Locale.ROOT);
+            public List<String> suggest(@NotNull BladeContext context, @NotNull BladeArgument arg) throws BladeExitMessage {
+                String input = arg.getString().toUpperCase(Locale.ROOT);
                 List<String> completions = new ArrayList<>();
 
                 for (GameMode mode : GameMode.values()) {

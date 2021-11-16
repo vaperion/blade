@@ -89,16 +89,16 @@ public class BladeCommand {
     @NotNull
     public List<BladeParameter.CommandParameter> getCommandParameters() {
         return parameters.stream()
-                .filter(BladeParameter.CommandParameter.class::isInstance)
-                .map(BladeParameter.CommandParameter.class::cast)
-                .collect(Collectors.toList());
+              .filter(BladeParameter.CommandParameter.class::isInstance)
+              .map(BladeParameter.CommandParameter.class::cast)
+              .collect(Collectors.toList());
     }
 
     @NotNull
     public List<BladeParameter.FlagParameter> getFlagParameters() {
         return parameters.stream()
-                .filter(BladeParameter.FlagParameter.class::isInstance)
-                .map(BladeParameter.FlagParameter.class::cast)
-                .collect(Collectors.toList());
+              .filter(BladeParameter.FlagParameter.class::isInstance)
+              .map(BladeParameter.FlagParameter.class::cast)
+              .collect(Collectors.toList());
     }
 }

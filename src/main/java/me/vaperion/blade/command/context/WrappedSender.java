@@ -15,7 +15,6 @@ public interface WrappedSender<T> {
 
     void sendMessage(@NotNull String... messages);
 
-    @Nullable
-    <T> T parseAs(@NotNull Class<T> clazz);
+    @Nullable <S> S parseAs(@NotNull Class<S> clazz);
 
 }

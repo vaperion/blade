@@ -11,8 +11,8 @@ import me.vaperion.blade.command.container.ContainerCreator;
 import me.vaperion.blade.command.container.ICommandContainer;
 import me.vaperion.blade.command.help.HelpGenerator;
 import me.vaperion.blade.command.help.impl.DefaultHelpGenerator;
-import me.vaperion.blade.completer.TabCompleter;
-import me.vaperion.blade.completer.impl.DefaultTabCompleter;
+import me.vaperion.blade.command.tabcompleter.TabCompleter;
+import me.vaperion.blade.command.tabcompleter.impl.DefaultTabCompleter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

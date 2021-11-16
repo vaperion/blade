@@ -1,4 +1,4 @@
-package me.vaperion.blade.completer.impl;
+package me.vaperion.blade.command.tabcompleter.impl;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -7,7 +7,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import me.vaperion.blade.command.context.impl.BukkitSender;
 import me.vaperion.blade.command.service.BladeCommandService;
-import me.vaperion.blade.completer.TabCompleter;
+import me.vaperion.blade.command.tabcompleter.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;

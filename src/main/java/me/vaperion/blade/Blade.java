@@ -10,7 +10,7 @@ import me.vaperion.blade.command.bindings.Binding;
 import me.vaperion.blade.command.container.ContainerCreator;
 import me.vaperion.blade.command.help.HelpGenerator;
 import me.vaperion.blade.command.service.BladeCommandService;
-import me.vaperion.blade.completer.TabCompleter;
+import me.vaperion.blade.command.tabcompleter.TabCompleter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -82,7 +82,7 @@ public class Blade {
                     blade.commandService.setAsyncExecutor(blade.asyncExecutor);
                 } else {
                     ExecutorService service = Executors.newCachedThreadPool(
-                            new ThreadFactoryBuilder().setNameFormat("blade-async-executor-%d").build()
+                          new ThreadFactoryBuilder().setNameFormat("blade-async-executor-%d").build()
                     );
                     blade.commandService.setAsyncExecutor(service::execute);
                 }

@@ -1,7 +1,7 @@
-package me.vaperion.blade.completer.impl;
+package me.vaperion.blade.command.tabcompleter.impl;
 
 import me.vaperion.blade.command.service.BladeCommandService;
-import me.vaperion.blade.completer.TabCompleter;
+import me.vaperion.blade.command.tabcompleter.TabCompleter;
 import org.jetbrains.annotations.NotNull;
 
 public class DefaultTabCompleter implements TabCompleter {
