@@ -9,10 +9,10 @@ import me.vaperion.blade.command.argument.ProviderAnnotation;
 import me.vaperion.blade.command.bindings.Binding;
 import me.vaperion.blade.command.container.ContainerCreator;
 import me.vaperion.blade.command.help.HelpGenerator;
+import me.vaperion.blade.command.service.BladeCommandRegistrar;
 import me.vaperion.blade.command.service.BladeCommandService;
 import me.vaperion.blade.command.tabcompleter.TabCompleter;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.AbstractMap;
 import java.util.List;
@@ -24,14 +24,16 @@ import java.util.function.Consumer;
 @SuppressWarnings("UnusedReturnValue")
 @Getter
 @Builder(builderMethodName = "of")
-public class Blade {
+public class Blade implements BladeCommandRegistrar.Registrar {
     private final BladeCommandService commandService = new BladeCommandService();
+
     private final boolean overrideCommands;
     private final String fallbackPrefix;
     private final ContainerCreator<?> containerCreator;
     private final TabCompleter tabCompleter;
     private final HelpGenerator helpGenerator;
     private final Consumer<Runnable> asyncExecutor;
+
     @Builder.Default
     private final long executionTimeWarningThreshold = 5;
 
@@ -40,20 +42,39 @@ public class Blade {
     @Singular
     private final List<Binding> bindings;
 
-    private void register(@Nullable Object instance, @NotNull Class<?> clazz) {
-        commandService.getCommandRegistrar().registerClass(instance, clazz);
+    @Override
+    public @NotNull BladeCommandService commandService() {
+        return commandService;
     }
 
-    @NotNull
-    public Blade register(@NotNull Class<?> containerClass) {
-        register(null, containerClass);
+    @Override
+    public @NotNull String fallbackPrefix() {
+        return fallbackPrefix;
+    }
+
+    @Override
+    public @NotNull Blade blade() {
         return this;
     }
 
     @NotNull
-    public Blade register(@NotNull Object containerInstance) {
-        register(containerInstance, containerInstance.getClass());
-        return this;
+    public BladeCommandRegistrar.Registrar section(@NotNull String prefix) {
+        return new BladeCommandRegistrar.Registrar() {
+            @Override
+            public @NotNull BladeCommandService commandService() {
+                return Blade.this.commandService();
+            }
+
+            @Override
+            public @NotNull String fallbackPrefix() {
+                return prefix;
+            }
+
+            @Override
+            public @NotNull Blade blade() {
+                return Blade.this;
+            }
+        };
     }
 
     public static BladeBuilder of() {
@@ -68,9 +89,6 @@ public class Blade {
                     throw new NullPointerException();
                 else
                     blade.commandService.setContainerCreator(blade.containerCreator);
-
-                if (blade.fallbackPrefix != null)
-                    blade.commandService.setFallbackPrefix(blade.fallbackPrefix);
 
                 if (blade.tabCompleter != null)
                     blade.commandService.setTabCompleter(blade.tabCompleter);

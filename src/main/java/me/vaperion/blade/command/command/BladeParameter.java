@@ -1,4 +1,4 @@
-package me.vaperion.blade.command.container;
+package me.vaperion.blade.command.command;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +27,10 @@ public abstract class BladeParameter {
 
     public boolean hasRange() {
         return range != null;
+    }
+
+    public boolean ignoreFailedArgumentParse() {
+        return isOptional() && optional.ignoreFailedArgumentParse();
     }
 
     public boolean defaultsToNull() {

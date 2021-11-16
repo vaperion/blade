@@ -3,7 +3,7 @@ package me.vaperion.blade.command.argument;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import me.vaperion.blade.command.container.BladeParameter;
+import me.vaperion.blade.command.command.BladeParameter;
 
 @Getter
 @RequiredArgsConstructor

@@ -1,4 +1,4 @@
-package me.vaperion.blade.command.container;
+package me.vaperion.blade.command.command;
 
 import lombok.Getter;
 import me.vaperion.blade.command.annotation.*;

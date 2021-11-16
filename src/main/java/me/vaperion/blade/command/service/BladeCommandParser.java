@@ -3,8 +3,8 @@ package me.vaperion.blade.command.service;
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.command.argument.BladeArgument;
 import me.vaperion.blade.command.argument.BladeProvider;
-import me.vaperion.blade.command.container.BladeCommand;
-import me.vaperion.blade.command.container.BladeParameter;
+import me.vaperion.blade.command.command.BladeCommand;
+import me.vaperion.blade.command.command.BladeParameter;
 import me.vaperion.blade.command.context.BladeContext;
 import me.vaperion.blade.command.exception.BladeExitMessage;
 import me.vaperion.blade.command.exception.BladeUsageMessage;
@@ -58,7 +58,7 @@ public class BladeCommandParser {
                         parsed = provider.provide(context, bladeArgument);
                     result.add(parsed);
 
-                    if (parsed == null && !parameter.defaultsToNull())
+                    if (parsed == null && !parameter.defaultsToNull() && !parameter.ignoreFailedArgumentParse())
                         throw new BladeUsageMessage();
 
                     if (!flag) argIndex++;

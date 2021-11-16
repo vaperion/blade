@@ -24,7 +24,7 @@ public class DefaultBindings implements Binding {
             try {
                 return UUID.fromString(arg.getString());
             } catch (Exception ex) {
-                if (arg.getParameter().defaultsToNull()) return null;
+                if (arg.getParameter().ignoreFailedArgumentParse()) return null;
                 throw new BladeExitMessage("Error: '" + arg.getString() + "' is not a valid UUID.");
             }
         });
@@ -34,7 +34,7 @@ public class DefaultBindings implements Binding {
             Boolean bool = BOOLEAN_MAP.get(arg.getString().toLowerCase(Locale.ROOT));
 
             if (bool == null) {
-                if (arg.getParameter().defaultsToNull()) return null;
+                if (arg.getParameter().ignoreFailedArgumentParse()) return null;
                 throw new BladeExitMessage("Error: '" + arg.getString() + "' is not a valid logical value.");
             }
 

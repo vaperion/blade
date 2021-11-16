@@ -2,8 +2,8 @@ package me.vaperion.blade.command.container.impl;
 
 import lombok.Getter;
 import me.vaperion.blade.command.annotation.Flag;
-import me.vaperion.blade.command.container.BladeCommand;
-import me.vaperion.blade.command.container.BladeParameter;
+import me.vaperion.blade.command.command.BladeCommand;
+import me.vaperion.blade.command.command.BladeParameter;
 import me.vaperion.blade.command.container.ContainerCreator;
 import me.vaperion.blade.command.container.ICommandContainer;
 import me.vaperion.blade.command.context.BladeContext;
@@ -61,7 +61,7 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
     private final BladeCommand parentCommand;
 
     @SuppressWarnings("unchecked")
-    private BukkitCommandContainer(@NotNull BladeCommandService service, @NotNull BladeCommand command, @NotNull String alias) throws Exception {
+    private BukkitCommandContainer(@NotNull BladeCommandService service, @NotNull BladeCommand command, @NotNull String alias, @NotNull String fallbackPrefix) throws Exception {
         super(alias, command.getDescription(), "/" + alias, new ArrayList<>());
 
         this.commandService = service;
@@ -81,7 +81,7 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
             KNOWN_COMMANDS.set(simpleCommandMap, knownCommands);
         }
 
-        simpleCommandMap.register(this.commandService.getFallbackPrefix(), this);
+        simpleCommandMap.register(fallbackPrefix, this);
     }
 
     private boolean doesBukkitCommandConflict(@NotNull Command bukkitCommand, @NotNull String alias, @NotNull BladeCommand bladeCommand) {

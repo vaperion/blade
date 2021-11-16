@@ -1,6 +1,6 @@
 package me.vaperion.blade.command.tabcompleter;
 
-import me.vaperion.blade.command.container.BladeCommand;
+import me.vaperion.blade.command.command.BladeCommand;
 import me.vaperion.blade.command.service.BladeCommandService;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;

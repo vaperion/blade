@@ -1,9 +1,10 @@
 package me.vaperion.blade.command.service;
 
 import lombok.RequiredArgsConstructor;
+import me.vaperion.blade.Blade;
 import me.vaperion.blade.command.annotation.Command;
 import me.vaperion.blade.command.annotation.Permission;
-import me.vaperion.blade.command.container.BladeCommand;
+import me.vaperion.blade.command.command.BladeCommand;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,7 +19,7 @@ public class BladeCommandRegistrar {
 
     private final BladeCommandService commandService;
 
-    public void registerClass(@Nullable Object instance, @NotNull Class<?> clazz) {
+    public void registerClass(@Nullable Object instance, @NotNull Class<?> clazz, @NotNull String fallbackPrefix) {
         try {
             BladeCommand parent = null;
 
@@ -33,7 +34,7 @@ public class BladeCommandRegistrar {
                 if (!method.isAnnotationPresent(Command.class)) continue;
                 if ((instance == null) != Modifier.isStatic(method.getModifiers())) continue;
 
-                registerMethod(instance, method, parent);
+                registerMethod(instance, method, parent, fallbackPrefix);
             }
         } catch (Exception ex) {
             System.err.println("An exception was thrown while registering commands in class " + clazz.getCanonicalName() + " (instance: " + instance + ")");
@@ -41,7 +42,7 @@ public class BladeCommandRegistrar {
         }
     }
 
-    public void registerMethod(@Nullable Object instance, @NotNull Method method, @Nullable BladeCommand parentCommand) throws Exception {
+    public void registerMethod(@Nullable Object instance, @NotNull Method method, @Nullable BladeCommand parentCommand, @NotNull String fallbackPrefix) throws Exception {
         Command command = method.getAnnotation(Command.class);
         Permission permission = method.getAnnotation(Permission.class);
 
@@ -57,7 +58,7 @@ public class BladeCommandRegistrar {
             commandService.aliasCommands.computeIfAbsent(realAlias, $ -> new LinkedList<>()).add(bladeCommand);
 
             if (commandService.containerMap.containsKey(realAlias)) continue;
-            commandService.containerMap.put(realAlias, commandService.getContainerCreator().create(commandService, bladeCommand, realAlias));
+            commandService.containerMap.put(realAlias, commandService.getContainerCreator().create(commandService, bladeCommand, realAlias, fallbackPrefix));
         }
     }
 
@@ -74,4 +75,35 @@ public class BladeCommandRegistrar {
         return output.toArray(new String[0]);
     }
 
+    @SuppressWarnings("UnusedReturnValue")
+    public interface Registrar {
+        @NotNull
+        BladeCommandService commandService();
+
+        @NotNull
+        String fallbackPrefix();
+
+        @NotNull
+        Blade blade();
+
+        default Blade exit() {
+            return blade();
+        }
+
+        default void register(@Nullable Object instance, @NotNull Class<?> clazz) {
+            commandService().getCommandRegistrar().registerClass(instance, clazz, fallbackPrefix());
+        }
+
+        @NotNull
+        default Registrar register(@NotNull Class<?> containerClass) {
+            register(null, containerClass);
+            return this;
+        }
+
+        @NotNull
+        default Registrar register(@NotNull Object containerInstance) {
+            register(containerInstance, containerInstance.getClass());
+            return this;
+        }
+    }
 }

@@ -3,7 +3,7 @@ package me.vaperion.blade.command.service;
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.command.argument.BladeArgument;
 import me.vaperion.blade.command.argument.BladeProvider;
-import me.vaperion.blade.command.container.BladeCommand;
+import me.vaperion.blade.command.command.BladeCommand;
 import me.vaperion.blade.command.context.BladeContext;
 import me.vaperion.blade.command.context.WrappedSender;
 import me.vaperion.blade.command.exception.BladeExitMessage;
@@ -26,7 +26,7 @@ public class BladeCommandCompleter {
 
         Tuple<BladeCommand, String> resolved = commandService.getCommandResolver().resolveCommand(commandParts);
         if (resolved == null) return null;
-        if (!permissionFunction.apply(resolved.getLeft())) return Collections.emptyList();
+        if (!permissionFunction.apply(resolved.getLeft()) || resolved.getLeft().isContextBased()) return Collections.emptyList();
 
         BladeCommand command = resolved.getLeft();
         String foundAlias = resolved.getRight();
@@ -43,6 +43,8 @@ public class BladeCommandCompleter {
 
     @NotNull
     public List<String> suggest(@NotNull BladeContext context, @NotNull BladeCommand command, @NotNull String[] args) throws BladeExitMessage {
+        if (command.isContextBased()) return Collections.emptyList();
+
         try {
             List<String> argumentList = new ArrayList<>(Arrays.asList(args));
             List<String> arguments = command.isQuoted() ? commandService.getCommandParser().combineQuotedArguments(argumentList) : argumentList;

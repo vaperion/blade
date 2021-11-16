@@ -1,6 +1,6 @@
 package me.vaperion.blade.command.help;
 
-import me.vaperion.blade.command.container.BladeCommand;
+import me.vaperion.blade.command.command.BladeCommand;
 import me.vaperion.blade.command.context.BladeContext;
 import org.jetbrains.annotations.NotNull;
 

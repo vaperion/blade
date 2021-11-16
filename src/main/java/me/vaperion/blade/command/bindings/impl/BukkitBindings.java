@@ -34,11 +34,12 @@ public class BukkitBindings implements Binding {
 
                 if (arg.getType() == BladeArgument.Type.OPTIONAL && "self".equals(arg.getString())) {
                     if (player != null) return player;
-                    else throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
+                    else
+                        throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
                 }
 
-                Player onlinePlayer = getPlayer(arg.getString().trim());
-                if (onlinePlayer == null && !arg.getParameter().defaultsToNull())
+                Player onlinePlayer = getPlayer(arg.getString());
+                if (onlinePlayer == null && !arg.getParameter().ignoreFailedArgumentParse())
                     throw new BladeExitMessage("Error: No online player with name or UUID '" + arg.getString() + "' found.");
 
                 return onlinePlayer;
@@ -50,7 +51,7 @@ public class BukkitBindings implements Binding {
                 Player sender = context.sender().parseAs(Player.class);
                 List<String> completions = new ArrayList<>();
 
-                String input = arg.getString().trim();
+                String input = arg.getString();
 
                 for (Player player : Bukkit.getServer().getOnlinePlayers()) {
                     if ((input.isEmpty() || player.getName().toLowerCase().startsWith(input.toLowerCase())) && (sender == null || sender.canSee(player)))
@@ -69,7 +70,8 @@ public class BukkitBindings implements Binding {
 
                 if (arg.getType() == BladeArgument.Type.OPTIONAL && "self".equals(arg.getString())) {
                     if (player != null) return player;
-                    else throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
+                    else
+                        throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
                 }
 
                 return getOfflinePlayer(arg.getString());
@@ -81,7 +83,7 @@ public class BukkitBindings implements Binding {
                 Player sender = context.sender().parseAs(Player.class);
                 List<String> completions = new ArrayList<>();
 
-                String input = arg.getString().trim();
+                String input = arg.getString();
 
                 for (Player player : Bukkit.getServer().getOnlinePlayers()) {
                     if ((input.isEmpty() || player.getName().toLowerCase().startsWith(input.toLowerCase())) && (sender == null || sender.canSee(player)))
@@ -96,9 +98,9 @@ public class BukkitBindings implements Binding {
             @Nullable
             @Override
             public GameMode provide(@NotNull BladeContext ctx, @NotNull BladeArgument arg) throws BladeExitMessage {
-                GameMode mode = getGameMode(arg.getString().trim());
+                GameMode mode = getGameMode(arg.getString());
 
-                if (mode == null && !arg.getParameter().defaultsToNull())
+                if (mode == null && !arg.getParameter().ignoreFailedArgumentParse())
                     throw new BladeExitMessage("Error: '" + arg.getString() + "' is not a valid gamemode.");
 
                 return mode;

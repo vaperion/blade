@@ -1,18 +1,44 @@
 package me.vaperion.blade.command.help.impl;
 
-import me.vaperion.blade.command.container.BladeCommand;
+import me.vaperion.blade.command.command.BladeCommand;
 import me.vaperion.blade.command.context.BladeContext;
-import me.vaperion.blade.command.exception.BladeExitMessage;
 import me.vaperion.blade.command.help.HelpGenerator;
+import org.bukkit.ChatColor;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 public class DefaultHelpGenerator implements HelpGenerator {
+
+    private static final String LINE = ChatColor.GRAY.toString() + ChatColor.STRIKETHROUGH + "------------------------------";
 
     @NotNull
     @Override
     public List<String> generate(@NotNull BladeContext context, @NotNull List<BladeCommand> commands) {
-        throw new BladeExitMessage("This command failed to execute as we couldn't find its registration.");
+        commands = commands.stream().distinct().collect(Collectors.toList());
+        List<String> lines = new ArrayList<>();
+
+        if (commands.isEmpty()) {
+            lines.add(ChatColor.RED + "You don't have permission to perform this command.");
+            return lines;
+        }
+
+        lines.add(LINE);
+
+        for (BladeCommand command : commands) {
+            String cmd = Arrays.stream(command.getAliases())
+                  .filter(a -> a.toLowerCase(Locale.ROOT).startsWith(context.alias().toLowerCase(Locale.ROOT)))
+                  .findFirst().orElse(null);
+            if (cmd == null) continue;
+            lines.add(ChatColor.AQUA + "/" + cmd);
+        }
+
+        lines.add(LINE);
+
+        return lines;
     }
 }

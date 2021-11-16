@@ -1,4 +1,4 @@
-package me.vaperion.blade.command.container;
+package me.vaperion.blade.command.argument;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

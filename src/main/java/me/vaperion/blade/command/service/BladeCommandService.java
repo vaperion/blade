@@ -3,10 +3,10 @@ package me.vaperion.blade.command.service;
 import lombok.Getter;
 import lombok.Setter;
 import me.vaperion.blade.command.argument.BladeProvider;
+import me.vaperion.blade.command.argument.BladeProviderContainer;
 import me.vaperion.blade.command.argument.ProviderAnnotation;
 import me.vaperion.blade.command.bindings.impl.DefaultBindings;
-import me.vaperion.blade.command.container.BladeCommand;
-import me.vaperion.blade.command.container.BladeProviderContainer;
+import me.vaperion.blade.command.command.BladeCommand;
 import me.vaperion.blade.command.container.ContainerCreator;
 import me.vaperion.blade.command.container.ICommandContainer;
 import me.vaperion.blade.command.help.HelpGenerator;
@@ -28,7 +28,6 @@ public class BladeCommandService {
     final Map<String, ICommandContainer> containerMap = new LinkedHashMap<>();
 
     @Setter @Getter private boolean overrideCommands = false;
-    @Setter @Getter private String fallbackPrefix = "blade";
     @Setter @Getter private ContainerCreator<?> containerCreator = ContainerCreator.NONE;
     @Setter @Getter private TabCompleter tabCompleter = new DefaultTabCompleter();
     @Setter @Getter private HelpGenerator helpGenerator = new DefaultHelpGenerator();
