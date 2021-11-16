@@ -29,7 +29,15 @@ public class DefaultBindings implements Binding {
             }
         });
 
-        commandService.bindProvider(String.class, (ctx, arg) -> arg.getString());
+        commandService.bindProvider(String.class, (ctx, arg) -> {
+            if (arg.getString() == null) {
+                if (arg.getParameter().ignoreFailedArgumentParse()) return null;
+                throw new BladeExitMessage("Error: '" + arg.getString() + "' is not a valid string.");
+            }
+
+            return arg.getString();
+        });
+
         commandService.bindProvider(boolean.class, (ctx, arg) -> {
             Boolean bool = BOOLEAN_MAP.get(arg.getString().toLowerCase(Locale.ROOT));
 

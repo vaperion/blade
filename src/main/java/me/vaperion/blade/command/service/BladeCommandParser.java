@@ -42,7 +42,7 @@ public class BladeCommandParser {
                     } else throw new BladeUsageMessage();
 
                     if (parameter.isCombined())
-                        data = arguments.size() >= argIndex ? String.join(" ", arguments.subList(argIndex, arguments.size())) : data;
+                        data = arguments.size() > argIndex ? String.join(" ", arguments.subList(argIndex, arguments.size())) : data;
                 } else data = ((BladeParameter.FlagParameter) parameter).extractFrom(flags);
                 bladeArgument.setString(data);
 
