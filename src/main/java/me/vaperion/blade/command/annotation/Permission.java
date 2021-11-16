@@ -10,5 +10,5 @@ import java.lang.annotation.Target;
 public @interface Permission {
     String value() default "";
 
-    String message() default "No permission.";
+    String message() default "";
 }

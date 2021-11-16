@@ -33,6 +33,7 @@ public class BladeCommandService {
     @Setter @Getter private HelpGenerator helpGenerator = new DefaultHelpGenerator();
     @Setter @Getter private Consumer<Runnable> asyncExecutor = Runnable::run;
     @Setter @Getter private long executionTimeWarningThreshold = 5;
+    @Setter @Getter private String defaultPermissionMessage = "You don't have permission to perform this command.";
 
     @Getter private final BladeCommandRegistrar commandRegistrar = new BladeCommandRegistrar(this);
     @Getter private final BladeCommandResolver commandResolver = new BladeCommandResolver(this);

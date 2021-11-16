@@ -28,7 +28,7 @@ public class Blade implements BladeCommandRegistrar.Registrar {
     private final BladeCommandService commandService = new BladeCommandService();
 
     private final boolean overrideCommands;
-    private final String fallbackPrefix;
+    private final String fallbackPrefix, defaultPermissionMessage;
     private final ContainerCreator<?> containerCreator;
     private final TabCompleter tabCompleter;
     private final HelpGenerator helpGenerator;
@@ -84,6 +84,7 @@ public class Blade implements BladeCommandRegistrar.Registrar {
                 Blade blade = super.build();
 
                 blade.commandService.setOverrideCommands(blade.overrideCommands);
+                blade.commandService.setDefaultPermissionMessage(blade.defaultPermissionMessage);
 
                 if (blade.containerCreator == null)
                     throw new NullPointerException();

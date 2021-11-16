@@ -23,7 +23,7 @@ public class DefaultHelpGenerator implements HelpGenerator {
         List<String> lines = new ArrayList<>();
 
         if (commands.isEmpty()) {
-            lines.add(ChatColor.RED + "You don't have permission to perform this command.");
+            lines.add(ChatColor.RED + context.commandService().getDefaultPermissionMessage());
             return lines;
         }
 

@@ -211,7 +211,7 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
         try {
             String[] joined = joinAliasToArgs(alias, args);
 
-            BladeContext context = new BladeContext(new BukkitSender(sender), alias, args);
+            BladeContext context = new BladeContext(commandService, new BukkitSender(sender), alias, args);
 
             Tuple<BladeCommand, String> resolved = resolveCommand(joined);
             if (resolved == null) {
@@ -328,7 +328,7 @@ public class BukkitCommandContainer extends Command implements ICommandContainer
             if (argList.isEmpty()) argList.add("");
             String[] actualArguments = argList.toArray(new String[0]);
 
-            BladeContext context = new BladeContext(new BukkitSender(sender), foundAlias, actualArguments);
+            BladeContext context = new BladeContext(commandService, new BukkitSender(sender), foundAlias, actualArguments);
             return commandService.getCommandCompleter().suggest(context, command, actualArguments);
         } catch (BladeExitMessage ex) {
             sender.sendMessage(ChatColor.RED + ex.getMessage());

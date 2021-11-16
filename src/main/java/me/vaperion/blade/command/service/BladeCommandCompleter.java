@@ -21,7 +21,8 @@ public class BladeCommandCompleter {
     private final BladeCommandService commandService;
 
     @Nullable
-    public List<String> suggest(@NotNull String commandLine, @NotNull Supplier<WrappedSender<?>> senderSupplier, @NotNull Function<BladeCommand, Boolean> permissionFunction) {
+    public List<String> suggest(@NotNull String commandLine, @NotNull Supplier<WrappedSender<?>> senderSupplier,
+                                @NotNull Function<BladeCommand, Boolean> permissionFunction) {
         String[] commandParts = commandLine.split(" ");
 
         Tuple<BladeCommand, String> resolved = commandService.getCommandResolver().resolveCommand(commandParts);
@@ -37,7 +38,7 @@ public class BladeCommandCompleter {
         if (commandLine.endsWith(" ")) argList.add("");
         String[] actualArguments = argList.toArray(new String[0]);
 
-        BladeContext context = new BladeContext(senderSupplier.get(), foundAlias, actualArguments);
+        BladeContext context = new BladeContext(commandService, senderSupplier.get(), foundAlias, actualArguments);
         return suggest(context, command, actualArguments);
     }
 

@@ -1,11 +1,14 @@
 package me.vaperion.blade.command.context;
 
 import lombok.RequiredArgsConstructor;
+import me.vaperion.blade.command.service.BladeCommandService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @RequiredArgsConstructor
 public class BladeContext {
+
+    private final BladeCommandService commandService;
 
     private final WrappedSender<?> sender;
     private final String alias;
@@ -38,6 +41,11 @@ public class BladeContext {
     @NotNull
     public WrappedSender<?> sender() {
         return this.sender;
+    }
+
+    @NotNull
+    public BladeCommandService commandService() {
+        return this.commandService;
     }
 
 }

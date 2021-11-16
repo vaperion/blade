@@ -46,7 +46,7 @@ public class BladeCommand {
         this.quoted = command.quoted();
 
         this.permission = permission == null ? "" : permission.value();
-        this.permissionMessage = permission == null ? "" : permission.message();
+        this.permissionMessage = permission == null ? "" : "".equals(permission.message()) ? commandService.getDefaultPermissionMessage() : permission.message();
 
         this.contextBased = method != null && method.getParameterCount() == 1 && method.getParameterTypes()[0] == BladeContext.class;
 
