@@ -8,7 +8,7 @@ import me.vaperion.blade.command.argument.ProviderAnnotation;
 import me.vaperion.blade.command.bindings.impl.DefaultBindings;
 import me.vaperion.blade.command.command.BladeCommand;
 import me.vaperion.blade.command.container.ContainerCreator;
-import me.vaperion.blade.command.container.ICommandContainer;
+import me.vaperion.blade.command.container.CommandContainer;
 import me.vaperion.blade.command.help.HelpGenerator;
 import me.vaperion.blade.command.help.impl.DefaultHelpGenerator;
 import me.vaperion.blade.command.tabcompleter.TabCompleter;
@@ -25,7 +25,7 @@ public class BladeCommandService {
     final List<BladeProviderContainer<?>> providers = new LinkedList<>();
     final List<BladeCommand> commands = new LinkedList<>();
     final Map<String, List<BladeCommand>> aliasCommands = new LinkedHashMap<>();
-    final Map<String, ICommandContainer> containerMap = new LinkedHashMap<>();
+    final Map<String, CommandContainer> containerMap = new LinkedHashMap<>();
 
     @Setter @Getter private boolean overrideCommands = false;
     @Setter @Getter private ContainerCreator<?> containerCreator = ContainerCreator.NONE;
@@ -50,7 +50,7 @@ public class BladeCommandService {
     }
 
     @NotNull
-    public Map<String, ICommandContainer> getRegisteredCommands() {
+    public Map<String, CommandContainer> getRegisteredCommands() {
         return Collections.unmodifiableMap(this.containerMap);
     }
 

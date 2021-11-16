@@ -5,7 +5,7 @@ import me.vaperion.blade.command.service.BladeCommandService;
 import org.jetbrains.annotations.NotNull;
 
 @FunctionalInterface
-public interface ContainerCreator<T extends ICommandContainer> {
+public interface ContainerCreator<T extends CommandContainer> {
     ContainerCreator<?> NONE = (service, command, alias, fallbackPrefix) -> {
         throw new UnsupportedOperationException("Not implemented");
     };

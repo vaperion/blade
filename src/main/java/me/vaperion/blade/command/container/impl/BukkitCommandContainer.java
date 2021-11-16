@@ -5,7 +5,7 @@ import me.vaperion.blade.command.annotation.Flag;
 import me.vaperion.blade.command.command.BladeCommand;
 import me.vaperion.blade.command.command.BladeParameter;
 import me.vaperion.blade.command.container.ContainerCreator;
-import me.vaperion.blade.command.container.ICommandContainer;
+import me.vaperion.blade.command.container.CommandContainer;
 import me.vaperion.blade.command.context.BladeContext;
 import me.vaperion.blade.command.context.impl.BukkitSender;
 import me.vaperion.blade.command.exception.BladeExitMessage;
@@ -29,7 +29,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Getter
-public class BukkitCommandContainer extends Command implements ICommandContainer {
+public class BukkitCommandContainer extends Command implements CommandContainer {
 
     private static final Field COMMAND_MAP, KNOWN_COMMANDS;
     public static final ContainerCreator<BukkitCommandContainer> CREATOR = BukkitCommandContainer::new;
