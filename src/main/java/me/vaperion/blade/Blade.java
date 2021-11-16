@@ -84,7 +84,9 @@ public class Blade implements BladeCommandRegistrar.Registrar {
                 Blade blade = super.build();
 
                 blade.commandService.setOverrideCommands(blade.overrideCommands);
-                blade.commandService.setDefaultPermissionMessage(blade.defaultPermissionMessage);
+
+                if (blade.defaultPermissionMessage != null && !"".equals(blade.defaultPermissionMessage))
+                    blade.commandService.setDefaultPermissionMessage(blade.defaultPermissionMessage);
 
                 if (blade.containerCreator == null)
                     throw new NullPointerException();
