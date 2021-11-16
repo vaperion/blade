@@ -14,9 +14,9 @@ import java.util.UUID;
 public class DefaultBindings implements Binding {
 
     private static final Map<String, Boolean> BOOLEAN_MAP = ImmutableMap.<String, Boolean>builder()
-          .put("true", true).put("1", true).put("yes", true)
-          .put("false", false).put("0", false).put("no", false)
-          .build();
+            .put("true", true).put("1", true).put("yes", true)
+            .put("false", false).put("0", false).put("no", false)
+            .build();
 
     @Override
     public void bind(@NotNull BladeCommandService commandService) {
@@ -50,7 +50,12 @@ public class DefaultBindings implements Binding {
         });
 
         commandService.bindProvider(int.class, (ctx, arg) -> {
-            int input = Integer.parseInt(arg.getString());
+            int input;
+            try {
+                input = Integer.parseInt(arg.getString());
+            } catch (NumberFormatException e) {
+                throw new BladeExitMessage("Error: Invalid number: " + arg.getString());
+            }
 
             if (arg.getParameter().hasRange()) {
                 Range range = arg.getParameter().getRange();
@@ -65,7 +70,12 @@ public class DefaultBindings implements Binding {
         });
 
         commandService.bindProvider(long.class, (ctx, arg) -> {
-            long input = Long.parseLong(arg.getString());
+            long input;
+            try {
+                input = Long.parseLong(arg.getString());
+            } catch (NumberFormatException e) {
+                throw new BladeExitMessage("Error: Invalid number: " + arg.getString());
+            }
 
             if (arg.getParameter().hasRange()) {
                 Range range = arg.getParameter().getRange();
@@ -80,7 +90,12 @@ public class DefaultBindings implements Binding {
         });
 
         commandService.bindProvider(double.class, (ctx, arg) -> {
-            double input = Double.parseDouble(arg.getString());
+            double input;
+            try {
+                input = Double.parseDouble(arg.getString());
+            } catch (NumberFormatException e) {
+                throw new BladeExitMessage("Error: Invalid number: " + arg.getString());
+            }
 
             if (arg.getParameter().hasRange()) {
                 Range range = arg.getParameter().getRange();
