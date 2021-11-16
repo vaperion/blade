@@ -33,7 +33,7 @@ public class BladeCommandParser {
 
                 String data;
                 if (!flag) {
-                    if (arguments.size() >= argIndex) {
+                    if (arguments.size() > argIndex) {
                         data = arguments.get(argIndex);
                         bladeArgument.setType(BladeArgument.Type.PROVIDED);
                     } else if (parameter.isOptional()) {
