@@ -34,8 +34,7 @@ public class BukkitBindings implements Binding {
 
                 if (arg.getType() == BladeArgument.Type.OPTIONAL && "self".equals(arg.getString())) {
                     if (player != null) return player;
-                    else
-                        throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
+                    else throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
                 }
 
                 Player onlinePlayer = getPlayer(arg.getString().trim());
@@ -70,8 +69,7 @@ public class BukkitBindings implements Binding {
 
                 if (arg.getType() == BladeArgument.Type.OPTIONAL && "self".equals(arg.getString())) {
                     if (player != null) return player;
-                    else
-                        throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
+                    else throw new BladeUsageMessage(); // show usage to console if we have 'self' as a default value (only works on players)
                 }
 
                 return getOfflinePlayer(arg.getString());

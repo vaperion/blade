@@ -11,7 +11,6 @@ import me.vaperion.blade.command.exception.BladeUsageMessage;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class BladeCommandParser {
@@ -26,19 +25,6 @@ public class BladeCommandParser {
         try {
             List<String> arguments = command.isQuoted() ? combineQuotedArguments(args) : args;
             Map<Character, String> flags = parseFlags(command, arguments);
-
-            List<BladeParameter> realParameters = command.getParameters().stream()
-                  .filter(p -> !(p instanceof BladeParameter.FlagParameter))
-                  .collect(Collectors.toList());
-
-            if (arguments.size() < realParameters.size()) {
-                for (BladeParameter parameter : realParameters.subList(arguments.size(), realParameters.size())) {
-                    String defaultValue = parameter.getDefault();
-                    if (defaultValue == null && parameter.getType() == String.class) continue;
-
-                    arguments.add(defaultValue);
-                }
-            }
 
             int argIndex = 0, providerIndex = 0;
             for (BladeParameter parameter : command.getParameters()) {
@@ -116,7 +102,7 @@ public class BladeCommandParser {
                 if (flagParameter.isBooleanFlag())
                     map.put(flag, "true");
                 else if (pendingFlag != null)
-                    throw new BladeExitMessage("Invalid flag usage.");
+                    throw new BladeExitMessage("The '-" + pendingFlag + "' flag requires a value.");
                 else
                     pendingFlag = flag;
                 continue;
