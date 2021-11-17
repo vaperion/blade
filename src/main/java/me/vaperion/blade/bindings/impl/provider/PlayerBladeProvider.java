@@ -43,7 +43,7 @@ public class PlayerBladeProvider implements BladeProvider<Player> {
         String input = arg.getString();
 
         for (Player player : Bukkit.getServer().getOnlinePlayers()) {
-            if ((input.isEmpty() || player.getName().toLowerCase().startsWith(input.toLowerCase())) && (sender == null || sender.canSee(player)))
+            if (player.getName().toLowerCase().startsWith(input.toLowerCase()) && (sender == null || sender.canSee(player)))
                 completions.add(player.getName());
         }
 
