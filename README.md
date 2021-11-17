@@ -48,8 +48,8 @@ Initializing Blade:
 
 ```java
 import me.vaperion.blade.Blade;
-import me.vaperion.blade.command.bindings.impl.BukkitBindings;
-import me.vaperion.blade.command.container.impl.BukkitCommandContainer;
+import me.vaperion.blade.bindings.impl.BukkitBindings;
+import me.vaperion.blade.container.impl.BukkitCommandContainer;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class ExamplePlugin extends JavaPlugin {
@@ -57,11 +57,11 @@ public class ExamplePlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         Blade.of()
-              .fallbackPrefix("fallbackPrefix")
-              .containerCreator(BukkitCommandContainer.CREATOR)
-              .binding(new BukkitBindings())
-              .build()
-              .register(ExampleCommand.class);
+                .fallbackPrefix("fallbackPrefix")
+                .containerCreator(BukkitCommandContainer.CREATOR)
+                .binding(new BukkitBindings())
+                .build()
+                .register(ExampleCommand.class);
     }
 }
 ```
@@ -91,12 +91,13 @@ Blade.of()
 ```
 
 Example commands:
+
 ```java
-import me.vaperion.blade.command.annotation.*;
+import me.vaperion.blade.annotation.*;
 import org.bukkit.entity.Player;
 
 public class ExampleCommand {
-    
+
     @Command(value = {"ban", "go away"}, async = true, quoted = false, description = "Ban a player")
     @Permission(value = "blade.command.ban", message = "You are not allowed to execute this command.")
     public static void ban(@Sender Player sender,
@@ -107,7 +108,7 @@ public class ExampleCommand {
         sender.sendMessage("Target: " + target.getName());
         sender.sendMessage("Reason: " + reason);
     }
-    
+
     @Command("test")
     public static void test(@Sender Player sender,
                             @Range(min = 18) int age,
@@ -131,8 +132,8 @@ public class ExampleCommand {
 Example custom tab completer with Netty:
 
 ```java
-import me.vaperion.blade.command.service.BladeCommandService;
-import me.vaperion.blade.command.tabcompleter.TabCompleter;
+import me.vaperion.blade.service.BladeCommandService;
+import me.vaperion.blade.tabcompleter.TabCompleter;
 import net.minecraft.server.v1_7_R4.PacketPlayInTabComplete;
 import net.minecraft.server.v1_7_R4.PacketPlayOutTabComplete;
 import net.minecraft.util.io.netty.channel.ChannelDuplexHandler;
@@ -162,25 +163,25 @@ public class CustomTabCompleter implements TabCompleter, Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         ((CraftPlayer) player).getHandle().playerConnection.networkManager.m.pipeline()
-              .addBefore("packet_handler", "blade_completer", new ChannelDuplexHandler() {
-                  @Override
-                  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                      if (msg instanceof PacketPlayInTabComplete) {
-                          String commandLine = ((PacketPlayInTabComplete) msg).c();
-                          if (commandLine.startsWith("/")) {
-                              commandLine = commandLine.substring(1);
+                .addBefore("packet_handler", "blade_completer", new ChannelDuplexHandler() {
+                    @Override
+                    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                        if (msg instanceof PacketPlayInTabComplete) {
+                            String commandLine = ((PacketPlayInTabComplete) msg).c();
+                            if (commandLine.startsWith("/")) {
+                                commandLine = commandLine.substring(1);
 
-                              List<String> suggestions = commandService.getCommandCompleter().suggest(commandLine, () -> new BukkitSender(player), (cmd) -> hasPermission(player, cmd));
-                              if (suggestions != null) {
-                                  ctx.writeAndFlush(new PacketPlayOutTabComplete(suggestions.toArray(new String[0])));
-                                  return;
-                              }
-                          }
-                      }
+                                List<String> suggestions = commandService.getCommandCompleter().suggest(commandLine, () -> new BukkitSender(player), (cmd) -> hasPermission(player, cmd));
+                                if (suggestions != null) {
+                                    ctx.writeAndFlush(new PacketPlayOutTabComplete(suggestions.toArray(new String[0])));
+                                    return;
+                                }
+                            }
+                        }
 
-                      super.channelRead(ctx, msg);
-                  }
-              });
+                        super.channelRead(ctx, msg);
+                    }
+                });
     }
 }
 ```
