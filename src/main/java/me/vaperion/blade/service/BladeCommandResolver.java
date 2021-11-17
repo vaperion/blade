@@ -2,8 +2,8 @@ package me.vaperion.blade.service;
 
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.argument.BladeProvider;
-import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.argument.BladeProviderContainer;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.utils.Tuple;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

@@ -15,6 +15,7 @@ import me.vaperion.blade.tabcompleter.TabCompleter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -38,7 +39,7 @@ public class Blade implements BladeCommandRegistrar.Registrar {
     private final long executionTimeWarningThreshold = 5;
 
     @Singular("bind0")
-    private final Map<Map.Entry<Class<?>, Class<? extends ProviderAnnotation>>, BladeProvider<?>> customProviderMap;
+    private final Map<Map.Entry<Class<?>, List<Class<? extends ProviderAnnotation>>>, BladeProvider<?>> customProviderMap;
     @Singular
     private final List<Binding> bindings;
 
@@ -116,7 +117,7 @@ public class Blade implements BladeCommandRegistrar.Registrar {
 
                 blade.commandService.getTabCompleter().init(blade.commandService);
 
-                for (Map.Entry<Map.Entry<Class<?>, Class<? extends ProviderAnnotation>>, BladeProvider<?>> entry : blade.customProviderMap.entrySet()) {
+                for (Map.Entry<Map.Entry<Class<?>, List<Class<? extends ProviderAnnotation>>>, BladeProvider<?>> entry : blade.customProviderMap.entrySet()) {
                     //noinspection deprecation
                     blade.commandService.bindProviderUnsafely(entry.getKey().getKey(), entry.getValue(), entry.getKey().getValue());
                 }
@@ -127,13 +128,9 @@ public class Blade implements BladeCommandRegistrar.Registrar {
     }
 
     public static class BladeBuilder {
-        public <T> BladeBuilder bind(Class<T> clazz, BladeProvider<T> provider) {
-            bind0(new AbstractMap.SimpleEntry<>(clazz, null), provider);
-            return this;
-        }
-
-        public <T> BladeBuilder bind(Class<T> clazz, BladeProvider<T> provider, Class<? extends ProviderAnnotation> annotation) {
-            bind0(new AbstractMap.SimpleEntry<>(clazz, annotation), provider);
+        @SafeVarargs
+        public final <T> BladeBuilder bind(Class<T> clazz, BladeProvider<T> provider, Class<? extends ProviderAnnotation>... annotations) {
+            bind0(new AbstractMap.SimpleEntry<>(clazz, Arrays.asList(annotations)), provider);
             return this;
         }
     }

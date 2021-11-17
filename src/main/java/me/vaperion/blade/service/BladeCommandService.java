@@ -7,14 +7,13 @@ import me.vaperion.blade.argument.BladeProviderContainer;
 import me.vaperion.blade.argument.ProviderAnnotation;
 import me.vaperion.blade.bindings.impl.DefaultBindings;
 import me.vaperion.blade.command.BladeCommand;
-import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.container.CommandContainer;
+import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.help.HelpGenerator;
 import me.vaperion.blade.help.impl.DefaultHelpGenerator;
 import me.vaperion.blade.tabcompleter.TabCompleter;
 import me.vaperion.blade.tabcompleter.impl.DefaultTabCompleter;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -54,22 +53,39 @@ public class BladeCommandService {
         return Collections.unmodifiableMap(this.containerMap);
     }
 
-    public <T> void bindProvider(@NotNull Class<T> clazz, @NotNull BladeProvider<T> provider) {
-        bindProvider(clazz, provider, null);
+    @SafeVarargs
+    public final void releaseProvider(@NotNull Class<?> clazz, @NotNull Class<? extends ProviderAnnotation>... annotations) {
+        releaseProvider(clazz, Arrays.asList(annotations));
     }
 
-    public <T> void bindProvider(@NotNull Class<T> clazz, @NotNull BladeProvider<T> provider, @Nullable Class<? extends ProviderAnnotation> annotation) {
-        this.providers.add(new BladeProviderContainer<>(clazz, provider, annotation));
+    public final void releaseProvider(@NotNull Class<?> clazz, @NotNull List<Class<? extends ProviderAnnotation>> annotations) {
+        this.providers.removeIf(container -> container.getType() == clazz
+              && annotations.containsAll(container.getRequiredAnnotations()) && container.getRequiredAnnotations().size() == annotations.size());
     }
 
-    public void releaseProvider(@NotNull Class<?> clazz) {
-        this.providers.removeIf(bladeProviderContainer -> bladeProviderContainer.getType() == clazz);
+    @SafeVarargs
+    public final <T> void bindProvider(@NotNull Class<T> clazz, @NotNull BladeProvider<T> provider,
+                                       @NotNull Class<? extends ProviderAnnotation>... annotations) {
+        bindProvider(clazz, provider, Arrays.asList(annotations));
+    }
+
+    public final <T> void bindProvider(@NotNull Class<T> clazz, @NotNull BladeProvider<T> provider,
+                                       @NotNull List<Class<? extends ProviderAnnotation>> annotations) {
+        this.providers.add(new BladeProviderContainer<>(clazz, provider, annotations));
+    }
+
+    @Deprecated
+    @SafeVarargs
+    public final <T> void bindProviderUnsafely(@NotNull Class<T> clazz, @NotNull BladeProvider<?> provider,
+                                               @NotNull Class<? extends ProviderAnnotation>... annotations) {
+        bindProviderUnsafely(clazz, provider, Arrays.asList(annotations));
     }
 
     @Deprecated
     @SuppressWarnings({"unchecked", "DeprecatedIsStillUsed"})
-    public <T> void bindProviderUnsafely(@NotNull Class<T> clazz, @NotNull BladeProvider<?> provider, @Nullable Class<? extends ProviderAnnotation> annotation) {
-        this.providers.add(new BladeProviderContainer<>(clazz, (BladeProvider<T>) provider, annotation));
+    public final <T> void bindProviderUnsafely(@NotNull Class<T> clazz, @NotNull BladeProvider<?> provider,
+                                               @NotNull List<Class<? extends ProviderAnnotation>> annotations) {
+        this.providers.add(new BladeProviderContainer<>(clazz, (BladeProvider<T>) provider, annotations));
     }
 
 }

@@ -1,32 +1,67 @@
 package me.vaperion.blade.command;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import me.vaperion.blade.annotation.Completer;
 import me.vaperion.blade.annotation.Flag;
 import me.vaperion.blade.annotation.Optional;
 import me.vaperion.blade.annotation.Range;
+import me.vaperion.blade.argument.BladeProvider;
+import me.vaperion.blade.exception.BladeExitMessage;
 
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 @Getter
 @RequiredArgsConstructor
 public abstract class BladeParameter {
+
+    private static final LoadingCache<Class<?>, BladeProvider<?>> COMPLETER_CACHE = CacheBuilder.newBuilder()
+          .build(new CacheLoader<Class<?>, BladeProvider<?>>() {
+              @Override
+              public BladeProvider<?> load(Class<?> clazz) {
+                  try {
+                      return (BladeProvider<?>) clazz.newInstance();
+                  } catch (Exception ex) {
+                      throw new IllegalArgumentException("Provided completer '" + clazz.getSimpleName() + "' does not have an empty constructor.");
+                  }
+              }
+          });
+
     protected final String name;
     protected final Class<?> type;
     protected final Optional optional;
     protected final Range range;
+    protected final Completer completer;
     protected final boolean combined;
 
     public boolean isOptional() {
         return optional != null;
     }
 
-    public String getDefault() {
-        return isOptional() ? optional.value() : null;
-    }
-
     public boolean hasRange() {
         return range != null;
+    }
+
+    public boolean hasCustomTabCompleter() {
+        return completer != null;
+    }
+
+    public BladeProvider<?> getCompleter() {
+        if (!hasCustomTabCompleter()) return null;
+        try {
+            return COMPLETER_CACHE.get(completer.provider());
+        } catch (ExecutionException e) {
+            e.getCause().printStackTrace();
+            throw new BladeExitMessage("An exception was thrown while attempting to load custom tab completer.");
+        }
+    }
+
+    public String getDefault() {
+        return isOptional() ? optional.value() : null;
     }
 
     public boolean ignoreFailedArgumentParse() {
@@ -39,8 +74,8 @@ public abstract class BladeParameter {
     }
 
     public static class CommandParameter extends BladeParameter {
-        public CommandParameter(String name, Class<?> type, Optional optional, Range range, boolean combined) {
-            super(name, type, optional, range, combined);
+        public CommandParameter(String name, Class<?> type, Optional optional, Range range, Completer completer, boolean combined) {
+            super(name, type, optional, range, completer, combined);
         }
     }
 
@@ -48,7 +83,7 @@ public abstract class BladeParameter {
         @Getter private final Flag flag;
 
         public FlagParameter(String name, Class<?> type, Optional optional, Flag flag) {
-            super(name, type, optional, null, false);
+            super(name, type, optional, null, null, false);
 
             this.flag = flag;
         }

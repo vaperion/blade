@@ -68,7 +68,8 @@ public class BladeCommand {
                     Flag flag = parameter.getAnnotation(Flag.class);
                     bladeParameter = new BladeParameter.FlagParameter(parameterName, parameter.getType(), parameter.getAnnotation(Optional.class), flag);
                 } else {
-                    bladeParameter = new BladeParameter.CommandParameter(parameterName, parameter.getType(), parameter.getAnnotation(Optional.class), parameter.getAnnotation(Range.class), parameter.isAnnotationPresent(Combined.class));
+                    bladeParameter = new BladeParameter.CommandParameter(parameterName, parameter.getType(), parameter.getAnnotation(Optional.class),
+                          parameter.getAnnotation(Range.class), parameter.getAnnotation(Completer.class), parameter.isAnnotationPresent(Combined.class));
                 }
 
                 BladeProvider<?> provider = commandService.getCommandResolver().resolveProvider(parameter.getType(), Arrays.asList(parameter.getAnnotations()));

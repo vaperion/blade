@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.argument.BladeArgument;
 import me.vaperion.blade.argument.BladeProvider;
 import me.vaperion.blade.command.BladeCommand;
+import me.vaperion.blade.command.BladeParameter;
 import me.vaperion.blade.context.BladeContext;
 import me.vaperion.blade.context.WrappedSender;
 import me.vaperion.blade.exception.BladeExitMessage;
@@ -62,10 +63,13 @@ public class BladeCommandCompleter {
             if (command.getParameterProviders().size() < arguments.size()) return Collections.emptyList();
 
             int index = Math.max(0, arguments.size() - 1);
-            BladeProvider<?> parameterProvider = command.getParameterProviders().get(index);
             String argument = index < arguments.size() ? arguments.get(index) : "";
 
-            BladeArgument bladeArgument = new BladeArgument(null);
+            BladeParameter parameter = index < command.getParameters().size() ? command.getParameters().get(index) : null;
+            BladeProvider<?> parameterProvider = parameter != null && parameter.hasCustomTabCompleter()
+                  ? parameter.getCompleter() : command.getParameterProviders().get(index);
+
+            BladeArgument bladeArgument = new BladeArgument(parameter);
             bladeArgument.setType(index < arguments.size() ? BladeArgument.Type.PROVIDED : BladeArgument.Type.OPTIONAL);
             bladeArgument.setString(argument);
 
