@@ -59,8 +59,7 @@ public class BladeCommandService {
     }
 
     public final void releaseProvider(@NotNull Class<?> clazz, @NotNull List<Class<? extends ProviderAnnotation>> annotations) {
-        this.providers.removeIf(container -> container.getType() == clazz
-              && annotations.containsAll(container.getRequiredAnnotations()) && container.getRequiredAnnotations().size() == annotations.size());
+        this.providers.removeIf(container -> container.getType() == clazz && container.doAnnotationsMatch(annotations));
     }
 
     @SafeVarargs

@@ -3,6 +3,7 @@ package me.vaperion.blade.service;
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.argument.BladeProvider;
 import me.vaperion.blade.argument.BladeProviderContainer;
+import me.vaperion.blade.argument.ProviderAnnotation;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.utils.Tuple;
 import org.jetbrains.annotations.NotNull;
@@ -12,6 +13,7 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class BladeCommandResolver {
@@ -45,9 +47,15 @@ public class BladeCommandResolver {
     @SuppressWarnings("unchecked")
     @Nullable
     public <T> BladeProvider<T> resolveProvider(Class<T> clazz, List<Annotation> annotations) {
+        List<Class<? extends ProviderAnnotation>> providerAnnotations = annotations.stream()
+              .map(Annotation::annotationType)
+              .filter(ProviderAnnotation.class::isAssignableFrom)
+              .map(c -> (Class<? extends ProviderAnnotation>) c)
+              .collect(Collectors.toList());
+
         return commandService.providers.stream()
               .filter(container -> container.getType() == clazz)
-              .filter(container -> container.getRequiredAnnotation() == null || annotations.stream().anyMatch(annotation -> annotation.getClass() == container.getRequiredAnnotation()))
+              .filter(container -> container.doAnnotationsMatch(providerAnnotations))
               .limit(1)
               .map(BladeProviderContainer::getProvider)
               .map(provider -> (BladeProvider<T>) provider)
