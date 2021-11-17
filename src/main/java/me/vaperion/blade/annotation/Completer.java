@@ -10,5 +10,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 public @interface Completer {
-    Class<? extends BladeProvider<?>> provider();
+    Class<? extends BladeProvider<?>> value();
 }

@@ -53,7 +53,7 @@ public abstract class BladeParameter {
     public BladeProvider<?> getCompleter() {
         if (!hasCustomTabCompleter()) return null;
         try {
-            return COMPLETER_CACHE.get(completer.provider());
+            return COMPLETER_CACHE.get(completer.value());
         } catch (ExecutionException e) {
             e.getCause().printStackTrace();
             throw new BladeExitMessage("An exception was thrown while attempting to load custom tab completer.");
