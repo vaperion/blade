@@ -1,5 +1,7 @@
 # Blade
 
+:warning: Blade only supports Java 8-11 due to the use of reflection!
+
 Blade is an easy-to-use command framework based on annotations. It currently only supports Bukkit, but it can be easily extended to more platforms.
 To use Blade, you simply have to include it as a dependency and shade it into your final jar.
 
@@ -23,7 +25,7 @@ Maven
     <dependency>
         <groupId>com.github.vaperion</groupId>
         <artifactId>blade</artifactId>
-        <version>1.2.10</version>
+        <version>2.0.0</version>
         <scope>compile</scope>
     </dependency>
 </dependencies>
@@ -38,18 +40,18 @@ allprojects {
 }
 
 dependencies {
-    implementation 'com.github.vaperion:blade:1.2.10'
+    implementation 'com.github.vaperion:blade:2.0.0'
 }
 ```
 
 ### Example code
 
 Initializing Blade:
+
 ```java
 import me.vaperion.blade.Blade;
-import me.vaperion.blade.command.bindings.impl.BukkitBindings;
-import me.vaperion.blade.command.container.impl.BukkitCommandContainer;
-import me.vaperion.blade.completer.impl.ProtocolLibTabCompleter;
+import me.vaperion.blade.bindings.impl.BukkitBindings;
+import me.vaperion.blade.container.impl.BukkitCommandContainer;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class ExamplePlugin extends JavaPlugin {
@@ -91,12 +93,13 @@ Blade.of()
 ```
 
 Example commands:
+
 ```java
-import me.vaperion.blade.command.annotation.*;
+import me.vaperion.blade.annotation.*;
 import org.bukkit.entity.Player;
 
 public class ExampleCommand {
-    
+
     @Command(value = {"ban", "go away"}, async = true, quoted = false, description = "Ban a player")
     @Permission(value = "blade.command.ban", message = "You are not allowed to execute this command.")
     public static void ban(@Sender Player sender,
@@ -107,7 +110,7 @@ public class ExampleCommand {
         sender.sendMessage("Target: " + target.getName());
         sender.sendMessage("Reason: " + reason);
     }
-    
+
     @Command("test")
     public static void test(@Sender Player sender,
                             @Range(min = 18) int age,
@@ -129,9 +132,10 @@ public class ExampleCommand {
 ```
 
 Example custom tab completer with Netty:
+
 ```java
-import me.vaperion.blade.command.service.BladeCommandService;
-import me.vaperion.blade.completer.TabCompleter;
+import me.vaperion.blade.service.BladeCommandService;
+import me.vaperion.blade.tabcompleter.TabCompleter;
 import net.minecraft.server.v1_7_R4.PacketPlayInTabComplete;
 import net.minecraft.server.v1_7_R4.PacketPlayOutTabComplete;
 import net.minecraft.util.io.netty.channel.ChannelDuplexHandler;

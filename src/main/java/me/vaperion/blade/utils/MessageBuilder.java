@@ -34,14 +34,14 @@ public class MessageBuilder {
 
     public MessageBuilder hover(String[] lines) {
         builder.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(
-                combineMultiLine(lines)
+              combineMultiLine(lines)
         ).create()));
         return this;
     }
 
     public MessageBuilder hover(List<String> lines) {
         builder.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(
-                combineMultiLine(lines)
+              combineMultiLine(lines)
         ).create()));
         return this;
     }
