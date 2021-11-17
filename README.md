@@ -1,5 +1,7 @@
 # Blade
 
+:warning: Blade only supports Java 8-11 due to the use of reflection!
+
 Blade is an easy-to-use command framework based on annotations. It currently only supports Bukkit, but it can be easily extended to more platforms.
 To use Blade, you simply have to include it as a dependency and shade it into your final jar.
 
