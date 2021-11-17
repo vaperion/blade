@@ -61,9 +61,9 @@ public class DefaultBindings implements Binding {
                 Range range = arg.getParameter().getRange();
 
                 if (!Double.isNaN(range.min()) && input < range.min())
-                    throw new BladeExitMessage("Error: The provided value (" + input + ") is too low.");
+                    throw new BladeExitMessage("Error: The provided number '" + input + "' must be at least " + range.min() + ".");
                 else if (!Double.isNaN(range.max()) && input > range.max())
-                    throw new BladeExitMessage("Error: The provided value (" + input + ") is too high.");
+                    throw new BladeExitMessage("Error: The provided number '" + input + "' must be at most " + range.max() + ".");
             }
 
             return input;
@@ -81,9 +81,9 @@ public class DefaultBindings implements Binding {
                 Range range = arg.getParameter().getRange();
 
                 if (!Double.isNaN(range.min()) && input < range.min())
-                    throw new BladeExitMessage("Error: The provided value (" + input + ") is too low.");
+                    throw new BladeExitMessage("Error: The provided number '" + input + "' must be at least " + range.min() + ".");
                 else if (!Double.isNaN(range.max()) && input > range.max())
-                    throw new BladeExitMessage("Error: The provided value (" + input + ") is too high.");
+                    throw new BladeExitMessage("Error: The provided number '" + input + "' must be at most " + range.max() + ".");
             }
 
             return input;
@@ -101,9 +101,9 @@ public class DefaultBindings implements Binding {
                 Range range = arg.getParameter().getRange();
 
                 if (!Double.isNaN(range.min()) && input < range.min())
-                    throw new BladeExitMessage("Error: The provided value (" + input + ") is too low.");
+                    throw new BladeExitMessage("Error: The provided number '" + input + "' must be at least " + range.min() + ".");
                 else if (!Double.isNaN(range.max()) && input > range.max())
-                    throw new BladeExitMessage("Error: The provided value (" + input + ") is too high.");
+                    throw new BladeExitMessage("Error: The provided number '" + input + "' must be at most " + range.max() + ".");
             }
 
             return input;
