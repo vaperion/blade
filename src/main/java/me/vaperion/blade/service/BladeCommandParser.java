@@ -19,7 +19,7 @@ public class BladeCommandParser {
 
     @NotNull
     public List<Object> parseArguments(@NotNull BladeCommand command, @NotNull BladeContext context, @NotNull String[] argArray) throws BladeExitMessage {
-        List<String> args = Arrays.asList(argArray);
+        List<String> args = new ArrayList<>(Arrays.asList(argArray));
         List<Object> result = new ArrayList<>(command.getParameters().size());
 
         try {
