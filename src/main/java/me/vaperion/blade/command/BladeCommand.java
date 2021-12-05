@@ -66,10 +66,10 @@ public class BladeCommand {
 
                 if (parameter.isAnnotationPresent(Flag.class)) {
                     Flag flag = parameter.getAnnotation(Flag.class);
-                    bladeParameter = new BladeParameter.FlagParameter(parameterName, parameter.getType(), parameter.getAnnotation(Optional.class), flag);
+                    bladeParameter = new BladeParameter.FlagParameter(parameterName, parameter.getType(), parameter.getAnnotation(Optional.class), parameter, flag);
                 } else {
                     bladeParameter = new BladeParameter.CommandParameter(parameterName, parameter.getType(), parameter.getAnnotation(Optional.class),
-                          parameter.getAnnotation(Range.class), parameter.getAnnotation(Completer.class), parameter.isAnnotationPresent(Combined.class));
+                          parameter.getAnnotation(Range.class), parameter.getAnnotation(Completer.class), parameter, parameter.isAnnotationPresent(Combined.class));
                 }
 
                 BladeProvider<?> provider = commandService.getCommandResolver().resolveProvider(parameter.getType(), Arrays.asList(parameter.getAnnotations()));
