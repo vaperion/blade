@@ -12,6 +12,7 @@ import me.vaperion.blade.annotation.Range;
 import me.vaperion.blade.argument.BladeProvider;
 import me.vaperion.blade.exception.BladeExitMessage;
 
+import java.lang.reflect.AnnotatedElement;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -36,6 +37,7 @@ public abstract class BladeParameter {
     protected final Optional optional;
     protected final Range range;
     protected final Completer completer;
+    protected final AnnotatedElement element;
     protected final boolean combined;
 
     public boolean isOptional() {
@@ -73,17 +75,21 @@ public abstract class BladeParameter {
         return "null".equals(optional.value());
     }
 
+    public AnnotatedElement getAnnotatedElement() {
+        return element;
+    }
+
     public static class CommandParameter extends BladeParameter {
-        public CommandParameter(String name, Class<?> type, Optional optional, Range range, Completer completer, boolean combined) {
-            super(name, type, optional, range, completer, combined);
+        public CommandParameter(String name, Class<?> type, Optional optional, Range range, Completer completer, AnnotatedElement element, boolean combined) {
+            super(name, type, optional, range, completer, element, combined);
         }
     }
 
     public static class FlagParameter extends BladeParameter {
         @Getter private final Flag flag;
 
-        public FlagParameter(String name, Class<?> type, Optional optional, Flag flag) {
-            super(name, type, optional, null, null, false);
+        public FlagParameter(String name, Class<?> type, Optional optional, AnnotatedElement element, Flag flag) {
+            super(name, type, optional, null, null, element, false);
 
             this.flag = flag;
         }
