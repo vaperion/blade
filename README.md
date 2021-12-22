@@ -2,18 +2,21 @@
 
 :warning: Blade only supports Java 8-11 due to the use of reflection!
 
-Blade is an easy-to-use command framework based on annotations. It currently only supports Bukkit, but it can be easily extended to more platforms.
-To use Blade, you simply have to include it as a dependency and shade it into your final jar.
+Blade is an easy-to-use command framework based on annotations. It currently only supports Bukkit, but it can be easily
+extended to more platforms. To use Blade, you simply have to include it as a dependency and shade it into your final
+jar.
 
-If you make any changes or improvements to the project, please consider making a pull request to merge your changes back into the upstream project.
-This project is in its early stages, if you find any issues please open an issue.
+If you make any changes or improvements to the project, please consider making a pull request to merge your changes back
+into the upstream project. This project is in its early stages, if you find any issues please open an issue.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
 ## Using Blade
 
 Maven
+
 ```xml
+
 <repositories>
     <repository>
         <id>jitpack.io</id>
@@ -32,6 +35,7 @@ Maven
 ```
 
 Gradle
+
 ```groovy
 allprojects {
     repositories {
@@ -63,12 +67,13 @@ public class ExamplePlugin extends JavaPlugin {
                 .containerCreator(BukkitCommandContainer.CREATOR)
                 .binding(new BukkitBindings())
                 .build()
-                .register(ExampleCommand.class);
+                .registerAll(this);
     }
 }
 ```
 
 Overriding bukkit commands:
+
 ```java
 Blade.of()
         ...
@@ -77,6 +82,7 @@ Blade.of()
 ```
 
 Setting a custom tab completer:
+
 ```java
 Blade.of()
         ...
@@ -85,10 +91,29 @@ Blade.of()
 ```
 
 Registering a type provider without Bindings:
+
 ```java
 Blade.of()
         ...
-        .bind(Example.class, new BladeProvider<Example>() {...})
+        .bind(Example.class,new BladeProvider<Example>(){...})
+        ...;
+```
+
+Registering all commands in a single line.
+
+```java
+Blade.of()
+        ...
+        .registerAll(this)
+        ...;
+```
+
+Registering commands individually.
+
+```java
+Blade.of()
+        ...
+        .register(ExampleCommand.class)
         ...;
 ```
 
