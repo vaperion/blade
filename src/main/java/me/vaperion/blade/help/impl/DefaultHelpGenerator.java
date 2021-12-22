@@ -31,8 +31,8 @@ public class DefaultHelpGenerator implements HelpGenerator {
 
         for (BladeCommand command : commands) {
             String cmd = Arrays.stream(command.getAliases())
-                  .filter(a -> a.toLowerCase(Locale.ROOT).startsWith(context.alias().toLowerCase(Locale.ROOT)))
-                  .findFirst().orElse(null);
+                    .filter(a -> a.toLowerCase(Locale.ROOT).startsWith(context.alias().toLowerCase(Locale.ROOT)))
+                    .findFirst().orElse(null);
             if (cmd == null) continue;
             lines.add(ChatColor.AQUA + "/" + cmd);
         }

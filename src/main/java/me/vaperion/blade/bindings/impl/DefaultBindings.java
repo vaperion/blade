@@ -15,9 +15,14 @@ import java.util.UUID;
 public class DefaultBindings implements Binding {
 
     private static final Map<String, Boolean> BOOLEAN_MAP = ImmutableMap.<String, Boolean>builder()
-          .put("true", true).put("1", true).put("yes", true)
-          .put("false", false).put("0", false).put("no", false)
-          .build();
+            .put("true", true)
+            .put("1", true)
+            .put("yes", true)
+
+            .put("false", false)
+            .put("0", false)
+            .put("no", false)
+            .build();
 
     private static final DecimalFormat NUMBER_FORMAT = new DecimalFormat("#.#");
 

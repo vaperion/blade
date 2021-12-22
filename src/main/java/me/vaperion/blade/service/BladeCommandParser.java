@@ -93,8 +93,8 @@ public class BladeCommandParser {
                 char flag = arg.charAt(1);
 
                 BladeParameter.FlagParameter flagParameter = command.getFlagParameters().stream()
-                      .filter(param -> param.getFlag().value() == flag)
-                      .findFirst().orElse(null);
+                        .filter(param -> param.getFlag().value() == flag)
+                        .findFirst().orElse(null);
                 if (flagParameter == null) continue;
 
                 it.remove();

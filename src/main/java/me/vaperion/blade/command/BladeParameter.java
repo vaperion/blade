@@ -21,16 +21,16 @@ import java.util.concurrent.ExecutionException;
 public abstract class BladeParameter {
 
     private static final LoadingCache<Class<?>, BladeProvider<?>> COMPLETER_CACHE = CacheBuilder.newBuilder()
-          .build(new CacheLoader<Class<?>, BladeProvider<?>>() {
-              @Override
-              public BladeProvider<?> load(Class<?> clazz) {
-                  try {
-                      return (BladeProvider<?>) clazz.newInstance();
-                  } catch (Exception ex) {
-                      throw new IllegalArgumentException("Provided completer '" + clazz.getSimpleName() + "' does not have an empty constructor.");
-                  }
-              }
-          });
+            .build(new CacheLoader<Class<?>, BladeProvider<?>>() {
+                @Override
+                public BladeProvider<?> load(Class<?> clazz) {
+                    try {
+                        return (BladeProvider<?>) clazz.newInstance();
+                    } catch (Exception ex) {
+                        throw new IllegalArgumentException("Provided completer '" + clazz.getSimpleName() + "' does not have an empty constructor.");
+                    }
+                }
+            });
 
     protected final String name;
     protected final Class<?> type;
@@ -86,7 +86,8 @@ public abstract class BladeParameter {
     }
 
     public static class FlagParameter extends BladeParameter {
-        @Getter private final Flag flag;
+        @Getter
+        private final Flag flag;
 
         public FlagParameter(String name, Class<?> type, Optional optional, AnnotatedElement element, Flag flag) {
             super(name, type, optional, null, null, element, false);

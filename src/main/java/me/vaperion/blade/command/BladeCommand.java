@@ -69,7 +69,7 @@ public class BladeCommand {
                     bladeParameter = new BladeParameter.FlagParameter(parameterName, parameter.getType(), parameter.getAnnotation(Optional.class), parameter, flag);
                 } else {
                     bladeParameter = new BladeParameter.CommandParameter(parameterName, parameter.getType(), parameter.getAnnotation(Optional.class),
-                          parameter.getAnnotation(Range.class), parameter.getAnnotation(Completer.class), parameter, parameter.isAnnotationPresent(Combined.class));
+                            parameter.getAnnotation(Range.class), parameter.getAnnotation(Completer.class), parameter, parameter.isAnnotationPresent(Combined.class));
                 }
 
                 BladeProvider<?> provider = commandService.getCommandResolver().resolveProvider(parameter.getType(), Arrays.asList(parameter.getAnnotations()));
@@ -90,16 +90,16 @@ public class BladeCommand {
     @NotNull
     public List<BladeParameter.CommandParameter> getCommandParameters() {
         return parameters.stream()
-              .filter(BladeParameter.CommandParameter.class::isInstance)
-              .map(BladeParameter.CommandParameter.class::cast)
-              .collect(Collectors.toList());
+                .filter(BladeParameter.CommandParameter.class::isInstance)
+                .map(BladeParameter.CommandParameter.class::cast)
+                .collect(Collectors.toList());
     }
 
     @NotNull
     public List<BladeParameter.FlagParameter> getFlagParameters() {
         return parameters.stream()
-              .filter(BladeParameter.FlagParameter.class::isInstance)
-              .map(BladeParameter.FlagParameter.class::cast)
-              .collect(Collectors.toList());
+                .filter(BladeParameter.FlagParameter.class::isInstance)
+                .map(BladeParameter.FlagParameter.class::cast)
+                .collect(Collectors.toList());
     }
 }

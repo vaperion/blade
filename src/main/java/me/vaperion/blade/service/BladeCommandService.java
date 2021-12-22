@@ -25,19 +25,35 @@ public class BladeCommandService {
     final List<BladeCommand> commands = new LinkedList<>();
     final Map<String, List<BladeCommand>> aliasCommands = new LinkedHashMap<>();
     final Map<String, CommandContainer> containerMap = new LinkedHashMap<>();
-
-    @Setter @Getter private boolean overrideCommands = false;
-    @Setter @Getter private ContainerCreator<?> containerCreator = ContainerCreator.NONE;
-    @Setter @Getter private TabCompleter tabCompleter = new DefaultTabCompleter();
-    @Setter @Getter private HelpGenerator helpGenerator = new DefaultHelpGenerator();
-    @Setter @Getter private Consumer<Runnable> asyncExecutor = Runnable::run;
-    @Setter @Getter private long executionTimeWarningThreshold = 5;
-    @Setter @Getter private String defaultPermissionMessage = "You don't have permission to perform this command.";
-
-    @Getter private final BladeCommandRegistrar commandRegistrar = new BladeCommandRegistrar(this);
-    @Getter private final BladeCommandResolver commandResolver = new BladeCommandResolver(this);
-    @Getter private final BladeCommandParser commandParser = new BladeCommandParser(this);
-    @Getter private final BladeCommandCompleter commandCompleter = new BladeCommandCompleter(this);
+    @Getter
+    private final BladeCommandRegistrar commandRegistrar = new BladeCommandRegistrar(this);
+    @Getter
+    private final BladeCommandResolver commandResolver = new BladeCommandResolver(this);
+    @Getter
+    private final BladeCommandParser commandParser = new BladeCommandParser(this);
+    @Getter
+    private final BladeCommandCompleter commandCompleter = new BladeCommandCompleter(this);
+    @Setter
+    @Getter
+    private boolean overrideCommands = false;
+    @Setter
+    @Getter
+    private ContainerCreator<?> containerCreator = ContainerCreator.NONE;
+    @Setter
+    @Getter
+    private TabCompleter tabCompleter = new DefaultTabCompleter();
+    @Setter
+    @Getter
+    private HelpGenerator helpGenerator = new DefaultHelpGenerator();
+    @Setter
+    @Getter
+    private Consumer<Runnable> asyncExecutor = Runnable::run;
+    @Setter
+    @Getter
+    private long executionTimeWarningThreshold = 5;
+    @Setter
+    @Getter
+    private String defaultPermissionMessage = "You don't have permission to perform this command.";
 
     public BladeCommandService() {
         new DefaultBindings().bind(this);

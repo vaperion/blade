@@ -11,6 +11,12 @@ import java.util.List;
 
 public class MessageBuilder {
 
+    private final ComponentBuilder builder;
+
+    public MessageBuilder(String mainText) {
+        builder = new ComponentBuilder(mainText);
+    }
+
     public static String toStringFormat(BaseComponent[] components) {
         StringBuilder strBuilder = new StringBuilder();
 
@@ -21,12 +27,6 @@ public class MessageBuilder {
         return strBuilder.toString();
     }
 
-    private final ComponentBuilder builder;
-
-    public MessageBuilder(String mainText) {
-        builder = new ComponentBuilder(mainText);
-    }
-
     public MessageBuilder append(String text) {
         builder.append(text);
         return this;
@@ -34,14 +34,14 @@ public class MessageBuilder {
 
     public MessageBuilder hover(String[] lines) {
         builder.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(
-              combineMultiLine(lines)
+                combineMultiLine(lines)
         ).create()));
         return this;
     }
 
     public MessageBuilder hover(List<String> lines) {
         builder.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(
-              combineMultiLine(lines)
+                combineMultiLine(lines)
         ).create()));
         return this;
     }

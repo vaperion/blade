@@ -28,7 +28,8 @@ public class BladeCommandCompleter {
 
         Tuple<BladeCommand, String> resolved = commandService.getCommandResolver().resolveCommand(commandParts);
         if (resolved == null) return null;
-        if (!permissionFunction.apply(resolved.getLeft()) || resolved.getLeft().isContextBased()) return Collections.emptyList();
+        if (!permissionFunction.apply(resolved.getLeft()) || resolved.getLeft().isContextBased())
+            return Collections.emptyList();
 
         BladeCommand command = resolved.getLeft();
         String foundAlias = resolved.getRight();
@@ -67,7 +68,7 @@ public class BladeCommandCompleter {
 
             BladeParameter parameter = index < command.getParameters().size() ? command.getParameters().get(index) : null;
             BladeProvider<?> parameterProvider = parameter != null && parameter.hasCustomTabCompleter()
-                  ? parameter.getCompleter() : command.getParameterProviders().get(index);
+                    ? parameter.getCompleter() : command.getParameterProviders().get(index);
 
             BladeArgument bladeArgument = new BladeArgument(parameter);
             bladeArgument.setType(index < arguments.size() ? BladeArgument.Type.PROVIDED : BladeArgument.Type.OPTIONAL);

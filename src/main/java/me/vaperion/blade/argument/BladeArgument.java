@@ -11,8 +11,10 @@ public class BladeArgument {
 
     private final BladeParameter parameter;
 
-    @Setter private Type type;
-    @Setter private String string;
+    @Setter
+    private Type type;
+    @Setter
+    private String string;
 
     public enum Type {
         PROVIDED,

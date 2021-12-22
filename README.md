@@ -22,12 +22,12 @@ Maven
 </repositories>
 
 <dependencies>
-    <dependency>
-        <groupId>com.github.vaperion</groupId>
-        <artifactId>blade</artifactId>
-        <version>2.0.1</version>
-        <scope>compile</scope>
-    </dependency>
+<dependency>
+    <groupId>com.github.vaperion</groupId>
+    <artifactId>blade</artifactId>
+    <version>2.0.1</version>
+    <scope>compile</scope>
+</dependency>
 </dependencies>
 ```
 

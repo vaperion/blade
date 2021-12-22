@@ -48,18 +48,18 @@ public class BladeCommandResolver {
     @Nullable
     public <T> BladeProvider<T> resolveProvider(Class<T> clazz, List<Annotation> annotations) {
         List<Class<? extends ProviderAnnotation>> providerAnnotations = annotations.stream()
-              .map(Annotation::annotationType)
-              .filter(ProviderAnnotation.class::isAssignableFrom)
-              .map(c -> (Class<? extends ProviderAnnotation>) c)
-              .collect(Collectors.toList());
+                .map(Annotation::annotationType)
+                .filter(ProviderAnnotation.class::isAssignableFrom)
+                .map(c -> (Class<? extends ProviderAnnotation>) c)
+                .collect(Collectors.toList());
 
         return commandService.providers.stream()
-              .filter(container -> container.getType() == clazz)
-              .filter(container -> container.doAnnotationsMatch(providerAnnotations))
-              .limit(1)
-              .map(BladeProviderContainer::getProvider)
-              .map(provider -> (BladeProvider<T>) provider)
-              .findFirst().orElse(null);
+                .filter(container -> container.getType() == clazz)
+                .filter(container -> container.doAnnotationsMatch(providerAnnotations))
+                .limit(1)
+                .map(BladeProviderContainer::getProvider)
+                .map(provider -> (BladeProvider<T>) provider)
+                .findFirst().orElse(null);
     }
 
 }
