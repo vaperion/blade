@@ -5,15 +5,16 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
 import me.vaperion.blade.argument.BladeProvider;
-import me.vaperion.blade.argument.ProviderAnnotation;
 import me.vaperion.blade.bindings.Binding;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.help.HelpGenerator;
+import me.vaperion.blade.permissions.PermissionPredicate;
 import me.vaperion.blade.service.BladeCommandRegistrar;
 import me.vaperion.blade.service.BladeCommandService;
 import me.vaperion.blade.tabcompleter.TabCompleter;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.annotation.Annotation;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.List;
@@ -39,9 +40,12 @@ public class Blade implements BladeCommandRegistrar.Registrar {
     private final long executionTimeWarningThreshold = 5;
 
     @Singular("bind0")
-    private final Map<Map.Entry<Class<?>, List<Class<? extends ProviderAnnotation>>>, BladeProvider<?>> customProviderMap;
+    private final Map<Map.Entry<Class<?>, List<Class<? extends Annotation>>>, BladeProvider<?>> customProviderMap;
     @Singular
     private final List<Binding> bindings;
+
+    @Singular("addPermissionPredicate")
+    private final Map<String, PermissionPredicate> permissionPredicateMap;
 
     @Override
     public @NotNull BladeCommandService commandService() {
@@ -117,8 +121,11 @@ public class Blade implements BladeCommandRegistrar.Registrar {
 
                 blade.commandService.getTabCompleter().init(blade.commandService);
 
-                for (Map.Entry<Map.Entry<Class<?>, List<Class<? extends ProviderAnnotation>>>, BladeProvider<?>> entry : blade.customProviderMap.entrySet()) {
-                    //noinspection deprecation
+                for (Map.Entry<String, PermissionPredicate> entry : blade.permissionPredicateMap.entrySet()) {
+                    blade.commandService.registerPermissionPredicate(entry.getKey(), entry.getValue());
+                }
+
+                for (Map.Entry<Map.Entry<Class<?>, List<Class<? extends Annotation>>>, BladeProvider<?>> entry : blade.customProviderMap.entrySet()) {
                     blade.commandService.bindProviderUnsafely(entry.getKey().getKey(), entry.getValue(), entry.getKey().getValue());
                 }
 
@@ -129,7 +136,7 @@ public class Blade implements BladeCommandRegistrar.Registrar {
 
     public static class BladeBuilder {
         @SafeVarargs
-        public final <T> BladeBuilder bind(Class<T> clazz, BladeProvider<T> provider, Class<? extends ProviderAnnotation>... annotations) {
+        public final <T> BladeBuilder bind(Class<T> clazz, BladeProvider<T> provider, Class<? extends Annotation>... annotations) {
             bind0(new AbstractMap.SimpleEntry<>(clazz, Arrays.asList(annotations)), provider);
             return this;
         }

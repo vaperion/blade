@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,7 +46,7 @@ public class BladeCommand {
         this.async = command.async();
         this.quoted = command.quoted();
 
-        this.permission = permission == null ? "" : permission.value();
+        this.permission = permission == null ? "" : permission.value().trim();
         this.permissionMessage = permission == null ? "" : "".equals(permission.message()) ? commandService.getDefaultPermissionMessage() : permission.message();
 
         this.contextBased = method != null && method.getParameterCount() == 1 && method.getParameterTypes()[0] == BladeContext.class;
@@ -62,13 +63,15 @@ public class BladeCommand {
                 }
 
                 String parameterName = parameter.isAnnotationPresent(Name.class) ? parameter.getAnnotation(Name.class).value() : parameter.getName();
+                String[] parameterData = parameter.isAnnotationPresent(Data.class) ? parameter.getAnnotation(Data.class).value() : null;
                 BladeParameter bladeParameter;
 
                 if (parameter.isAnnotationPresent(Flag.class)) {
                     Flag flag = parameter.getAnnotation(Flag.class);
                     bladeParameter = new BladeParameter.FlagParameter(parameterName, parameter.getType(), parameter.getAnnotation(Optional.class), parameter, flag);
                 } else {
-                    bladeParameter = new BladeParameter.CommandParameter(parameterName, parameter.getType(), parameter.getAnnotation(Optional.class),
+                    bladeParameter = new BladeParameter.CommandParameter(parameterName, parameter.getType(),
+                          parameterData == null ? Collections.emptyList() : Arrays.asList(parameterData), parameter.getAnnotation(Optional.class),
                           parameter.getAnnotation(Range.class), parameter.getAnnotation(Completer.class), parameter, parameter.isAnnotationPresent(Combined.class));
                 }
 

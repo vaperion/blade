@@ -3,6 +3,7 @@ package me.vaperion.blade.context.impl;
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.context.WrappedSender;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,6 +22,15 @@ public class BukkitSender implements WrappedSender<CommandSender> {
     @Override
     public String getName() {
         return commandSender.getName();
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull String permissionNode) {
+        if ("op".equals(permissionNode))
+            return commandSender instanceof ConsoleCommandSender || commandSender.isOp();
+        if ("console".equals(permissionNode))
+            return commandSender instanceof ConsoleCommandSender;
+        return commandSender.hasPermission(permissionNode);
     }
 
     @Override

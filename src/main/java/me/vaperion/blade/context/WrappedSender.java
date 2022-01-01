@@ -11,6 +11,8 @@ public interface WrappedSender<T> {
     @NotNull
     String getName();
 
+    boolean hasPermission(@NotNull String permissionNode);
+
     void sendMessage(@NotNull String message);
 
     void sendMessage(@NotNull String... messages);

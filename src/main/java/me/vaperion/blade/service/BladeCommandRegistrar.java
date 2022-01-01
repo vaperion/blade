@@ -5,6 +5,7 @@ import me.vaperion.blade.Blade;
 import me.vaperion.blade.annotation.Command;
 import me.vaperion.blade.annotation.Permission;
 import me.vaperion.blade.command.BladeCommand;
+import me.vaperion.blade.utils.ClassUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -104,6 +105,10 @@ public class BladeCommandRegistrar {
         default Registrar register(@NotNull Object containerInstance) {
             register(containerInstance, containerInstance.getClass());
             return this;
+        }
+
+        default void registerPackage(@NotNull Class<?> clazz, @NotNull String packageName) {
+            ClassUtil.getClassesInPackage(clazz, packageName).forEach(this::register);
         }
     }
 }

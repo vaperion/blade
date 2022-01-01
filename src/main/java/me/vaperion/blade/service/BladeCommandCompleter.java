@@ -69,9 +69,14 @@ public class BladeCommandCompleter {
             BladeProvider<?> parameterProvider = parameter != null && parameter.hasCustomTabCompleter()
                   ? parameter.getCompleter() : command.getParameterProviders().get(index);
 
+            if (parameterProvider == null) {
+                throw new BladeExitMessage("Could not find provider for argument " + index + ".");
+            }
+
             BladeArgument bladeArgument = new BladeArgument(parameter);
             bladeArgument.setType(index < arguments.size() ? BladeArgument.Type.PROVIDED : BladeArgument.Type.OPTIONAL);
             bladeArgument.setString(argument);
+            bladeArgument.getData().addAll(parameter.getData());
 
             return parameterProvider.suggest(context, bladeArgument);
         } catch (BladeExitMessage ex) {

@@ -178,16 +178,17 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
 
     private boolean hasPermission(@NotNull CommandSender sender, String[] args) throws BladeExitMessage {
         Tuple<BladeCommand, String> command = resolveCommand(joinAliasToArgs(this.parentCommand.getAliases()[0], args));
-        return checkPermission(sender, command == null ? null : command.getLeft()).getLeft();
+        BladeContext context = new BladeContext(commandService, new BukkitSender(sender), command == null ? "" : command.getRight(), args);
+        return checkPermission(context, command == null ? null : command.getLeft()).getLeft();
     }
 
-    private Tuple<Boolean, String> checkPermission(@NotNull CommandSender sender, @Nullable BladeCommand command) throws BladeExitMessage {
+    private Tuple<Boolean, String> checkPermission(@NotNull BladeContext context, @Nullable BladeCommand command) throws BladeExitMessage {
         if (command == null)
             return new Tuple<>(false, "This command failed to execute as we couldn't find its registration.");
-        if ("op".equals(command.getPermission())) return new Tuple<>(sender.isOp(), command.getPermissionMessage());
-        if (command.getPermission() == null || command.getPermission().trim().isEmpty())
-            return new Tuple<>(true, command.getPermissionMessage());
-        return new Tuple<>(sender.hasPermission(command.getPermission()), command.getPermissionMessage());
+
+        return new Tuple<>(
+              commandService.getPermissionTester().testPermission(context, command),
+              command.getPermissionMessage());
     }
 
     private String[] joinAliasToArgs(String alias, String[] args) {
@@ -217,7 +218,7 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
             if (resolved == null) {
                 List<BladeCommand> availableCommands = commandService.getAllBladeCommands()
                       .stream().filter(c -> Arrays.stream(c.getAliases()).anyMatch(a -> a.toLowerCase().startsWith(alias.toLowerCase(Locale.ROOT) + " ") || a.equalsIgnoreCase(alias)))
-                      .filter(c -> this.checkPermission(sender, c).getLeft())
+                      .filter(c -> this.checkPermission(context, c).getLeft())
                       .collect(Collectors.toList());
 
                 for (String line : commandService.getHelpGenerator().generate(context, availableCommands)) {
@@ -227,7 +228,7 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
                 return true;
             }
 
-            Tuple<Boolean, String> permissionResult = checkPermission(sender, resolved.getLeft());
+            Tuple<Boolean, String> permissionResult = checkPermission(context, resolved.getLeft());
             if (!permissionResult.getLeft()) throw new BladeExitMessage(permissionResult.getRight());
 
             command = resolved.getLeft();
