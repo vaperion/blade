@@ -44,7 +44,7 @@ public class Blade implements BladeCommandRegistrar.Registrar {
     @Singular
     private final List<Binding> bindings;
 
-    @Singular("addPermissionPredicate")
+    @Singular("registerPermissionPredicate")
     private final Map<String, PermissionPredicate> permissionPredicateMap;
 
     @Override
