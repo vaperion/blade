@@ -1,6 +1,7 @@
 package me.vaperion.blade.service;
 
 import lombok.RequiredArgsConstructor;
+import me.vaperion.blade.annotation.*;
 import me.vaperion.blade.argument.BladeProvider;
 import me.vaperion.blade.argument.BladeProviderContainer;
 import me.vaperion.blade.command.BladeCommand;
@@ -16,6 +17,11 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class BladeCommandResolver {
+
+    private static final List<Class<? extends Annotation>> INTERNAL_ANNOTATIONS = Arrays.asList(
+          Combined.class, Command.class, Completer.class, Data.class, Flag.class,
+          Name.class, Optional.class, Permission.class, Range.class, Sender.class
+    );
 
     private final BladeCommandService commandService;
 
@@ -50,6 +56,7 @@ public class BladeCommandResolver {
               .map(Annotation::annotationType)
               .map(c -> (Class<? extends Annotation>) c)
               .collect(Collectors.toList());
+        inputAnnotations.removeIf(INTERNAL_ANNOTATIONS::contains);
 
         return commandService.providers.stream()
               .filter(container -> container.getType() == clazz)

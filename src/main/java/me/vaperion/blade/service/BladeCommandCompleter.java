@@ -76,7 +76,7 @@ public class BladeCommandCompleter {
             BladeArgument bladeArgument = new BladeArgument(parameter);
             bladeArgument.setType(index < arguments.size() ? BladeArgument.Type.PROVIDED : BladeArgument.Type.OPTIONAL);
             bladeArgument.setString(argument);
-            bladeArgument.getData().addAll(parameter.getData());
+            if (parameter != null) bladeArgument.getData().addAll(parameter.getData());
 
             return parameterProvider.suggest(context, bladeArgument);
         } catch (BladeExitMessage ex) {
