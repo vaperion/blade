@@ -330,7 +330,10 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
             String[] actualArguments = argList.toArray(new String[0]);
 
             BladeContext context = new BladeContext(commandService, new BukkitSender(sender), foundAlias, actualArguments);
-            return commandService.getCommandCompleter().suggest(context, command, actualArguments);
+
+            List<String> suggestions = new ArrayList<>();
+            commandService.getCommandCompleter().suggest(suggestions, context, command, actualArguments);
+            return suggestions;
         } catch (BladeExitMessage ex) {
             sender.sendMessage(ChatColor.RED + ex.getMessage());
         } catch (Exception ex) {

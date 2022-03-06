@@ -5,18 +5,22 @@ import me.vaperion.blade.Blade;
 import me.vaperion.blade.annotation.Command;
 import me.vaperion.blade.annotation.Permission;
 import me.vaperion.blade.command.BladeCommand;
+import me.vaperion.blade.container.CommandContainer;
 import me.vaperion.blade.utils.ClassUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
 @RequiredArgsConstructor
 public class BladeCommandRegistrar {
+
+    private static final List<BladeCommand> EMPTY_COMMAND_LIST = new ArrayList<>();
 
     private final BladeCommandService commandService;
 
@@ -43,6 +47,29 @@ public class BladeCommandRegistrar {
         }
     }
 
+    public void unregisterClass(@Nullable Object instance, @NotNull Class<?> clazz) {
+        try {
+            BladeCommand parent = null;
+
+            if (clazz.isAnnotationPresent(Command.class)) {
+                Command command = clazz.getAnnotation(Command.class);
+                Permission permission = clazz.getAnnotation(Permission.class);
+                parent = new BladeCommand(commandService, instance, null,
+                      Arrays.stream(command.value()).map(String::toLowerCase).toArray(String[]::new), command, permission);
+            }
+
+            for (Method method : clazz.getMethods()) {
+                if (!method.isAnnotationPresent(Command.class)) continue;
+                if ((instance == null) != Modifier.isStatic(method.getModifiers())) continue;
+
+                unregisterMethod(instance, method, parent);
+            }
+        } catch (Exception ex) {
+            System.err.println("An exception was thrown while registering commands in class " + clazz.getCanonicalName() + " (instance: " + instance + ")");
+            ex.printStackTrace();
+        }
+    }
+
     public void registerMethod(@Nullable Object instance, @NotNull Method method, @Nullable BladeCommand parentCommand, @NotNull String fallbackPrefix) throws Exception {
         Command command = method.getAnnotation(Command.class);
         Permission permission = method.getAnnotation(Permission.class);
@@ -60,6 +87,33 @@ public class BladeCommandRegistrar {
 
             if (commandService.containerMap.containsKey(realAlias)) continue;
             commandService.containerMap.put(realAlias, commandService.getContainerCreator().create(commandService, bladeCommand, realAlias, fallbackPrefix));
+        }
+    }
+
+    public void unregisterMethod(@Nullable Object instance, @NotNull Method method, @Nullable BladeCommand parentCommand) {
+        Command command = method.getAnnotation(Command.class);
+        Permission permission = method.getAnnotation(Permission.class);
+
+        String[] aliases = parentCommand == null ? command.value() : mutateAliases(command.value(), parentCommand.getAliases());
+        aliases = Arrays.stream(aliases).map(String::toLowerCase).toArray(String[]::new);
+
+        BladeCommand bladeCommand = commandService.commands.stream().filter(c -> c.getInstance() == instance && c.getMethod() == method).findFirst().orElse(null);
+        if (bladeCommand == null) return;
+        commandService.commands.remove(bladeCommand);
+
+        for (String alias : aliases) {
+            String realAlias = alias.split(" ")[0];
+
+            List<BladeCommand> commandList = commandService.aliasCommands.getOrDefault(realAlias, EMPTY_COMMAND_LIST);
+            commandList.remove(bladeCommand);
+            if (commandList.isEmpty()) commandService.aliasCommands.remove(realAlias);
+
+            if (!commandService.containerMap.containsKey(realAlias)) continue;
+            CommandContainer commandContainer = commandService.containerMap.get(realAlias);
+
+            if (commandContainer.getParentCommand() == bladeCommand) {
+                commandService.containerMap.remove(realAlias);
+            }
         }
     }
 
@@ -95,6 +149,10 @@ public class BladeCommandRegistrar {
             commandService().getCommandRegistrar().registerClass(instance, clazz, fallbackPrefix());
         }
 
+        default void unregister(@Nullable Object instance, @NotNull Class<?> clazz) {
+            commandService().getCommandRegistrar().unregisterClass(instance, clazz);
+        }
+
         @NotNull
         default Registrar register(@NotNull Class<?> containerClass) {
             register(null, containerClass);
@@ -102,8 +160,20 @@ public class BladeCommandRegistrar {
         }
 
         @NotNull
+        default Registrar unregister(@NotNull Class<?> containerClass) {
+            unregister(null, containerClass);
+            return this;
+        }
+
+        @NotNull
         default Registrar register(@NotNull Object containerInstance) {
             register(containerInstance, containerInstance.getClass());
+            return this;
+        }
+
+        @NotNull
+        default Registrar unregister(@NotNull Object containerInstance) {
+            unregister(containerInstance, containerInstance.getClass());
             return this;
         }
 

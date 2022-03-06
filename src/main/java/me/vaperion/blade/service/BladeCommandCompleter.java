@@ -24,11 +24,14 @@ public class BladeCommandCompleter {
     @Nullable
     public List<String> suggest(@NotNull String commandLine, @NotNull Supplier<WrappedSender<?>> senderSupplier,
                                 @NotNull Function<BladeCommand, Boolean> permissionFunction) {
-        String[] commandParts = commandLine.split(" ");
+        List<String> suggestions = new ArrayList<>();
+        suggestSubCommand(suggestions, commandLine, permissionFunction);
 
+        String[] commandParts = commandLine.split(" ");
         Tuple<BladeCommand, String> resolved = commandService.getCommandResolver().resolveCommand(commandParts);
-        if (resolved == null) return null;
-        if (!permissionFunction.apply(resolved.getLeft()) || resolved.getLeft().isContextBased()) return Collections.emptyList();
+
+        if (resolved == null) return suggestions.isEmpty() ? null : suggestions;
+        if (!permissionFunction.apply(resolved.getLeft()) || resolved.getLeft().isContextBased()) return suggestions.isEmpty() ? null : suggestions;
 
         BladeCommand command = resolved.getLeft();
         String foundAlias = resolved.getRight();
@@ -40,12 +43,14 @@ public class BladeCommandCompleter {
         String[] actualArguments = argList.toArray(new String[0]);
 
         BladeContext context = new BladeContext(commandService, senderSupplier.get(), foundAlias, actualArguments);
-        return suggest(context, command, actualArguments);
+
+        suggest(suggestions, context, command, actualArguments);
+        return suggestions;
     }
 
-    @NotNull
-    public List<String> suggest(@NotNull BladeContext context, @NotNull BladeCommand command, @NotNull String[] args) throws BladeExitMessage {
-        if (command.isContextBased()) return Collections.emptyList();
+    public void suggest(@NotNull List<String> suggestions, @NotNull BladeContext context,
+                        @NotNull BladeCommand command, @NotNull String[] args) throws BladeExitMessage {
+        if (command.isContextBased()) return;
 
         try {
             List<String> argumentList = new ArrayList<>(Arrays.asList(args));
@@ -59,8 +64,8 @@ public class BladeCommandCompleter {
                 if (!isFlag || !"true".equals(entry.getValue())) arguments.remove(entry.getValue());
             }
 
-            if (arguments.size() == 0) return Collections.emptyList();
-            if (command.getParameterProviders().size() < arguments.size()) return Collections.emptyList();
+            if (arguments.size() == 0) return;
+            if (command.getParameterProviders().size() < arguments.size()) return;
 
             int index = Math.max(0, arguments.size() - 1);
             String argument = index < arguments.size() ? arguments.get(index) : "";
@@ -78,12 +83,41 @@ public class BladeCommandCompleter {
             bladeArgument.setString(argument);
             if (parameter != null) bladeArgument.getData().addAll(parameter.getData());
 
-            return parameterProvider.suggest(context, bladeArgument);
+            List<String> suggested = parameterProvider.suggest(context, bladeArgument);
+            suggestions.addAll(suggested);
         } catch (BladeExitMessage ex) {
             throw ex;
         } catch (Exception ex) {
             ex.printStackTrace();
             throw new BladeExitMessage("An exception was thrown while parsing your arguments.");
+        }
+    }
+
+    public void suggestSubCommand(@NotNull List<String> suggestions, @NotNull String commandLine,
+                                  @NotNull Function<BladeCommand, Boolean> permissionFunction) throws BladeExitMessage {
+        String[] commandLineParts = commandLine.split(" ");
+        String baseCommand = commandLineParts[0];
+
+        List<BladeCommand> commandsWithBase = commandService.aliasCommands.get(baseCommand);
+        if (commandsWithBase == null) return;
+
+        int currentWordIndex = commandLineParts.length - 1 + (commandLine.endsWith(" ") ? 1 : 0);
+        if (currentWordIndex == 0) return;
+
+        for (BladeCommand bladeCommand : commandsWithBase) {
+            if (!permissionFunction.apply(bladeCommand)) continue;
+
+            for (String alias : bladeCommand.getAliases()) {
+                if (!alias.startsWith(commandLine.toLowerCase(Locale.ROOT))) continue;
+
+                String[] aliasWords = alias.split(" ");
+                if (aliasWords.length < currentWordIndex) continue;
+
+                String currentWord = aliasWords[currentWordIndex];
+                if (currentWord.isEmpty() || suggestions.contains(currentWord)) continue;
+
+                suggestions.add(currentWord);
+            }
         }
     }
 
