@@ -96,6 +96,7 @@ public class BladeCommandCompleter {
     public void suggestSubCommand(@NotNull List<String> suggestions, @NotNull String commandLine,
                                   @NotNull Function<BladeCommand, Boolean> permissionFunction) throws BladeExitMessage {
         String[] commandLineParts = commandLine.split(" ");
+        if (commandLineParts.length == 0) return;
         String baseCommand = commandLineParts[0];
 
         List<BladeCommand> commandsWithBase = commandService.aliasCommands.get(baseCommand);
