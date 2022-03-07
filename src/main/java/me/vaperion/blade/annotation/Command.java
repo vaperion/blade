@@ -27,12 +27,32 @@ public @interface Command {
     boolean quoted() default false;
 
     /**
+     * This method indicates whether this command should be hidden from or not.
+     * <p>Hidden commands do not show up in the generated help message, and cannot be tab completed.</p>
+     * <p>Players will see the default unknown command message instead of the no permission message when executed without permission.</p>
+     */
+    boolean hidden() default false;
+
+    /**
      * This is the description of the command that is shown when you hover over the usage message.
      */
     String description() default "";
 
     /**
-     * This data will get appended to the end of the usage message.
+     * This is the usage message that is shown when an invalid number of arguments is given.
+     * <p>If this is not set, the usage message will automatically be generated.</p>
+     */
+    String usage() default "";
+
+    /**
+     * This is the alias that should be displayed in the generated help message.
+     * <p>If this is not set, the first alias in {@link Command#value()} will be used.</p>
+     */
+    String usageAlias() default "";
+
+    /**
+     * This data will get appended to the end of the generated usage message.
+     * <p>If a custom usage message is set, this will be ignored.</p>
      */
     String extraUsageData() default "";
 }

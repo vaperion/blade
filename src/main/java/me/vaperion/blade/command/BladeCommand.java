@@ -5,6 +5,7 @@ import me.vaperion.blade.annotation.*;
 import me.vaperion.blade.argument.BladeProvider;
 import me.vaperion.blade.context.BladeContext;
 import me.vaperion.blade.service.BladeCommandService;
+import me.vaperion.blade.utils.LoadedValue;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Method;
@@ -22,9 +23,9 @@ public class BladeCommand {
     private final Object instance;
     private final Method method;
     private final String[] aliases, realAliases;
-    private final String description, extraUsageData;
+    private final String description, customUsage, extraUsageData, usageAlias;
     private final String permission, permissionMessage;
-    private final boolean async, quoted;
+    private final boolean async, quoted, hidden;
 
     private final boolean contextBased;
 
@@ -34,6 +35,8 @@ public class BladeCommand {
     private final List<BladeParameter> parameters = new LinkedList<>();
     private final List<BladeProvider<?>> providers = new LinkedList<>(), parameterProviders = new LinkedList<>(), flagProviders = new LinkedList<>();
 
+    private final LoadedValue<UsageMessage> usageMessage = new LoadedValue<>();
+
     public BladeCommand(BladeCommandService commandService, Object instance, Method method, String[] aliases, Command command, Permission permission) {
         this.commandService = commandService;
 
@@ -42,9 +45,12 @@ public class BladeCommand {
         this.aliases = aliases;
         this.realAliases = Arrays.stream(aliases).map(String::toLowerCase).map(s -> s.split(" ")[0]).distinct().toArray(String[]::new);
         this.description = command.description();
+        this.customUsage = command.usage();
         this.extraUsageData = command.extraUsageData();
+        this.usageAlias = command.usageAlias();
         this.async = command.async();
         this.quoted = command.quoted();
+        this.hidden = command.hidden();
 
         this.permission = permission == null ? "" : permission.value().trim();
         this.permissionMessage = permission == null ? "" : "".equals(permission.message()) ? commandService.getDefaultPermissionMessage() : permission.message();

@@ -1,5 +1,6 @@
 package me.vaperion.blade.utils;
 
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
@@ -7,7 +8,9 @@ import net.md_5.bungee.api.chat.HoverEvent;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MessageBuilder {
 
@@ -27,22 +30,33 @@ public class MessageBuilder {
         builder = new ComponentBuilder(mainText);
     }
 
+    public MessageBuilder color(ChatColor color) {
+        builder.color(color);
+        return this;
+    }
+
     public MessageBuilder append(String text) {
         builder.append(text);
         return this;
     }
 
-    public MessageBuilder hover(String[] lines) {
-        builder.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(
-              combineMultiLine(lines)
-        ).create()));
-        return this;
+    public MessageBuilder hover(String... lines) {
+        return hover(Arrays.asList(lines));
+    }
+
+    public MessageBuilder hoverWithColor(ChatColor color, String... lines) {
+        return hoverWithColor(color, Arrays.asList(lines));
     }
 
     public MessageBuilder hover(List<String> lines) {
-        builder.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(
-              combineMultiLine(lines)
-        ).create()));
+        if (lines.isEmpty() || lines.stream().allMatch(String::isEmpty)) return this;
+        builder.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(combineMultiLine(lines)).create()));
+        return this;
+    }
+
+    public MessageBuilder hoverWithColor(ChatColor color, List<String> lines) {
+        if (lines.isEmpty() || lines.stream().allMatch(String::isEmpty)) return this;
+        builder.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(lines.stream().map(s -> color.toString() + s).collect(Collectors.joining("\n"))).create()));
         return this;
     }
 

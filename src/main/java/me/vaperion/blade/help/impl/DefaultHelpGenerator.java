@@ -19,7 +19,7 @@ public class DefaultHelpGenerator implements HelpGenerator {
     @NotNull
     @Override
     public List<String> generate(@NotNull BladeContext context, @NotNull List<BladeCommand> commands) {
-        commands = commands.stream().distinct().collect(Collectors.toList());
+        commands = commands.stream().distinct().filter(c -> !c.isHidden()).collect(Collectors.toList());
         List<String> lines = new ArrayList<>();
 
         if (commands.isEmpty()) {

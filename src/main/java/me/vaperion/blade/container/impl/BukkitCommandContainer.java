@@ -1,9 +1,8 @@
 package me.vaperion.blade.container.impl;
 
 import lombok.Getter;
-import me.vaperion.blade.annotation.Flag;
 import me.vaperion.blade.command.BladeCommand;
-import me.vaperion.blade.command.BladeParameter;
+import me.vaperion.blade.command.impl.BukkitUsageMessage;
 import me.vaperion.blade.container.CommandContainer;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.context.BladeContext;
@@ -11,7 +10,6 @@ import me.vaperion.blade.context.impl.BukkitSender;
 import me.vaperion.blade.exception.BladeExitMessage;
 import me.vaperion.blade.exception.BladeUsageMessage;
 import me.vaperion.blade.service.BladeCommandService;
-import me.vaperion.blade.utils.MessageBuilder;
 import me.vaperion.blade.utils.Tuple;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -31,11 +29,26 @@ import java.util.stream.Collectors;
 @Getter
 public class BukkitCommandContainer extends Command implements CommandContainer {
 
-    private static final Field COMMAND_MAP, KNOWN_COMMANDS;
     public static final ContainerCreator<BukkitCommandContainer> CREATOR = BukkitCommandContainer::new;
+    private static final Field COMMAND_MAP, KNOWN_COMMANDS;
+    private static final String UNKNOWN_COMMAND_MESSAGE;
 
     static {
-        Field mapField = null, commandsField = null;
+        Class<?> spigotConfigClass = null;
+        Field mapField = null, commandsField = null, unknownCommandField = null;
+        String unknownCommandMessage = ChatColor.WHITE + "Unknown command. Type \"/help\" for help.";
+
+        try {
+            spigotConfigClass = Class.forName("org.spigotmc.SpigotConfig");
+
+            unknownCommandField = spigotConfigClass.getDeclaredField("unknownCommandMessage");
+            unknownCommandField.setAccessible(true);
+
+            unknownCommandMessage = ChatColor.WHITE + (String) unknownCommandField.get(null);
+        } catch (Exception ex) {
+            System.err.println("Failed to grab unknown command message from SpigotConfig.");
+            ex.printStackTrace();
+        }
 
         try {
             mapField = SimplePluginManager.class.getDeclaredField("commandMap");
@@ -55,6 +68,7 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
 
         COMMAND_MAP = mapField;
         KNOWN_COMMANDS = commandsField;
+        UNKNOWN_COMMAND_MESSAGE = unknownCommandMessage;
     }
 
     private final BladeCommandService commandService;
@@ -114,66 +128,9 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
         }
     }
 
-    private void sendUsageMessage(@NotNull CommandSender sender, @NotNull String alias, @Nullable BladeCommand command) {
+    private void sendUsageMessage(@NotNull BladeContext context, @Nullable BladeCommand command) {
         if (command == null) return;
-        boolean hasDesc = command.getDescription() != null && !command.getDescription().trim().isEmpty();
-
-        MessageBuilder builder = new MessageBuilder(ChatColor.RED + "Usage: /").append(ChatColor.RED + alias);
-        if (hasDesc) builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription()));
-
-        Optional.of(command.getFlagParameters())
-              .ifPresent(flagParameters -> {
-                  if (!flagParameters.isEmpty()) {
-                      builder.append(" ").append(ChatColor.RED + "(").reset();
-                      if (hasDesc)
-                          builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
-
-                      int i = 0;
-                      for (BladeParameter.FlagParameter flagParameter : flagParameters) {
-                          builder.append(i++ == 0 ? "" : (ChatColor.GRAY + " | ")).reset();
-                          if (hasDesc)
-                              builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
-
-                          Flag flag = flagParameter.getFlag();
-
-                          builder.append(ChatColor.AQUA + "-" + flag.value());
-                          if (!flagParameter.isBooleanFlag())
-                              builder.append(ChatColor.AQUA + " <" + flagParameter.getName() + ">");
-                          if (!flag.description().trim().isEmpty())
-                              builder.hover(Collections.singletonList(ChatColor.YELLOW + flag.description().trim()));
-                      }
-
-                      builder.append(ChatColor.RED + ")").reset();
-                      if (hasDesc)
-                          builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
-                  }
-              });
-
-        Optional.of(command.getCommandParameters())
-              .ifPresent(commandParameters -> {
-                  if (!commandParameters.isEmpty()) {
-                      builder.append(" ");
-                      if (hasDesc)
-                          builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
-
-                      int i = 0;
-                      for (BladeParameter.CommandParameter commandParameter : commandParameters) {
-                          builder.append(i++ == 0 ? "" : " ");
-
-                          builder.append(ChatColor.RED + (commandParameter.isOptional() ? "(" : "<"));
-                          builder.append(ChatColor.RED + commandParameter.getName());
-                          builder.append(ChatColor.RED + (commandParameter.isOptional() ? ")" : ">"));
-                      }
-                  }
-              });
-
-        if (command.getExtraUsageData() != null && !command.getExtraUsageData().trim().isEmpty()) {
-            builder.append(" ");
-            builder.append(ChatColor.RED + command.getExtraUsageData());
-            if (hasDesc) builder.hover(Collections.singletonList(ChatColor.GRAY + command.getDescription().trim()));
-        }
-
-        builder.sendTo(sender);
+        command.getUsageMessage().ensureGetOrLoad(() -> new BukkitUsageMessage(command)).sendTo(context);
     }
 
     private boolean hasPermission(@NotNull CommandSender sender, String[] args) throws BladeExitMessage {
@@ -188,7 +145,7 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
 
         return new Tuple<>(
               commandService.getPermissionTester().testPermission(context, command),
-              command.getPermissionMessage());
+              command.isHidden() ? UNKNOWN_COMMAND_MESSAGE : command.getPermissionMessage());
     }
 
     private String[] joinAliasToArgs(String alias, String[] args) {
@@ -209,11 +166,10 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
         BladeCommand command = null;
         String resolvedAlias = alias;
 
+        String[] joined = joinAliasToArgs(alias, args);
+        BladeContext context = new BladeContext(commandService, new BukkitSender(sender), alias, args);
+
         try {
-            String[] joined = joinAliasToArgs(alias, args);
-
-            BladeContext context = new BladeContext(commandService, new BukkitSender(sender), alias, args);
-
             Tuple<BladeCommand, String> resolved = resolveCommand(joined);
             if (resolved == null) {
                 List<BladeCommand> availableCommands = commandService.getAllBladeCommands()
@@ -254,13 +210,13 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
                     finalCommand.getMethod().setAccessible(true);
                     finalCommand.getMethod().invoke(finalCommand.getInstance(), parsed.toArray(new Object[0]));
                 } catch (BladeUsageMessage ex) {
-                    sendUsageMessage(sender, finalResolvedAlias, finalCommand);
+                    sendUsageMessage(context, finalCommand);
                 } catch (BladeExitMessage ex) {
                     sender.sendMessage(ChatColor.RED + ex.getMessage());
                 } catch (InvocationTargetException ex) {
                     if (ex.getTargetException() != null) {
                         if (ex.getTargetException() instanceof BladeUsageMessage) {
-                            sendUsageMessage(sender, finalResolvedAlias, finalCommand);
+                            sendUsageMessage(context, finalCommand);
                             return;
                         } else if (ex.getTargetException() instanceof BladeExitMessage) {
                             sender.sendMessage(ChatColor.RED + ex.getTargetException().getMessage());
@@ -296,7 +252,7 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
 
             return true;
         } catch (BladeUsageMessage ex) {
-            sendUsageMessage(sender, resolvedAlias, command);
+            sendUsageMessage(context, command);
         } catch (BladeExitMessage ex) {
             sender.sendMessage(ChatColor.RED + ex.getMessage());
         } catch (Throwable t) {

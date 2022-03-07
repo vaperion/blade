@@ -106,6 +106,7 @@ public class BladeCommandCompleter {
         if (currentWordIndex == 0) return;
 
         for (BladeCommand bladeCommand : commandsWithBase) {
+            if (bladeCommand.isHidden()) continue;
             if (!permissionFunction.apply(bladeCommand)) continue;
 
             for (String alias : bladeCommand.getAliases()) {
