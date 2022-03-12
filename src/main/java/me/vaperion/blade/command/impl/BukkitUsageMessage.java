@@ -8,20 +8,22 @@ import me.vaperion.blade.command.UsageMessage;
 import me.vaperion.blade.context.BladeContext;
 import me.vaperion.blade.utils.MessageBuilder;
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
 public class BukkitUsageMessage implements UsageMessage {
 
-    private final MessageBuilder messageBuilder;
+    private final BaseComponent[] components;
 
     public BukkitUsageMessage(BladeCommand command) {
-        this.messageBuilder = new MessageBuilder("Usage: /").color(ChatColor.RED)
+        MessageBuilder messageBuilder = new MessageBuilder("Usage: /").color(ChatColor.RED)
               .hoverWithColor(ChatColor.GRAY, command.getDescription())
               .append(command.getUsageAlias().isEmpty() ? command.getAliases()[0] : command.getUsageAlias());
 
         if (!command.getCustomUsage().isEmpty()) {
-            this.messageBuilder.append(" ").append(command.getCustomUsage());
+            messageBuilder.append(" ").append(command.getCustomUsage());
+            this.components = messageBuilder.build();
             return;
         }
 
@@ -31,43 +33,45 @@ public class BukkitUsageMessage implements UsageMessage {
             Flag flag = flagParameter.getFlag();
 
             if (first) {
-                this.messageBuilder.append(" (").reset().color(ChatColor.RED).hoverWithColor(ChatColor.GRAY, command.getDescription());
+                messageBuilder.append(" (").reset().color(ChatColor.RED).hoverWithColor(ChatColor.GRAY, command.getDescription());
                 first = false;
             } else {
-                this.messageBuilder.append(" | ").reset().color(ChatColor.RED).hoverWithColor(ChatColor.GRAY, command.getDescription());
+                messageBuilder.append(" | ").reset().color(ChatColor.RED).hoverWithColor(ChatColor.GRAY, command.getDescription());
             }
 
-            this.messageBuilder
+            messageBuilder
                   .append("-" + flag.value() + (flagParameter.isBooleanFlag() ? "" : " <" + flagParameter.getName() + ">"))
                   .color(ChatColor.AQUA)
                   .hoverWithColor(ChatColor.GRAY, flag.description());
         }
-        if (!first) this.messageBuilder.append(")").reset().color(ChatColor.RED).hoverWithColor(ChatColor.GRAY, command.getDescription());
+        if (!first) messageBuilder.append(")").reset().color(ChatColor.RED).hoverWithColor(ChatColor.GRAY, command.getDescription());
 
         // Add real parameters
         for (CommandParameter commandParameter : command.getCommandParameters()) {
-            this.messageBuilder.append(" ");
+            messageBuilder.append(" ");
 
-            this.messageBuilder.append(commandParameter.isOptional() ? "(" : "<");
-            this.messageBuilder.append(commandParameter.getName());
-            if (commandParameter.isCombined()) this.messageBuilder.append("...");
-            this.messageBuilder.append(commandParameter.isOptional() ? ")" : ">");
+            messageBuilder.append(commandParameter.isOptional() ? "(" : "<");
+            messageBuilder.append(commandParameter.getName());
+            if (commandParameter.isCombined()) messageBuilder.append("...");
+            messageBuilder.append(commandParameter.isOptional() ? ")" : ">");
         }
 
         // Add extra usage
         if (!command.getExtraUsageData().isEmpty()) {
-            this.messageBuilder.append(" ").append(command.getExtraUsageData().trim());
+            messageBuilder.append(" ").append(command.getExtraUsageData().trim());
         }
+
+        this.components = messageBuilder.build();
     }
 
     @Override
     public void sendTo(@NotNull BladeContext context) {
-        messageBuilder.sendTo((CommandSender) context.sender().getBackingSender());
+        MessageBuilder.send((CommandSender) context.sender().getBackingSender(), components);
     }
 
     @NotNull
     @Override
     public String toString() {
-        return messageBuilder.toStringFormat();
+        return MessageBuilder.toStringFormat(components);
     }
 }

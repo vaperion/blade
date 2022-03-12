@@ -24,6 +24,15 @@ public class MessageBuilder {
         return strBuilder.toString();
     }
 
+    public static void send(CommandSender sender, BaseComponent[] components) {
+        if (sender instanceof Player) {
+            ((Player) sender).spigot().sendMessage(components);
+            return;
+        }
+
+        sender.sendMessage(toStringFormat(components));
+    }
+
     private final ComponentBuilder builder;
 
     public MessageBuilder(String mainText) {
@@ -83,21 +92,10 @@ public class MessageBuilder {
     }
 
     public String toStringFormat() {
-        StringBuilder strBuilder = new StringBuilder();
-
-        for (BaseComponent component : builder.create()) {
-            strBuilder.append(component.toLegacyText());
-        }
-
-        return strBuilder.toString();
+        return toStringFormat(build());
     }
 
     public void sendTo(CommandSender sender) {
-        if (sender instanceof Player) {
-            ((Player) sender).spigot().sendMessage(build());
-            return;
-        }
-
-        sender.sendMessage(toStringFormat());
+        send(sender, build());
     }
 }
