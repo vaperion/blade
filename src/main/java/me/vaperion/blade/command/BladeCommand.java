@@ -61,6 +61,8 @@ public class BladeCommand {
         this.senderType = this.senderParameter ? method.getParameterTypes()[0] : null;
 
         if (method != null) {
+            method.setAccessible(true);
+
             int i = 0;
             for (Parameter parameter : method.getParameters()) {
                 if (i == 0 && senderParameter) {

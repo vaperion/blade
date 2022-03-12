@@ -8,10 +8,12 @@ import me.vaperion.blade.argument.BladeProvider;
 import me.vaperion.blade.bindings.Binding;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.help.HelpGenerator;
+import me.vaperion.blade.help.impl.BukkitHelpGenerator;
 import me.vaperion.blade.permissions.PermissionPredicate;
 import me.vaperion.blade.service.BladeCommandRegistrar;
 import me.vaperion.blade.service.BladeCommandService;
 import me.vaperion.blade.tabcompleter.TabCompleter;
+import me.vaperion.blade.utils.ClassUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
@@ -103,6 +105,8 @@ public class Blade implements BladeCommandRegistrar.Registrar {
 
                 if (blade.helpGenerator != null)
                     blade.commandService.setHelpGenerator(blade.helpGenerator);
+                else if (ClassUtil.classExists("org.bukkit.Bukkit"))
+                    blade.commandService.setHelpGenerator(new BukkitHelpGenerator());
 
                 if (blade.asyncExecutor != null) {
                     blade.commandService.setAsyncExecutor(blade.asyncExecutor);

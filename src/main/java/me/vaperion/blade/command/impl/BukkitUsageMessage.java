@@ -64,4 +64,10 @@ public class BukkitUsageMessage implements UsageMessage {
     public void sendTo(@NotNull BladeContext context) {
         messageBuilder.sendTo((CommandSender) context.sender().getBackingSender());
     }
+
+    @NotNull
+    @Override
+    public String toString() {
+        return messageBuilder.toStringFormat();
+    }
 }

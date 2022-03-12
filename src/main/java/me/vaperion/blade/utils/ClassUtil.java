@@ -14,6 +14,15 @@ import java.util.jar.JarFile;
 @UtilityClass
 public class ClassUtil {
 
+    public boolean classExists(@NotNull String className) {
+        try {
+            Class.forName(className);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
     @NotNull
     public List<Class<?>> getClassesInPackage(@NotNull Class<?> clazz, @NotNull String packageName) {
         List<Class<?>> classes = new ArrayList<>();

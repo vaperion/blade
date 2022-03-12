@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,16 +33,14 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
     private static final String UNKNOWN_COMMAND_MESSAGE;
 
     static {
-        Class<?> spigotConfigClass = null;
-        Field mapField = null, commandsField = null, unknownCommandField = null;
+        Field mapField = null, commandsField = null;
         String unknownCommandMessage = ChatColor.WHITE + "Unknown command. Type \"/help\" for help.";
 
         try {
-            spigotConfigClass = Class.forName("org.spigotmc.SpigotConfig");
+            Class<?> spigotConfigClass = Class.forName("org.spigotmc.SpigotConfig");
+            Field unknownCommandField = spigotConfigClass.getDeclaredField("unknownCommandMessage");
 
-            unknownCommandField = spigotConfigClass.getDeclaredField("unknownCommandMessage");
             unknownCommandField.setAccessible(true);
-
             unknownCommandMessage = ChatColor.WHITE + (String) unknownCommandField.get(null);
         } catch (Exception ex) {
             System.err.println("Failed to grab unknown command message from SpigotConfig.");
@@ -52,15 +49,10 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
 
         try {
             mapField = SimplePluginManager.class.getDeclaredField("commandMap");
-            mapField.setAccessible(true);
             commandsField = SimpleCommandMap.class.getDeclaredField("knownCommands");
+
+            mapField.setAccessible(true);
             commandsField.setAccessible(true);
-
-            Field modifiers = Field.class.getDeclaredField("modifiers");
-            modifiers.setAccessible(true);
-
-            modifiers.setInt(mapField, modifiers.getInt(mapField) & ~Modifier.FINAL);
-            modifiers.setInt(commandsField, modifiers.getInt(commandsField) & ~Modifier.FINAL);
         } catch (Exception ex) {
             System.err.println("Failed to grab commandMap from the plugin manager.");
             ex.printStackTrace();
@@ -86,13 +78,17 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
 
         if (service.isOverrideCommands()) {
             Map<String, Command> knownCommands = (Map<String, Command>) KNOWN_COMMANDS.get(simpleCommandMap);
-            for (Command registeredCommand : new ArrayList<>(knownCommands.values())) {
+            Iterator<Map.Entry<String, Command>> iterator = knownCommands.entrySet().iterator();
+
+            while (iterator.hasNext()) {
+                Map.Entry<String, Command> entry = iterator.next();
+                Command registeredCommand = entry.getValue();
+
                 if (doesBukkitCommandConflict(registeredCommand, alias, command)) {
                     registeredCommand.unregister(simpleCommandMap);
-                    knownCommands.remove(registeredCommand.getName().toLowerCase(Locale.ENGLISH));
+                    iterator.remove();
                 }
             }
-            KNOWN_COMMANDS.set(simpleCommandMap, knownCommands);
         }
 
         simpleCommandMap.register(fallbackPrefix, this);
@@ -197,6 +193,10 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
             final BladeCommand finalCommand = command;
             final String finalResolvedAlias = resolvedAlias;
 
+            if (finalCommand.getMethod() == null) {
+                throw new BladeExitMessage("The command " + finalResolvedAlias + " is a root command and cannot be executed.");
+            }
+
             Runnable runnable = () -> {
                 try {
                     List<Object> parsed;
@@ -207,7 +207,6 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
                         if (finalCommand.isSenderParameter()) parsed.add(0, sender);
                     }
 
-                    finalCommand.getMethod().setAccessible(true);
                     finalCommand.getMethod().invoke(finalCommand.getInstance(), parsed.toArray(new Object[0]));
                 } catch (BladeUsageMessage ex) {
                     sendUsageMessage(context, finalCommand);

@@ -9,7 +9,7 @@ import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.CommandContainer;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.help.HelpGenerator;
-import me.vaperion.blade.help.impl.DefaultHelpGenerator;
+import me.vaperion.blade.help.impl.NoOpHelpGenerator;
 import me.vaperion.blade.permissions.PermissionPredicate;
 import me.vaperion.blade.tabcompleter.TabCompleter;
 import me.vaperion.blade.tabcompleter.impl.DefaultTabCompleter;
@@ -31,7 +31,7 @@ public class BladeCommandService {
     @Setter @Getter private boolean overrideCommands = false;
     @Setter @Getter private ContainerCreator<?> containerCreator = ContainerCreator.NONE;
     @Setter @Getter private TabCompleter tabCompleter = new DefaultTabCompleter();
-    @Setter @Getter private HelpGenerator helpGenerator = new DefaultHelpGenerator();
+    @Setter @Getter private HelpGenerator helpGenerator = new NoOpHelpGenerator();
     @Setter @Getter private Consumer<Runnable> asyncExecutor = Runnable::run;
     @Setter @Getter private long executionTimeWarningThreshold = 5;
     @Setter @Getter private String defaultPermissionMessage = "You don't have permission to perform this command.";

@@ -5,4 +5,5 @@ import org.jetbrains.annotations.NotNull;
 
 public interface UsageMessage {
     void sendTo(@NotNull BladeContext context);
+    @NotNull String toString();
 }
