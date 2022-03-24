@@ -9,6 +9,7 @@ import me.vaperion.blade.bindings.Binding;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.help.HelpGenerator;
 import me.vaperion.blade.help.impl.BukkitHelpGenerator;
+import me.vaperion.blade.help.impl.VelocityHelpGenerator;
 import me.vaperion.blade.permissions.PermissionPredicate;
 import me.vaperion.blade.service.BladeCommandRegistrar;
 import me.vaperion.blade.service.BladeCommandService;
@@ -37,6 +38,8 @@ public class Blade implements BladeCommandRegistrar.Registrar {
     private final TabCompleter tabCompleter;
     private final HelpGenerator helpGenerator;
     private final Consumer<Runnable> asyncExecutor;
+
+    private final Object bukkitPlugin, velocityServer;
 
     @Builder.Default
     private final long executionTimeWarningThreshold = 5;
@@ -92,6 +95,9 @@ public class Blade implements BladeCommandRegistrar.Registrar {
 
                 blade.commandService.setOverrideCommands(blade.overrideCommands);
 
+                blade.commandService.setBukkitPlugin(blade.bukkitPlugin);
+                blade.commandService.setVelocityProxyServer(blade.velocityServer);
+
                 if (blade.defaultPermissionMessage != null && !"".equals(blade.defaultPermissionMessage))
                     blade.commandService.setDefaultPermissionMessage(blade.defaultPermissionMessage);
 
@@ -107,6 +113,8 @@ public class Blade implements BladeCommandRegistrar.Registrar {
                     blade.commandService.setHelpGenerator(blade.helpGenerator);
                 else if (ClassUtil.classExists("org.bukkit.Bukkit"))
                     blade.commandService.setHelpGenerator(new BukkitHelpGenerator());
+                else if (ClassUtil.classExists("com.velocitypowered.api.proxy.ProxyServer"))
+                    blade.commandService.setHelpGenerator(new VelocityHelpGenerator());
 
                 if (blade.asyncExecutor != null) {
                     blade.commandService.setAsyncExecutor(blade.asyncExecutor);

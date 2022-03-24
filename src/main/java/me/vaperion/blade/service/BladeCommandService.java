@@ -36,6 +36,9 @@ public class BladeCommandService {
     @Setter @Getter private long executionTimeWarningThreshold = 5;
     @Setter @Getter private String defaultPermissionMessage = "You don't have permission to perform this command.";
 
+    @Getter @Setter private Object bukkitPlugin;
+    @Getter @Setter private Object velocityProxyServer;
+
     @Getter private final BladeCommandRegistrar commandRegistrar = new BladeCommandRegistrar(this);
     @Getter private final BladeCommandResolver commandResolver = new BladeCommandResolver(this);
     @Getter private final BladeCommandParser commandParser = new BladeCommandParser(this);

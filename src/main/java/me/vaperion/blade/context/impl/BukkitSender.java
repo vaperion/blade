@@ -1,5 +1,6 @@
 package me.vaperion.blade.context.impl;
 
+import com.velocitypowered.api.proxy.ConsoleCommandSource;
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.context.WrappedSender;
 import org.bukkit.command.CommandSender;
@@ -47,7 +48,9 @@ public class BukkitSender implements WrappedSender<CommandSender> {
     @Nullable
     @Override
     public <T> T parseAs(@NotNull Class<T> clazz) {
-        if (clazz.equals(Player.class) && (commandSender instanceof Player))
+        if (clazz.equals(Player.class) && commandSender instanceof Player)
+            return (T) commandSender;
+        else if (clazz.equals(ConsoleCommandSource.class) && commandSender instanceof ConsoleCommandSender)
             return (T) commandSender;
         else if (clazz.equals(CommandSender.class))
             return (T) commandSender;

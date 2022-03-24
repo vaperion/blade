@@ -1,108 +1,54 @@
 package me.vaperion.blade.container.impl;
 
+import com.velocitypowered.api.command.CommandManager;
+import com.velocitypowered.api.command.CommandMeta;
+import com.velocitypowered.api.command.CommandSource;
+import com.velocitypowered.api.command.RawCommand;
+import com.velocitypowered.api.proxy.ProxyServer;
 import lombok.Getter;
 import me.vaperion.blade.command.BladeCommand;
-import me.vaperion.blade.command.impl.BukkitUsageMessage;
+import me.vaperion.blade.command.impl.VelocityUsageMessage;
 import me.vaperion.blade.container.CommandContainer;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.context.BladeContext;
-import me.vaperion.blade.context.impl.BukkitSender;
+import me.vaperion.blade.context.impl.VelocitySender;
 import me.vaperion.blade.exception.BladeExitMessage;
 import me.vaperion.blade.exception.BladeUsageMessage;
 import me.vaperion.blade.service.BladeCommandService;
 import me.vaperion.blade.utils.Tuple;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.SimpleCommandMap;
-import org.bukkit.plugin.SimplePluginManager;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Getter
-public class BukkitCommandContainer extends Command implements CommandContainer {
+public class VelocityCommandContainer implements RawCommand, CommandContainer {
 
-    public static final ContainerCreator<BukkitCommandContainer> CREATOR = BukkitCommandContainer::new;
-    private static final Field COMMAND_MAP, KNOWN_COMMANDS;
-    private static final String UNKNOWN_COMMAND_MESSAGE;
-
-    static {
-        Field mapField = null, commandsField = null;
-        String unknownCommandMessage = ChatColor.WHITE + "Unknown command. Type \"/help\" for help.";
-
-        try {
-            Class<?> spigotConfigClass = Class.forName("org.spigotmc.SpigotConfig");
-            Field unknownCommandField = spigotConfigClass.getDeclaredField("unknownCommandMessage");
-
-            unknownCommandField.setAccessible(true);
-            unknownCommandMessage = ChatColor.WHITE + (String) unknownCommandField.get(null);
-        } catch (Exception ex) {
-            System.err.println("Failed to grab unknown command message from SpigotConfig.");
-            ex.printStackTrace();
-        }
-
-        try {
-            mapField = SimplePluginManager.class.getDeclaredField("commandMap");
-            commandsField = SimpleCommandMap.class.getDeclaredField("knownCommands");
-
-            mapField.setAccessible(true);
-            commandsField.setAccessible(true);
-        } catch (Exception ex) {
-            System.err.println("Failed to grab commandMap from the plugin manager.");
-            ex.printStackTrace();
-        }
-
-        COMMAND_MAP = mapField;
-        KNOWN_COMMANDS = commandsField;
-        UNKNOWN_COMMAND_MESSAGE = unknownCommandMessage;
-    }
+    public static final ContainerCreator<VelocityCommandContainer> CREATOR = VelocityCommandContainer::new;
 
     private final BladeCommandService commandService;
     private final BladeCommand parentCommand;
 
-    @SuppressWarnings("unchecked")
-    private BukkitCommandContainer(@NotNull BladeCommandService service, @NotNull BladeCommand command, @NotNull String alias, @NotNull String fallbackPrefix) throws Exception {
-        super(alias, command.getDescription(), "/" + alias, new ArrayList<>());
-
+    private VelocityCommandContainer(@NotNull BladeCommandService service, @NotNull BladeCommand command, @NotNull String alias, @NotNull String fallbackPrefix) throws Exception {
         this.commandService = service;
         this.parentCommand = command;
 
-        SimplePluginManager simplePluginManager = (SimplePluginManager) Bukkit.getServer().getPluginManager();
-        SimpleCommandMap simpleCommandMap = (SimpleCommandMap) COMMAND_MAP.get(simplePluginManager);
-
-        if (service.isOverrideCommands()) {
-            Map<String, Command> knownCommands = (Map<String, Command>) KNOWN_COMMANDS.get(simpleCommandMap);
-            Iterator<Map.Entry<String, Command>> iterator = knownCommands.entrySet().iterator();
-
-            while (iterator.hasNext()) {
-                Map.Entry<String, Command> entry = iterator.next();
-                Command registeredCommand = entry.getValue();
-
-                if (doesBukkitCommandConflict(registeredCommand, alias, command)) {
-                    registeredCommand.unregister(simpleCommandMap);
-                    iterator.remove();
-                }
-            }
+        if (service.getVelocityProxyServer() == null) {
+            throw new IllegalStateException("You must specify the proxy server in the Blade builder");
         }
 
-        simpleCommandMap.register(fallbackPrefix, this);
-    }
+        ProxyServer proxyServer = (ProxyServer) service.getVelocityProxyServer();
+        CommandManager commandManager = proxyServer.getCommandManager();
 
-    private boolean doesBukkitCommandConflict(@NotNull Command bukkitCommand, @NotNull String alias, @NotNull BladeCommand bladeCommand) {
-        if (bukkitCommand instanceof BukkitCommandContainer) return false; // don't override our own commands
-        if (bukkitCommand.getName().equalsIgnoreCase(alias) || bukkitCommand.getAliases().stream().anyMatch(a -> a.equalsIgnoreCase(alias)))
-            return true;
-        for (String realAlias : bladeCommand.getRealAliases()) {
-            if (bukkitCommand.getName().equalsIgnoreCase(realAlias) || bukkitCommand.getAliases().stream().anyMatch(a -> a.equalsIgnoreCase(realAlias)))
-                return true;
-        }
-        return false;
+        CommandMeta meta = commandManager.metaBuilder(alias)
+              .aliases(command.getRealAliases())
+              .build();
+        commandManager.register(meta, this);
     }
 
     @Nullable
@@ -116,7 +62,7 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
             case "Player":
                 return "players";
 
-            case "ConsoleCommandSender":
+            case "ConsoleCommandSource":
                 return "the console";
 
             default:
@@ -126,12 +72,12 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
 
     private void sendUsageMessage(@NotNull BladeContext context, @Nullable BladeCommand command) {
         if (command == null) return;
-        command.getUsageMessage().ensureGetOrLoad(() -> new BukkitUsageMessage(command)).sendTo(context);
+        command.getUsageMessage().ensureGetOrLoad(() -> new VelocityUsageMessage(command)).sendTo(context);
     }
 
-    private boolean hasPermission(@NotNull CommandSender sender, String[] args) throws BladeExitMessage {
+    private boolean hasPermission(@NotNull CommandSource sender, String[] args) throws BladeExitMessage {
         Tuple<BladeCommand, String> command = resolveCommand(joinAliasToArgs(this.parentCommand.getAliases()[0], args));
-        BladeContext context = new BladeContext(commandService, new BukkitSender(sender), command == null ? "" : command.getRight(), args);
+        BladeContext context = new BladeContext(commandService, new VelocitySender(sender), command == null ? "" : command.getRight(), args);
         return checkPermission(context, command == null ? null : command.getLeft()).getLeft();
     }
 
@@ -141,7 +87,7 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
 
         return new Tuple<>(
               commandService.getPermissionTester().testPermission(context, command),
-              command.isHidden() ? UNKNOWN_COMMAND_MESSAGE : command.getPermissionMessage());
+              command.isHidden() ? "" : command.getPermissionMessage());
     }
 
     private String[] joinAliasToArgs(String alias, String[] args) {
@@ -153,17 +99,21 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
     }
 
     @Override
-    public boolean testPermissionSilent(@NotNull CommandSender sender) {
-        return hasPermission(sender, new String[0]);
+    public boolean hasPermission(Invocation invocation) {
+        return hasPermission(invocation.source(), new String[0]);
     }
 
     @Override
-    public boolean execute(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
+    public void execute(Invocation invocation) {
+        CommandSource sender = invocation.source();
+        String[] args = invocation.arguments().split(" ");
+        String alias = invocation.alias();
+
         BladeCommand command = null;
         String resolvedAlias;
 
         String[] joined = joinAliasToArgs(alias, args);
-        BladeContext context = new BladeContext(commandService, new BukkitSender(sender), alias, args);
+        BladeContext context = new BladeContext(commandService, new VelocitySender(sender), alias, args);
 
         try {
             Tuple<BladeCommand, String> resolved = resolveCommand(joined);
@@ -174,10 +124,10 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
                       .collect(Collectors.toList());
 
                 for (String line : commandService.getHelpGenerator().generate(context, availableCommands)) {
-                    sender.sendMessage(line);
+                    sender.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(line));
                 }
 
-                return true;
+                return;
             }
 
             Tuple<Boolean, String> permissionResult = checkPermission(context, resolved.getLeft());
@@ -211,23 +161,23 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
                 } catch (BladeUsageMessage ex) {
                     sendUsageMessage(context, finalCommand);
                 } catch (BladeExitMessage ex) {
-                    sender.sendMessage(ChatColor.RED + ex.getMessage());
+                    sender.sendMessage(Component.text(ex.getMessage()).color(NamedTextColor.RED));
                 } catch (InvocationTargetException ex) {
                     if (ex.getTargetException() != null) {
                         if (ex.getTargetException() instanceof BladeUsageMessage) {
                             sendUsageMessage(context, finalCommand);
                             return;
                         } else if (ex.getTargetException() instanceof BladeExitMessage) {
-                            sender.sendMessage(ChatColor.RED + ex.getTargetException().getMessage());
+                            sender.sendMessage(Component.text(ex.getTargetException().getMessage()).color(NamedTextColor.RED));
                             return;
                         }
                     }
 
                     ex.printStackTrace();
-                    sender.sendMessage(ChatColor.RED + "An exception was thrown while executing this command.");
+                    sender.sendMessage(Component.text("An exception was thrown while executing this command.").color(NamedTextColor.RED));
                 } catch (Throwable t) {
                     t.printStackTrace();
-                    sender.sendMessage(ChatColor.RED + "An exception was thrown while executing this command.");
+                    sender.sendMessage(Component.text("An exception was thrown while executing this command.").color(NamedTextColor.RED));
                 }
             };
 
@@ -239,32 +189,31 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
                 long elapsed = (System.nanoTime() - time) / 1000000;
 
                 if (elapsed >= commandService.getExecutionTimeWarningThreshold()) {
-                    Bukkit.getLogger().warning(String.format(
-                          "[Blade] Command '%s' (%s#%s) took %d milliseconds to execute!",
+                    System.out.printf(
+                          "[Blade] Command '%s' (%s#%s) took %d milliseconds to execute!%n",
                           finalResolvedAlias,
                           finalCommand.getMethod().getDeclaringClass().getName(),
                           finalCommand.getMethod().getName(),
                           elapsed
-                    ));
+                    );
                 }
             }
-
-            return true;
         } catch (BladeUsageMessage ex) {
             sendUsageMessage(context, command);
         } catch (BladeExitMessage ex) {
-            sender.sendMessage(ChatColor.RED + ex.getMessage());
+            sender.sendMessage(Component.text(ex.getMessage()).color(NamedTextColor.RED));
         } catch (Throwable t) {
             t.printStackTrace();
-            sender.sendMessage(ChatColor.RED + "An exception was thrown while executing this command.");
+            sender.sendMessage(Component.text("An exception was thrown while executing this command.").color(NamedTextColor.RED));
         }
-
-        return false;
     }
 
-    @NotNull
     @Override
-    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
+    public List<String> suggest(Invocation invocation) {
+        CommandSource sender = invocation.source();
+        String[] args = invocation.arguments().split(" ");
+        String alias = invocation.alias();
+
         if (!commandService.getTabCompleter().isDefault()) return Collections.emptyList();
         if (!hasPermission(sender, args)) return Collections.emptyList();
 
@@ -284,16 +233,16 @@ public class BukkitCommandContainer extends Command implements CommandContainer 
             if (argList.isEmpty()) argList.add("");
             String[] actualArguments = argList.toArray(new String[0]);
 
-            BladeContext context = new BladeContext(commandService, new BukkitSender(sender), foundAlias, actualArguments);
+            BladeContext context = new BladeContext(commandService, new VelocitySender(sender), foundAlias, actualArguments);
 
             List<String> suggestions = new ArrayList<>();
             commandService.getCommandCompleter().suggest(suggestions, context, command, actualArguments);
             return suggestions;
         } catch (BladeExitMessage ex) {
-            sender.sendMessage(ChatColor.RED + ex.getMessage());
+            sender.sendMessage(Component.text(ex.getMessage()).color(NamedTextColor.RED));
         } catch (Exception ex) {
             ex.printStackTrace();
-            sender.sendMessage(ChatColor.RED + "An exception was thrown while completing this command.");
+            sender.sendMessage(Component.text("An exception was thrown while completing this command.").color(NamedTextColor.RED));
         }
 
         return Collections.emptyList();
