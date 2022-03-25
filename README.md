@@ -1,12 +1,10 @@
 # Blade
 
-:warning: Blade only supports Java 8-11 due to the use of reflection!
-
-Blade is an easy-to-use command framework based on annotations. It currently only supports Bukkit, but it can be easily extended to more platforms.
+Blade is an easy-to-use command framework based on annotations. It currently supports Bukkit and Velocity.
 To use Blade, you simply have to include it as a dependency and shade it into your final jar.
 
 If you make any changes or improvements to the project, please consider making a pull request to merge your changes back into the upstream project.
-This project is in its early stages, if you find any issues please open an issue.
+If you find any issues please open an issue.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
@@ -18,7 +16,8 @@ YourKit supports open source projects with innovative and intelligent tools for 
 
 ## Using Blade
 
-Maven
+Include the jitpack repository using the package manager of your choice:
+
 ```xml
 <repositories>
     <repository>
@@ -26,118 +25,163 @@ Maven
         <url>https://jitpack.io</url>
     </repository>
 </repositories>
+```
+```groovy
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+```
 
+And finally, include the dependency:
+
+[![Release](https://jitpack.io/v/vaperion/blade.svg)](https://jitpack.io/#vaperion/blade)
+
+```xml
 <dependencies>
     <dependency>
         <groupId>com.github.vaperion</groupId>
         <artifactId>blade</artifactId>
-        <version>2.1.8</version>
+        <version>VERSION</version>
         <scope>compile</scope>
     </dependency>
 </dependencies>
 ```
-
-Gradle
 ```groovy
-allprojects {
-    repositories {
-        maven { url 'https://jitpack.io' }
-    }
-}
-
 dependencies {
-    implementation 'com.github.vaperion:blade:2.1.8'
+    implementation 'com.github.vaperion:blade:VERSION'
 }
 ```
 
-### Example code
-
-Initializing Blade:
+### Creating your first bukkit command
 
 ```java
+package you.developer.exampleplugin;
+
 import me.vaperion.blade.Blade;
+import me.vaperion.blade.annotation.*;
+import me.vaperion.blade.argument.BladeProvider;
 import me.vaperion.blade.bindings.impl.BukkitBindings;
 import me.vaperion.blade.container.impl.BukkitCommandContainer;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class ExamplePlugin extends JavaPlugin {
+    @Override
+    public void onEnable() {
+        Blade.of() // Create a new Blade builder
+            .bukkitPlugin(this) // Pass your plugin instance to Blade (optional)
+            .fallbackPrefix("example") // Set the fallback prefix - shows up as `/example:ban`
+            .containerCreator(BukkitCommandContainer.CREATOR) // Set the container creator
+            .overrideCommands(true) // Should blade override already registered commands? (optional, defaults to false)
+            .defaultPermissionMessage("No permission.") // Set the default permission message (optional)
+            .binding(new BukkitBindings()) // Add the default bindings for Bukkit (Player, OfflinePlayer, etc.) (optional, you may call this multiple times)
+            .bind(Example.class, new BladeProvider<Example>() {...}) // Bind a provider for the Example type (optional, you may call this multiple times)
+            .executionTimeWarningThreshold(50) // Set the maximum time (in seconds) commands on the main thread can run for (optional, defaults to 5)
+            .tabCompleter(new ProtocolLibTabCompleter() [or] new TabCompleter() {...}) // Set a custom tab completer (optional, defaults to DefaultTabCompleter)
+            .helpGenerator(new NoOpHelpGenerator() [or] new HelpGenerator() {...}) // Set a custom help generator (optional, defaults to BukkitHelpGenerator)
+            .build() // Finish the builder
+            .register(ExampleCommand.class) // Register all static commands in the provided class
+            .register(new ExampleCommand()) // Register all the non-static commands in the provided object
+            .registerPackage(ExamplePlugin.class, "you.developer.exampleplugin.commands") // Register all commands in the provided package
+        ;
+    }
+    
+    @Command(
+        value = ["test", "testing"], // Command aliases
+        async = true, // Should the command be called asynchronously (optional, defaults to false)
+        quoted = true, // Should quotes in the arguments (' and ") be parsed? (optional, defaults to false)
+        hidden = true, // Should blade hide this command from the help message and tab completion? (optional, defaults to false)
+        description = "This is an example command.", // Command description that shows up when hovering over the usage and in the help message (optional)
+        usage = "", // Custom usage message that you want to show instead of the default generated one (optional)
+        usageAlias = "test", // The command alias that should be used in the usage message (optional, defaults to the first alias in `value`)
+        extraUsageData = "" // Custom data that shows up after the usage message (optional)
+    )
+    @Permission(
+        value = "example.command.test", // The permission
+        message = "" // The no permission message (optional, defaults to the one set in the Blade instance)
+    )
+    public static void testCommand(@Sender CommandSender sender,
+                                   @Flag(value = 'h', description = "Should we say hi?") boolean sayHi,
+                                   @Name("message") @Combined String message) {
+        sender.sendMessage("Your message is: " + message);
+        if (sayHi) sender.sendMessage("Hi!");
+    }
+}
+```
 
+A minimal example:
+```java
+package you.developer.exampleplugin;
+
+import me.vaperion.blade.Blade;
+import me.vaperion.blade.annotation.Command;
+import me.vaperion.blade.argument.BladeProvider;
+import me.vaperion.blade.bindings.impl.BukkitBindings;
+import me.vaperion.blade.container.impl.BukkitCommandContainer;
+import org.bukkit.plugin.java.JavaPlugin;
+
+public class ExamplePlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         Blade.of()
-                .fallbackPrefix("fallbackPrefix")
-                .containerCreator(BukkitCommandContainer.CREATOR)
-                .binding(new BukkitBindings())
-                .build()
-                .register(ExampleCommand.class);
+            .bukkitPlugin(this)
+            .fallbackPrefix("example")
+            .containerCreator(BukkitCommandContainer.CREATOR)
+            .binding(new BukkitBindings())
+            .build()
+            .register(ExamplePlugin.class)
+        ;
     }
-}
-```
-
-Overriding bukkit commands:
-```java
-Blade.of()
-        ...
-        .overrideCommands(true)
-        ...;
-```
-
-Setting a custom tab completer:
-```java
-Blade.of()
-        ...
-        .tabCompleter(new ProtocolLibTabCompleter(this))
-        ...;
-```
-
-Registering a type provider without Bindings:
-```java
-Blade.of()
-        ...
-        .bind(Example.class, new BladeProvider<Example>() {...})
-        ...;
-```
-
-Example commands:
-
-```java
-import me.vaperion.blade.annotation.*;
-import org.bukkit.entity.Player;
-
-public class ExampleCommand {
-
-    @Command(value = {"ban", "go away"}, async = true, quoted = false, description = "Ban a player")
-    @Permission(value = "blade.command.ban", message = "You are not allowed to execute this command.")
-    public static void ban(@Sender Player sender,
-                           @Flag(value = 's', description = "Silently ban the player") boolean silent,
-                           @Name("target") Player target,
-                           @Name("reason") @Combined String reason) {
-        sender.sendMessage("Silent: " + silent);
-        sender.sendMessage("Target: " + target.getName());
-        sender.sendMessage("Reason: " + reason);
-    }
-
+    
     @Command("test")
-    public static void test(@Sender Player sender,
-                            @Range(min = 18) int age,
-                            @Optional("100") @Range(max = 100000) double balance) {
-        sender.sendMessage("Age: " + age);
-        sender.sendMessage("Balance: " + balance);
-    }
-
-    @Command({"balance", "bal"})
-    public static void balance(@Sender Player sender,
-                               @Optional Player target) {
-        if (target == null) {
-            sender.sendMessage("Your balance is: $100");
-        } else {
-            sender.sendMessage(target.getName() + "'s balance is: $100");
-        }
+    public static void testCommand(@Sender CommandSender sender) {
+        sender.sendMessage("Hello, World!");
     }
 }
 ```
 
-Example custom tab completer with Netty:
+### Creating your first velocity command
+
+```java
+package you.developer.exampleplugin;
+
+import com.google.inject.Inject;
+import com.velocitypowered.api.plugin.Plugin;
+import com.velocitypowered.api.proxy.ProxyServer;
+import me.vaperion.blade.Blade;
+import me.vaperion.blade.annotation.Command;
+import me.vaperion.blade.argument.BladeProvider;
+import me.vaperion.blade.bindings.impl.VelocityBindings;
+import me.vaperion.blade.container.impl.VelocityCommandContainer;
+import net.kyori.adventure.text.Component;
+
+@Plugin(id = "exampleplugin", name = "Example Plugin", version = "0.1.0-SNAPSHOT")
+public class ExamplePlugin {
+
+    private final ProxyServer server;
+
+    @Inject
+    public ExamplePlugin(ProxyServer server) {
+        this.server = server;
+        this.logger = logger;
+
+        Blade.of()
+            .velocityServer(server)
+            .fallbackPrefix("example")
+            .containerCreator(VelocityCommandContainer.CREATOR)
+            .binding(new VelocityBindings())
+            .build()
+            .register(ExamplePlugin.class)
+        ;
+    }
+    
+    @Command("test")
+    public static void testCommand(@Sender CommandSource source) {
+        source.sendMessage(Component.text("Hello, World!"));
+    }
+}
+```
+
+### Netty tab completer for v1_7_R4 (1.7.10)
 
 ```java
 import me.vaperion.blade.service.BladeCommandService;
