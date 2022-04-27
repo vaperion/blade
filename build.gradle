@@ -32,8 +32,4 @@ subprojects {
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
     }
-	
-    shadowJar {
-        archiveFileName = 'blade-' + project.name + '.jar'
-    }
 }

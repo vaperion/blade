@@ -53,7 +53,7 @@ public final class Blade {
 
         permissionPredicates.putAll(builder.permissionPredicates);
 
-        Binder binder = new Binder(builder);
+        Binder binder = new Binder(builder, true);
         binder.bind(UUID.class, new UUIDArgument());
         binder.bind(String.class, new StringArgument());
         binder.bind(boolean.class, new BooleanArgument());
@@ -123,7 +123,7 @@ public final class Blade {
         @NotNull
         @Contract("_ -> this")
         public Builder bind(@NotNull Consumer<Binder> consumer) {
-            Binder binder = new Binder(this);
+            Binder binder = new Binder(this, false);
             consumer.accept(binder);
             return this;
         }
@@ -145,32 +145,48 @@ public final class Blade {
         @RequiredArgsConstructor
         public static final class Binder {
             private final Builder builder;
+            private final boolean insertToBeginning;
 
             @SafeVarargs
             public final <T> void bind(@NotNull Class<T> type, @NotNull ArgumentProvider<T> provider, @NotNull Class<? extends Annotation>... annotations) {
-                builder.bindings.add(new Binding<>(type, provider, Arrays.asList(annotations)));
+                bind(type, provider, Arrays.asList(annotations));
             }
 
             public <T> void bind(@NotNull Class<T> type, @NotNull ArgumentProvider<T> provider, @NotNull List<Class<? extends Annotation>> annotations) {
-                builder.bindings.add(new Binding<>(type, provider, annotations));
+                Binding<T> binding = new Binding<>(type, provider, annotations);
+                if (insertToBeginning) {
+                    builder.bindings.add(0, binding);
+                } else {
+                    builder.bindings.add(binding);
+                }
             }
 
             @SafeVarargs
             public final <T> void unsafeBind(@NotNull Class<T> type, @NotNull ArgumentProvider<?> provider, @NotNull Class<? extends Annotation>... annotations) {
-                builder.bindings.add(Binding.unsafe(type, provider, Arrays.asList(annotations)));
+                unsafeBind(type, provider, Arrays.asList(annotations));
             }
 
             public <T> void unsafeBind(@NotNull Class<T> type, @NotNull ArgumentProvider<?> provider, @NotNull List<Class<? extends Annotation>> annotations) {
-                builder.bindings.add(Binding.unsafe(type, provider, annotations));
+                Binding<?> binding = Binding.unsafe(type, provider, annotations);
+                if (insertToBeginning) {
+                    builder.bindings.add(0, binding);
+                } else {
+                    builder.bindings.add(binding);
+                }
             }
 
             @SafeVarargs
             public final <T> void release(@NotNull Class<T> type, @NotNull Class<? extends Annotation>... annotations) {
-                builder.bindings.add(Binding.release(type, Arrays.asList(annotations)));
+                release(type, Arrays.asList(annotations));
             }
 
             public <T> void release(@NotNull Class<T> type, @NotNull List<Class<? extends Annotation>> annotations) {
-                builder.bindings.add(Binding.release(type, annotations));
+                Binding<?> binding = Binding.release(type, annotations);
+                if (insertToBeginning) {
+                    builder.bindings.add(0, binding);
+                } else {
+                    builder.bindings.add(binding);
+                }
             }
         }
 

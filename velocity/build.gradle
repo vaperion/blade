@@ -8,4 +8,10 @@ repositories {
 
 dependencies {
     implementation project(":core")
+
+    compileOnly 'org.jetbrains:annotations:23.0.0'
+}
+
+shadowJar {
+    archiveFileName = project.name + '.jar'
 }
