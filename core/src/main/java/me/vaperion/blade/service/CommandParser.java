@@ -155,6 +155,10 @@ public class CommandParser {
             building.append(c);
         }
 
+        if (building.length() > 0) {
+            arguments.add(building.toString());
+        }
+
         return arguments;
     }
 
