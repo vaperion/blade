@@ -3,6 +3,7 @@ package me.vaperion.blade.util;
 import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -35,16 +36,16 @@ public abstract class PaginatedOutput<T> {
         List<String> lines = new ArrayList<>();
 
         String header = getHeader(page, totalPages);
-        if (header != null) lines.add(header);
+        if (header != null) lines.addAll(Arrays.asList(header.split("\n", -1)));
 
         for (T result : results.subList(startIndex, endIndex)) {
             String line = formatLine(result, startIndex + lines.size());
             if (line == null) continue;
-            lines.add(line);
+            lines.addAll(Arrays.asList(line.split("\n", -1)));
         }
 
         String footer = getFooter(page, totalPages);
-        if (footer != null) lines.add(footer);
+        if (footer != null) lines.addAll(Arrays.asList(footer.split("\n", -1)));
 
         return lines;
     }
