@@ -35,18 +35,18 @@ subprojects {
         options.encoding = 'UTF-8'
     }
 
-    publishing {
-        publications {
-            maven(MavenPublication) {
-                artifact shadowJar
-            }
-        }
-    }
-
     afterEvaluate {
         shadowJar {
             archiveClassifier.set('')
             archiveFileName = 'blade-' + project.name + ".jar"
+        }
+
+        publishing {
+            publications {
+                maven(MavenPublication) {
+                    artifact shadowJar
+                }
+            }
         }
 
         tasks.build.dependsOn(shadowJar)
