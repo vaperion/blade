@@ -169,7 +169,6 @@ public final class BukkitContainer extends Command implements Container {
             if (resolved == null) {
                 List<me.vaperion.blade.command.Command> availableCommands = blade.getCommands()
                       .stream().filter(c -> Arrays.stream(c.getAliases()).anyMatch(a -> a.toLowerCase().startsWith(alias.toLowerCase(Locale.ROOT) + " ") || a.equalsIgnoreCase(alias)))
-                      .filter(c -> this.checkPermission(context, c).getLeft())
                       .collect(Collectors.toList());
 
                 for (String line : blade.getConfiguration().getHelpGenerator().generate(context, availableCommands)) {

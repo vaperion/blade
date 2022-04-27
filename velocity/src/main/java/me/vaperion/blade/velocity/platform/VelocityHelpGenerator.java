@@ -7,6 +7,7 @@ import me.vaperion.blade.util.PaginatedOutput;
 import me.vaperion.blade.velocity.command.VelocityUsageMessage;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -18,6 +19,14 @@ public class VelocityHelpGenerator implements HelpGenerator {
     @Override
     public @NotNull List<String> generate(@NotNull Context context, @NotNull List<Command> commands) {
         commands = commands.stream().distinct().filter(c -> !c.isHidden()).collect(Collectors.toList());
+
+        int originalCount = commands.size();
+        commands = commands.stream().filter(c -> context.blade().getPermissionTester().testPermission(context, c))
+              .collect(Collectors.toList());
+
+        if (originalCount != 0 && commands.size() == 0) {
+            return Collections.singletonList("&c" + context.blade().getConfiguration().getDefaultPermissionMessage());
+        }
 
         return new PaginatedOutput<Command>(10) {
             @Override

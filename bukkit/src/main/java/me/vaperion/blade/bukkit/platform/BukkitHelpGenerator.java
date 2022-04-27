@@ -8,6 +8,7 @@ import me.vaperion.blade.util.PaginatedOutput;
 import org.bukkit.ChatColor;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,6 +18,14 @@ public class BukkitHelpGenerator implements HelpGenerator {
     @Override
     public List<String> generate(@NotNull Context context, @NotNull List<Command> commands) {
         commands = commands.stream().distinct().filter(c -> !c.isHidden()).collect(Collectors.toList());
+
+        int originalCount = commands.size();
+        commands = commands.stream().filter(c -> context.blade().getPermissionTester().testPermission(context, c))
+              .collect(Collectors.toList());
+
+        if (originalCount != 0 && commands.size() == 0) {
+            return Collections.singletonList(ChatColor.RED + context.blade().getConfiguration().getDefaultPermissionMessage());
+        }
 
         return new PaginatedOutput<Command>(10) {
             @Override
