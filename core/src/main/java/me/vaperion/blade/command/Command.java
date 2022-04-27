@@ -6,6 +6,7 @@ import me.vaperion.blade.annotation.*;
 import me.vaperion.blade.argument.ArgumentProvider;
 import me.vaperion.blade.command.Parameter.CommandParameter;
 import me.vaperion.blade.command.Parameter.FlagParameter;
+import me.vaperion.blade.context.WrappedSender;
 import me.vaperion.blade.util.LoadedValue;
 import me.vaperion.blade.util.Preconditions;
 import org.jetbrains.annotations.NotNull;
@@ -29,7 +30,7 @@ public final class Command {
     private final String permission, permissionMessage;
     private final boolean async, quoted, hidden;
 
-    private final boolean hasSenderParameter, contextBased;
+    private final boolean hasSenderParameter, contextBased, wrappedSenderBased;
     private final Class<?> senderType;
 
     private final List<Parameter> parameters = new ArrayList<>();
@@ -62,6 +63,7 @@ public final class Command {
         this.hasSenderParameter = method.getParameterCount() > 0 && method.getParameters()[0].isAnnotationPresent(Sender.class);
         this.senderType = hasSenderParameter ? method.getParameters()[0].getType() : null;
         this.contextBased = method.getParameterCount() == 1 && method.getParameterTypes()[0] == this.senderType;
+        this.wrappedSenderBased = method.getParameterCount() == 1 && method.getParameterTypes()[0] == WrappedSender.class;
 
         method.setAccessible(true);
 

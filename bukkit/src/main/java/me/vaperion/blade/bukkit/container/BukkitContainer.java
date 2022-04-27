@@ -186,7 +186,7 @@ public final class BukkitContainer extends Command implements Container {
             resolvedAlias = resolved.getRight();
             int offset = Math.min(args.length, resolvedAlias.split(" ").length - 1);
 
-            if (command.isHasSenderParameter() && !command.getSenderType().isInstance(sender))
+            if (command.isHasSenderParameter() && !command.isWrappedSenderBased() && !command.isContextBased() && !command.getSenderType().isInstance(sender))
                 throw new BladeExitMessage("This command can only be executed by " + getSenderType(command.getSenderType()) + ".");
 
             final me.vaperion.blade.command.Command finalCommand = command;
@@ -203,7 +203,10 @@ public final class BukkitContainer extends Command implements Container {
                         parsed = Collections.singletonList(context);
                     } else {
                         parsed = blade.getParser().parseArguments(finalCommand, context, Arrays.copyOfRange(args, offset, args.length));
-                        if (finalCommand.isHasSenderParameter()) parsed.add(0, sender);
+                        if (finalCommand.isHasSenderParameter()) {
+                            if (finalCommand.isWrappedSenderBased()) parsed.add(0, context.sender());
+                            else parsed.add(0, sender);
+                        }
                     }
 
                     finalCommand.getMethod().invoke(finalCommand.getInstance(), parsed.toArray(new Object[0]));
