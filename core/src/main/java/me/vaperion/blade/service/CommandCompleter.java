@@ -57,7 +57,7 @@ public class CommandCompleter {
 
         try {
             List<String> argumentList = new ArrayList<>(Arrays.asList(args));
-            List<String> arguments = command.isQuoted() ? blade.getParser().combineQuotedArguments(argumentList) : argumentList;
+            List<String> arguments = command.isQuoted() ? CommandParser.combineQuotedArguments(argumentList) : argumentList;
 
             Map<Character, String> flags = blade.getParser().parseFlags(command, arguments);
             for (Map.Entry<Character, String> entry : flags.entrySet()) {

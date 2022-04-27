@@ -85,4 +85,17 @@ public class CommandRegistrar {
             if (commandList.isEmpty()) blade.getAliasToCommands().remove(realAlias);
         }
     }
+
+    public void unregisterAlias(@NotNull String alias) {
+        List<Runnable> calls = new ArrayList<>();
+
+        for (Command command : blade.getCommands()) {
+            String[] aliases = command.getAliases();
+            if (Arrays.stream(aliases).noneMatch(a -> a.equalsIgnoreCase(alias))) continue;
+
+            calls.add(() -> unregisterMethod(command.getInstance(), command.getMethod()));
+        }
+
+        calls.forEach(Runnable::run);
+    }
 }

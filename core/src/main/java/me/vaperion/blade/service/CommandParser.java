@@ -92,6 +92,12 @@ public class CommandParser {
         while (it.hasNext()) {
             String arg = it.next();
 
+            if (pendingFlag != null) {
+                it.remove();
+                map.put(pendingFlag, arg);
+                pendingFlag = null;
+            }
+
             if (arg.length() == 2 && arg.charAt(0) == '-') {
                 char flag = arg.charAt(1);
 
@@ -104,19 +110,12 @@ public class CommandParser {
 
                 if (flagParameter.isBooleanFlag())
                     map.put(flag, "true");
-                else if (pendingFlag != null)
-                    throw new BladeExitMessage("The '-" + pendingFlag + "' flag requires a value.");
-                else
-                    pendingFlag = flag;
-                continue;
-            }
-
-            if (pendingFlag != null) {
-                it.remove();
-                map.put(pendingFlag, arg);
-                pendingFlag = null;
+                else pendingFlag = flag;
             }
         }
+
+        if (pendingFlag != null)
+            throw new BladeExitMessage("The '-" + pendingFlag + "' flag requires a value.");
 
         return map;
     }
@@ -133,14 +132,14 @@ public class CommandParser {
             if (c == '"' || c == '\'') {
                 if (boundary == '\0') {
                     boundary = c;
-                    building = new StringBuilder();
+                    building.setLength(0);
                     continue;
                 }
 
                 if (boundary == c) {
                     boundary = '\0';
                     arguments.add(building.toString());
-                    building = new StringBuilder();
+                    building.setLength(0);
                     continue;
                 }
             }

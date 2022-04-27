@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @RequiredArgsConstructor
-public class BukkitSender implements WrappedSender<CommandSender> {
+public final class BukkitSender implements WrappedSender<CommandSender> {
     private final CommandSender commandSender;
 
     @NotNull

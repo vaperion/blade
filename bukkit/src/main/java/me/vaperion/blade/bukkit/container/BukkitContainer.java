@@ -25,7 +25,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Getter
-public class BukkitContainer extends Command implements Container {
+public final class BukkitContainer extends Command implements Container {
 
     public static final ContainerCreator<BukkitContainer> CREATOR = BukkitContainer::new;
     private static final Field COMMAND_MAP, KNOWN_COMMANDS;
