@@ -43,8 +43,8 @@ public class VelocityHelpGenerator implements HelpGenerator {
 
             @Override
             public String formatLine(Command result, int index) {
-                return "&b - &e" + stripColor(result.getUsageMessage().ensureGetOrLoad(() -> new VelocityUsageMessage(result)).toString().replace("Usage: ", "")) +
-                      (result.getDescription().isEmpty() ? "" : (" - &7" + result.getDescription()));
+                String help = stripColor(result.getUsageMessage().ensureGetOrLoad(() -> new VelocityUsageMessage(result, false)).toString());
+                return "&b - &e" + help + (result.getDescription().isEmpty() ? "" : (" - &7" + result.getDescription()));
             }
         }.generatePage(commands, parsePage(context.argument(0)));
     }

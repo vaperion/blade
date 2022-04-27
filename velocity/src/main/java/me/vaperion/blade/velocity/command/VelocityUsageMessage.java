@@ -16,9 +16,14 @@ import org.jetbrains.annotations.NotNull;
 public final class VelocityUsageMessage implements UsageMessage {
 
     private final Component component;
+    private String toString;
 
     public VelocityUsageMessage(Command command) {
-        Component component = Component.text("Usage: /").color(NamedTextColor.RED)
+        this(command, true);
+    }
+
+    public VelocityUsageMessage(Command command, boolean addPrefix) {
+        Component component = Component.text((addPrefix ? "Usage: " : "") + "/").color(NamedTextColor.RED)
               .hoverEvent(HoverEvent.showText(
                     Component.text(command.getDescription()).color(NamedTextColor.GRAY))
               ).append(
@@ -101,6 +106,7 @@ public final class VelocityUsageMessage implements UsageMessage {
     @NotNull
     @Override
     public String toString() {
-        return LegacyComponentSerializer.legacyAmpersand().serialize(this.component);
+        if (toString == null) toString = LegacyComponentSerializer.legacyAmpersand().serialize(component);
+        return toString;
     }
 }

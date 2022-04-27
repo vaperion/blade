@@ -42,9 +42,8 @@ public class BukkitHelpGenerator implements HelpGenerator {
 
             @Override
             public String formatLine(Command result, int index) {
-                return ChatColor.AQUA + " - " +
-                      ChatColor.YELLOW + ChatColor.stripColor(result.getUsageMessage().ensureGetOrLoad(() -> new BukkitUsageMessage(result)).toString().replace("Usage: ", "")) +
-                      (result.getDescription().isEmpty() ? "" : (" - " + ChatColor.GRAY + result.getDescription()));
+                String help = ChatColor.stripColor(result.getHelpMessage().ensureGetOrLoad(() -> new BukkitUsageMessage(result, false)).toString());
+                return ChatColor.AQUA + " - " + ChatColor.YELLOW + help + (result.getDescription().isEmpty() ? "" : (" - " + ChatColor.GRAY + result.getDescription()));
             }
         }.generatePage(commands, parsePage(context.argument(0)));
     }

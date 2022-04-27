@@ -33,9 +33,19 @@ public abstract class PaginatedOutput<T> {
         int endIndex = Math.min(startIndex + resultsPerPage, results.size());
 
         List<String> lines = new ArrayList<>();
-        lines.add(getHeader(page, totalPages));
-        results.subList(startIndex, endIndex).forEach(result -> lines.add(formatLine(result, startIndex + lines.size())));
-        lines.add(getFooter(page, totalPages));
+
+        String header = getHeader(page, totalPages);
+        if (header != null) lines.add(header);
+
+        for (T result : results.subList(startIndex, endIndex)) {
+            String line = formatLine(result, startIndex + lines.size());
+            if (line == null) continue;
+            lines.add(line);
+        }
+
+        String footer = getFooter(page, totalPages);
+        if (footer != null) lines.add(footer);
+
         return lines;
     }
 

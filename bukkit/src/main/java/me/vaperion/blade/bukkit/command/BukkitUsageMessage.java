@@ -15,9 +15,14 @@ import org.jetbrains.annotations.NotNull;
 public final class BukkitUsageMessage implements UsageMessage {
 
     private final BaseComponent[] components;
+    private String toString;
 
     public BukkitUsageMessage(Command command) {
-        MessageBuilder messageBuilder = new MessageBuilder("Usage: /").color(ChatColor.RED)
+        this(command, true);
+    }
+
+    public BukkitUsageMessage(Command command, boolean addPrefix) {
+        MessageBuilder messageBuilder = new MessageBuilder((addPrefix ? "Usage: " : "") + "/").color(ChatColor.RED)
               .hoverWithColor(ChatColor.GRAY, command.getDescription())
               .append(command.getUsageAlias());
 
@@ -72,6 +77,7 @@ public final class BukkitUsageMessage implements UsageMessage {
     @NotNull
     @Override
     public String toString() {
-        return MessageBuilder.toStringFormat(components);
+        if (toString == null) toString = MessageBuilder.toStringFormat(components);
+        return toString;
     }
 }

@@ -40,7 +40,7 @@ public final class Command {
     private final List<Parameter> parameters = new ArrayList<>();
     private final List<ArgumentProvider<?>> providers = new ArrayList<>(), parameterProviders = new ArrayList<>(), flagProviders = new ArrayList<>();
 
-    private final LoadedValue<UsageMessage> usageMessage = new LoadedValue<>();
+    private final LoadedValue<UsageMessage> usageMessage = new LoadedValue<>(), helpMessage = new LoadedValue<>();
 
     public Command(Blade blade, Object instance, Method method) {
         this.blade = blade;
