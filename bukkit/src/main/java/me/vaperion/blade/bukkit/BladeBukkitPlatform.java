@@ -37,6 +37,7 @@ public final class BladeBukkitPlatform implements BladePlatform {
 
     @Override
     public void configureBlade(Blade.@NotNull Builder builder, @NotNull BladeConfiguration configuration) {
+        configuration.setPluginInstance(plugin);
         configuration.setFallbackPrefix(plugin.getName().toLowerCase(Locale.ROOT));
         configuration.setHelpGenerator(new BukkitHelpGenerator());
         configuration.setTabCompleter(Bukkit.getPluginManager().isPluginEnabled("ProtocolLib") ? new ProtocolLibTabCompleter(plugin) : new TabCompleter.Default());

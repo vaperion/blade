@@ -31,6 +31,7 @@ public final class BladeVelocityPlatform implements BladePlatform {
 
     @Override
     public void configureBlade(Blade.@NotNull Builder builder, @NotNull BladeConfiguration configuration) {
+        configuration.setPluginInstance(proxyServer);
         configuration.setFallbackPrefix("velocity");
         configuration.setHelpGenerator(new VelocityHelpGenerator());
         configuration.setTabCompleter(new TabCompleter.Default());
