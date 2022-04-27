@@ -14,10 +14,13 @@ import java.lang.reflect.AnnotatedElement;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Getter
 @RequiredArgsConstructor
 public class Parameter {
+
+    private static final Map<Class<? extends ArgumentProvider<?>>, ArgumentProvider<?>> COMPLETER_CACHE = new ConcurrentHashMap<>();
 
     final String name;
     final Class<?> type;
@@ -46,10 +49,17 @@ public class Parameter {
     public ArgumentProvider<?> getCustomCompleter() {
         if (!hasCustomCompleter()) return null;
         try {
-            return completer.value().newInstance();
+            return COMPLETER_CACHE.computeIfAbsent(completer.value(), c -> {
+                try {
+                    return c.newInstance();
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            });
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new BladeExitMessage("An exception was thrown while attempting to load custom tab completer.");
+            if (e.getCause() != null) e.getCause().printStackTrace();
+            else e.printStackTrace();
+            throw new BladeExitMessage("An exception was thrown while attempting to load the custom tab completer.");
         }
     }
 

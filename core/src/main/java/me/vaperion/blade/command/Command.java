@@ -87,7 +87,7 @@ public final class Command {
                       parameter.getAnnotation(Range.class), parameter.getAnnotation(Completer.class), parameter.isAnnotationPresent(Text.class), parameter);
             }
 
-            ArgumentProvider<?> provider = blade.getResolver().resolveProvider(parameter.getType(), Arrays.asList(parameter.getAnnotations()));
+            ArgumentProvider<?> provider = blade.getResolver().recursiveResolveProvider(parameter.getType(), Arrays.asList(parameter.getAnnotations()));
 
             parameters.add(bladeParameter);
             providers.add(provider);

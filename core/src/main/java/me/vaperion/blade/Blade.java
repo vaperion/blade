@@ -61,6 +61,7 @@ public final class Blade {
         binder.bind(long.class, new LongArgument());
         binder.bind(double.class, new DoubleArgument());
         binder.bind(float.class, new FloatArgument());
+        binder.bind(Enum.class, new EnumArgument());
 
         for (Binding<?> binding : builder.bindings) {
             if (binding instanceof Binding.Release) {

@@ -52,7 +52,21 @@ public class CommandResolver {
 
     @SuppressWarnings("unchecked")
     @Nullable
-    public <T> ArgumentProvider<T> resolveProvider(Class<T> clazz, List<Annotation> annotations) {
+    public <T> ArgumentProvider<T> recursiveResolveProvider(Class<T> clazz, List<Annotation> annotations) {
+        Class<?> parent = clazz;
+        do {
+            ArgumentProvider<T> provider = (ArgumentProvider<T>) resolveProvider(parent, annotations);
+            if (provider != null) return provider;
+
+            parent = parent.getSuperclass();
+        } while (parent != Object.class);
+
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nullable
+    private <T> ArgumentProvider<T> resolveProvider(Class<T> clazz, List<Annotation> annotations) {
         List<Class<? extends Annotation>> inputAnnotations = annotations.stream()
               .map(Annotation::annotationType)
               .map(c -> (Class<? extends Annotation>) c)
