@@ -11,7 +11,3 @@ dependencies {
 
     compileOnly 'org.jetbrains:annotations:23.0.0'
 }
-
-shadowJar {
-    archiveFileName = project.name + '.jar'
-}

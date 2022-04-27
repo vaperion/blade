@@ -32,4 +32,17 @@ subprojects {
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
     }
+
+    afterEvaluate {
+        shadowJar {
+            archiveClassifier.set('')
+            archiveFileName = 'blade-' + project.name + ".jar"
+        }
+
+        tasks.build.dependsOn(shadowJar)
+
+        if (project.name != 'core') {
+            tasks.shadowJar.dependsOn ':core:shadowJar'
+        }
+    }
 }
