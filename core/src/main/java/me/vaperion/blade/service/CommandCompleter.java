@@ -24,16 +24,15 @@ public class CommandCompleter {
     private final Blade blade;
 
     @Nullable
-    public List<String> suggest(@NotNull String commandLine, @NotNull Supplier<WrappedSender<?>> senderSupplier,
-                                @NotNull Function<Command, Boolean> permissionFunction) {
+    public List<String> suggest(@NotNull String commandLine, @NotNull Supplier<WrappedSender<?>> senderSupplier) {
         List<String> suggestions = new ArrayList<>();
-        suggestSubCommand(suggestions, commandLine, permissionFunction);
+        suggestSubCommand(suggestions, commandLine, senderSupplier);
 
         String[] commandParts = commandLine.split(" ");
         Tuple<Command, String> resolved = blade.getResolver().resolveCommand(commandParts);
 
         if (resolved == null) return suggestions.isEmpty() ? null : suggestions;
-        if (!permissionFunction.apply(resolved.getLeft()) || resolved.getLeft().isContextBased())
+        if (resolved.getLeft().isContextBased())
             return suggestions.isEmpty() ? null : suggestions;
 
         Command command = resolved.getLeft();
@@ -46,6 +45,8 @@ public class CommandCompleter {
         String[] actualArguments = argList.toArray(new String[0]);
 
         Context context = new Context(blade, senderSupplier.get(), foundAlias, actualArguments);
+        if (!blade.getPermissionTester().testPermission(context, command))
+            return suggestions.isEmpty() ? null : suggestions;
 
         suggest(suggestions, context, command, actualArguments);
         return suggestions;
@@ -96,8 +97,7 @@ public class CommandCompleter {
         }
     }
 
-    public void suggestSubCommand(@NotNull List<String> suggestions, @NotNull String commandLine,
-                                  @NotNull Function<Command, Boolean> permissionFunction) throws BladeExitMessage {
+    public void suggestSubCommand(@NotNull List<String> suggestions, @NotNull String commandLine, @NotNull Supplier<WrappedSender<?>> senderSupplier) throws BladeExitMessage {
         String[] commandLineParts = commandLine.split(" ");
         if (commandLineParts.length == 0) return;
         String baseCommand = commandLineParts[0];
@@ -110,7 +110,9 @@ public class CommandCompleter {
 
         for (Command bladeCommand : commandsWithBase) {
             if (bladeCommand.isHidden()) continue;
-            if (!permissionFunction.apply(bladeCommand)) continue;
+
+            Context context = new Context(blade, senderSupplier.get(), bladeCommand.getAliases()[0], new String[0]);
+            if (!blade.getPermissionTester().testPermission(context, bladeCommand)) continue;
 
             for (String alias : bladeCommand.getAliases()) {
                 if (!alias.startsWith(commandLine.toLowerCase(Locale.ROOT))) continue;

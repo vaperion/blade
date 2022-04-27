@@ -7,7 +7,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.bukkit.context.BukkitSender;
-import me.vaperion.blade.command.Command;
 import me.vaperion.blade.platform.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -29,12 +28,6 @@ public class ProtocolLibTabCompleter extends PacketAdapter implements TabComplet
         ProtocolLibrary.getProtocolManager().addPacketListener(this);
     }
 
-    private boolean hasPermission(@NotNull Player player, @NotNull Command command) {
-        if ("op".equals(command.getPermission())) return player.isOp();
-        if (command.getPermission() == null || command.getPermission().trim().isEmpty()) return true;
-        return player.hasPermission(command.getPermission());
-    }
-
     @Override
     public void onPacketReceiving(PacketEvent event) {
         if (event.getPlayer() == null) return;
@@ -45,7 +38,7 @@ public class ProtocolLibTabCompleter extends PacketAdapter implements TabComplet
         if (!commandLine.startsWith("/")) return;
         else commandLine = commandLine.substring(1);
 
-        List<String> suggestions = blade.getCompleter().suggest(commandLine, () -> new BukkitSender(player), cmd -> hasPermission(player, cmd));
+        List<String> suggestions = blade.getCompleter().suggest(commandLine, () -> new BukkitSender(player));
         if (suggestions == null) return; // if command was not found
 
         try {
