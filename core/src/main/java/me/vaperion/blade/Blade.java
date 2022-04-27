@@ -69,6 +69,8 @@ public final class Blade {
                 providers.add(Provider.unsafe(binding.getType(), binding.getProvider(), binding.getAnnotations()));
             }
         }
+
+        configuration.getTabCompleter().init(this);
     }
 
     @NotNull
