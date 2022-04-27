@@ -1,6 +1,6 @@
 package me.vaperion.blade.argument.impl;
 
-import me.vaperion.blade.annotation.Range;
+import me.vaperion.blade.annotation.argument.Range;
 import me.vaperion.blade.argument.Argument;
 import me.vaperion.blade.argument.ArgumentProvider;
 import me.vaperion.blade.context.Context;

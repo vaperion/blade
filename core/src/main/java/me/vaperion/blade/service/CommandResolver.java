@@ -2,7 +2,8 @@ package me.vaperion.blade.service;
 
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.Blade;
-import me.vaperion.blade.annotation.*;
+import me.vaperion.blade.annotation.argument.*;
+import me.vaperion.blade.annotation.command.*;
 import me.vaperion.blade.argument.ArgumentProvider;
 import me.vaperion.blade.argument.Provider;
 import me.vaperion.blade.command.Command;
@@ -20,8 +21,10 @@ import java.util.stream.Collectors;
 public class CommandResolver {
 
     private static final List<Class<? extends Annotation>> INTERNAL_ANNOTATIONS = Arrays.asList(
-          Text.class, me.vaperion.blade.annotation.Command.class, Completer.class, Data.class, Flag.class,
-          Name.class, Optional.class, Permission.class, Range.class, Sender.class
+          Completer.class, Data.class, Flag.class, Name.class, Optional.class, Range.class, Sender.class, Text.class,
+
+          Async.class, me.vaperion.blade.annotation.command.Command.class, Description.class, ExtraUsage.class, Hidden.class,
+          ParseQuotes.class, Permission.class, Usage.class, UsageAlias.class
     );
 
     private final Blade blade;

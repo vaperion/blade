@@ -1,4 +1,4 @@
-package me.vaperion.blade.annotation;
+package me.vaperion.blade.annotation.argument;
 
 import me.vaperion.blade.argument.ArgumentProvider;
 

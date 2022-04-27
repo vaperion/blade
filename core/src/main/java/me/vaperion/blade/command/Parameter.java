@@ -2,10 +2,10 @@ package me.vaperion.blade.command;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import me.vaperion.blade.annotation.Completer;
-import me.vaperion.blade.annotation.Flag;
-import me.vaperion.blade.annotation.Optional;
-import me.vaperion.blade.annotation.Range;
+import me.vaperion.blade.annotation.argument.Completer;
+import me.vaperion.blade.annotation.argument.Flag;
+import me.vaperion.blade.annotation.argument.Optional;
+import me.vaperion.blade.annotation.argument.Range;
 import me.vaperion.blade.argument.ArgumentProvider;
 import me.vaperion.blade.exception.BladeExitMessage;
 import org.jetbrains.annotations.Nullable;

@@ -2,14 +2,14 @@ package me.vaperion.blade.command;
 
 import lombok.Getter;
 import me.vaperion.blade.Blade;
-import me.vaperion.blade.annotation.*;
+import me.vaperion.blade.annotation.argument.*;
+import me.vaperion.blade.annotation.command.*;
 import me.vaperion.blade.argument.ArgumentProvider;
 import me.vaperion.blade.command.Parameter.CommandParameter;
 import me.vaperion.blade.command.Parameter.FlagParameter;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.context.WrappedSender;
 import me.vaperion.blade.util.LoadedValue;
-import me.vaperion.blade.util.Preconditions;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Method;
@@ -18,6 +18,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static me.vaperion.blade.util.Preconditions.checkNotEmpty;
+import static me.vaperion.blade.util.Preconditions.runOrDefault;
 
 @Getter
 public final class Command {
@@ -39,25 +42,28 @@ public final class Command {
 
     private final LoadedValue<UsageMessage> usageMessage = new LoadedValue<>();
 
-    public Command(Blade blade, Object instance, Method method, String[] aliases) {
+    public Command(Blade blade, Object instance, Method method) {
         this.blade = blade;
 
         this.instance = instance;
         this.method = method;
-        this.aliases = aliases;
-        this.baseCommands = Arrays.stream(aliases).map(String::toLowerCase).map(s -> s.split(" ")[0]).distinct().toArray(String[]::new);
 
-        me.vaperion.blade.annotation.Command command = method.getAnnotation(me.vaperion.blade.annotation.Command.class);
-        this.description = command.description();
-        this.async = command.async();
-        this.hidden = command.hidden();
-        this.usageAlias = command.usageAlias();
-        this.customUsage = command.customUsage();
-        this.extraUsageData = command.extraUsageData();
+        this.aliases = method.getAnnotation(me.vaperion.blade.annotation.command.Command.class).value();
+        this.description = runOrDefault(method.getAnnotation(Description.class), "", Description::value);
+        this.async = runOrDefault(method.getAnnotation(Async.class), false, $ -> true);
+        this.hidden = runOrDefault(method.getAnnotation(Hidden.class), false, $ -> true);
+        this.usageAlias = runOrDefault(method.getAnnotation(UsageAlias.class), this.aliases[0], UsageAlias::value);
+        this.customUsage = runOrDefault(method.getAnnotation(Usage.class), "", Usage::value);
+        this.extraUsageData = runOrDefault(method.getAnnotation(ExtraUsage.class), "", ExtraUsage::value);
+
+        this.baseCommands = Arrays.stream(aliases)
+              .map(String::toLowerCase)
+              .map(s -> s.split(" ")[0])
+              .distinct().toArray(String[]::new);
 
         Permission permission = method.getAnnotation(Permission.class);
         this.permission = permission != null ? permission.value() : "";
-        this.permissionMessage = Preconditions.checkNotEmpty(permission != null ? permission.message() : "", blade.getConfiguration().getDefaultPermissionMessage());
+        this.permissionMessage = checkNotEmpty(permission != null ? permission.message() : "", blade.getConfiguration().getDefaultPermissionMessage());
 
         this.quoted = method.isAnnotationPresent(ParseQuotes.class);
 

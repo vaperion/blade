@@ -1,4 +1,4 @@
-package me.vaperion.blade.annotation;
+package me.vaperion.blade.annotation.command;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
  * This annotation is used to set the permission of the command.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.TYPE})
+@Target(ElementType.METHOD)
 public @interface Permission {
     /**
      * The required permission.

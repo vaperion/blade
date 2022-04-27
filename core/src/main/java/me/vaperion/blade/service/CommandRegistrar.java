@@ -23,7 +23,7 @@ public class CommandRegistrar {
     public void registerClass(@Nullable Object instance, @NotNull Class<?> clazz) {
         try {
             for (Method method : clazz.getMethods()) {
-                if (!method.isAnnotationPresent(me.vaperion.blade.annotation.Command.class)) continue;
+                if (!method.isAnnotationPresent(me.vaperion.blade.annotation.command.Command.class)) continue;
                 if ((instance == null) != Modifier.isStatic(method.getModifiers())) continue;
 
                 registerMethod(instance, method);
@@ -37,7 +37,7 @@ public class CommandRegistrar {
     public void unregisterClass(@Nullable Object instance, @NotNull Class<?> clazz) {
         try {
             for (Method method : clazz.getMethods()) {
-                if (!method.isAnnotationPresent(me.vaperion.blade.annotation.Command.class)) continue;
+                if (!method.isAnnotationPresent(me.vaperion.blade.annotation.command.Command.class)) continue;
                 if ((instance == null) != Modifier.isStatic(method.getModifiers())) continue;
 
                 unregisterMethod(instance, method);
@@ -49,15 +49,10 @@ public class CommandRegistrar {
     }
 
     public void registerMethod(@Nullable Object instance, @NotNull Method method) throws Exception {
-        me.vaperion.blade.annotation.Command command = method.getAnnotation(me.vaperion.blade.annotation.Command.class);
-
-        String[] aliases = command.value();
-        aliases = Arrays.stream(aliases).map(String::toLowerCase).toArray(String[]::new);
-
-        Command cmd = new Command(blade, instance, method, aliases);
+        Command cmd = new Command(blade, instance, method);
         blade.getCommands().add(cmd);
 
-        for (String alias : aliases) {
+        for (String alias : cmd.getAliases()) {
             String realAlias = alias.split(" ")[0];
 
             blade.getAliasToCommands().computeIfAbsent(realAlias, $ -> new LinkedList<>()).add(cmd);
@@ -68,7 +63,7 @@ public class CommandRegistrar {
     }
 
     public void unregisterMethod(@Nullable Object instance, @NotNull Method method) {
-        me.vaperion.blade.annotation.Command command = method.getAnnotation(me.vaperion.blade.annotation.Command.class);
+        me.vaperion.blade.annotation.command.Command command = method.getAnnotation(me.vaperion.blade.annotation.command.Command.class);
 
         String[] aliases = command.value();
         aliases = Arrays.stream(aliases).map(String::toLowerCase).toArray(String[]::new);

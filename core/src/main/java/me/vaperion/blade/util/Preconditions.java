@@ -1,23 +1,29 @@
 package me.vaperion.blade.util;
 
-import lombok.experimental.UtilityClass;
+import java.util.function.Function;
 
-@UtilityClass
-public class Preconditions {
+public final class Preconditions {
 
-    public boolean checkNotNull(Object object, String message) {
+    private Preconditions() {}
+
+    public static boolean checkNotNull(Object object, String message) {
         if (object == null) throw new NullPointerException(message);
         return true;
     }
 
-    public boolean checkState(boolean expression, String message) {
+    public static boolean checkState(boolean expression, String message) {
         if (!expression) throw new IllegalStateException(message);
         return true;
     }
 
-    public String checkNotEmpty(String string, String replacement) {
+    public static String checkNotEmpty(String string, String replacement) {
         if (string == null || string.isEmpty()) return replacement;
         return string;
+    }
+
+    public static <O, T> T runOrDefault(O object, T defaultValue, Function<O, T> function) {
+        if (object == null) return defaultValue;
+        return function.apply(object);
     }
 
 }

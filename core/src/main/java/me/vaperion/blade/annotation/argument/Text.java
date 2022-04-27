@@ -1,4 +1,4 @@
-package me.vaperion.blade.annotation;
+package me.vaperion.blade.annotation.argument;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

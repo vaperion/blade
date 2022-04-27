@@ -1,6 +1,6 @@
 package me.vaperion.blade.bukkit.command;
 
-import me.vaperion.blade.annotation.Flag;
+import me.vaperion.blade.annotation.argument.Flag;
 import me.vaperion.blade.bukkit.util.MessageBuilder;
 import me.vaperion.blade.command.Command;
 import me.vaperion.blade.command.Parameter.CommandParameter;
@@ -19,7 +19,7 @@ public final class BukkitUsageMessage implements UsageMessage {
     public BukkitUsageMessage(Command command) {
         MessageBuilder messageBuilder = new MessageBuilder("Usage: /").color(ChatColor.RED)
               .hoverWithColor(ChatColor.GRAY, command.getDescription())
-              .append(command.getUsageAlias().isEmpty() ? command.getAliases()[0] : command.getUsageAlias());
+              .append(command.getUsageAlias());
 
         if (!command.getCustomUsage().isEmpty()) {
             messageBuilder.append(" ").append(command.getCustomUsage());

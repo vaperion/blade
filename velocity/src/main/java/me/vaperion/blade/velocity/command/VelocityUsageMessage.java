@@ -1,7 +1,7 @@
 package me.vaperion.blade.velocity.command;
 
 import com.velocitypowered.api.command.CommandSource;
-import me.vaperion.blade.annotation.Flag;
+import me.vaperion.blade.annotation.argument.Flag;
 import me.vaperion.blade.command.Command;
 import me.vaperion.blade.command.Parameter.CommandParameter;
 import me.vaperion.blade.command.Parameter.FlagParameter;
@@ -22,7 +22,7 @@ public final class VelocityUsageMessage implements UsageMessage {
               .hoverEvent(HoverEvent.showText(
                     Component.text(command.getDescription()).color(NamedTextColor.GRAY))
               ).append(
-                    Component.text(command.getUsageAlias().isEmpty() ? command.getAliases()[0] : command.getUsageAlias())
+                    Component.text(command.getUsageAlias())
               );
 
         if (!command.getCustomUsage().isEmpty()) {
