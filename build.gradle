@@ -1,19 +1,19 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-	id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
     id 'io.freefair.lombok' version '6.4.3'
 }
 
 allprojects {
     repositories {
-	    mavenCentral()
-	}
-	
-	group = 'me.vaperion.blade'
-	version = '3.0.0'
-	
-	// workaround for gradle issue: https://github.com/gradle/gradle/issues/17236#issuecomment-894385386
+        mavenCentral()
+    }
+
+    group = 'me.vaperion.blade'
+    version = '3.0.0'
+
+    // workaround for gradle issue: https://github.com/gradle/gradle/issues/17236#issuecomment-894385386
     tasks.withType(Copy).all {
         duplicatesStrategy DuplicatesStrategy.INCLUDE
         outputs.upToDateWhen { false }
@@ -30,7 +30,7 @@ subprojects {
             languageVersion = JavaLanguageVersion.of(8)
         }
     }
-	
+
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
     }
