@@ -62,7 +62,7 @@ public class CommandResolver {
             if (provider != null) return provider;
 
             parent = parent.getSuperclass();
-        } while (parent != Object.class);
+        } while (parent != Object.class && parent != null);
 
         return null;
     }
