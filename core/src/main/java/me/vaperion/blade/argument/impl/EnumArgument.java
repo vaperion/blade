@@ -28,7 +28,7 @@ public class EnumArgument implements ArgumentProvider<Enum> {
         if (value == null && !arg.getParameter().ignoreFailedArgumentParse())
             throw new BladeExitMessage("Error: '" + arg.getString() + "' is not a valid enum value.");
 
-        return null;
+        return value;
     }
 
     @Override
