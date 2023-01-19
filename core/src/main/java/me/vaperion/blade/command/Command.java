@@ -9,6 +9,7 @@ import me.vaperion.blade.command.Parameter.CommandParameter;
 import me.vaperion.blade.command.Parameter.FlagParameter;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.context.WrappedSender;
+import me.vaperion.blade.util.ClassUtil;
 import me.vaperion.blade.util.LoadedValue;
 import org.jetbrains.annotations.NotNull;
 
@@ -81,20 +82,22 @@ public final class Command {
                 continue;
             }
 
+            Class<?> type = ClassUtil.getGenericOrRawType(parameter);
+
             String parameterName = parameter.isAnnotationPresent(Name.class) ? parameter.getAnnotation(Name.class).value() : parameter.getName();
             String[] parameterData = parameter.isAnnotationPresent(Data.class) ? parameter.getAnnotation(Data.class).value() : null;
             Parameter bladeParameter;
 
             if (parameter.isAnnotationPresent(Flag.class)) {
                 Flag flag = parameter.getAnnotation(Flag.class);
-                bladeParameter = new FlagParameter(parameterName, parameter.getType(), parameter.getAnnotation(Optional.class), parameter, flag);
+                bladeParameter = new FlagParameter(parameterName, type, parameter.getAnnotation(Optional.class), parameter, flag);
             } else {
-                bladeParameter = new CommandParameter(parameterName, parameter.getType(),
+                bladeParameter = new CommandParameter(parameterName, type,
                       parameterData == null ? Collections.emptyList() : Arrays.asList(parameterData), parameter.getAnnotation(Optional.class),
                       parameter.getAnnotation(Range.class), parameter.getAnnotation(Completer.class), parameter.isAnnotationPresent(Text.class), parameter);
             }
 
-            ArgumentProvider<?> provider = blade.getResolver().recursiveResolveProvider(parameter.getType(), Arrays.asList(parameter.getAnnotations()));
+            ArgumentProvider<?> provider = blade.getResolver().recursiveResolveProvider(type, Arrays.asList(parameter.getAnnotations()));
 
             parameters.add(bladeParameter);
             providers.add(provider);

@@ -3,6 +3,9 @@ package me.vaperion.blade.util;
 import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.security.CodeSource;
 import java.util.ArrayList;
@@ -56,6 +59,14 @@ public class ClassUtil {
         }
 
         return classes;
+    }
+
+    public Class<?> getGenericOrRawType(Parameter parameter) {
+        Type type = parameter.getParameterizedType();
+        if (type instanceof ParameterizedType) {
+            return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
+        }
+        return parameter.getType();
     }
 
 }
