@@ -127,7 +127,7 @@ public class DataArgumentProvider implements ArgumentProvider<Data> {
 
         // If you couldn't parse their input, you can check if the argument is optional:
         if (arg.getParameter().ignoreFailedArgumentParse()) {
-            // If it is, you can return null to use the default value
+            // If it is, you can return null
             return null;
         } else {
             // If it isn't, you can throw an exception to show a custom message
