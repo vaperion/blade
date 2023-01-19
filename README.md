@@ -88,12 +88,12 @@ public class ExampleCommand {
           // You can also have complex types as flags:
           @Flag('p') Player anotherPlayer
     ) {
-        sender.sendMessage("(You) " + flagMessage);
+        sender.sendMessage("(You -> " + anotherPlayer + ") $" + amount);
 
         if (!flagSilent) {
-            player.sendMessage("(" + sender.getName() + ") " + flagMessage);
+            player.sendMessage("(" + sender.getName() + " -> You) +$" + amount);
         } else {
-            sender.sendMessage("(Anonymous) " + flagMessage);
+            sender.sendMessage("(Anonymous -> You) +$" + amount);
         }
     }
 }
@@ -109,10 +109,10 @@ public class Data {
 
 public class DataArgumentProvider implements ArgumentProvider<Data> {
     @Override
-    public @Nullable T provide(@NotNull Context ctx, @NotNoll Argument arg) throws BladeExitMessage {
+    public @Nullable Data provide(@NotNull Context ctx, @NotNull Argument arg) throws BladeExitMessage {
         Data data = new Data();
 
-        if (arg.getType() == Type.OPTIONAL) {
+        if (arg.getType() == Argument.Type.OPTIONAL) {
             data.wasProvided = false;
             data.message = "Default value: " + arg.getString();
         } else {
@@ -167,5 +167,4 @@ public class MyPlugin extends JavaPlugin {
         ;
     }
 }
-
 ```
