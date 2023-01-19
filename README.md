@@ -93,7 +93,7 @@ public class ExampleCommand {
         if (!flagSilent) {
             player.sendMessage("(" + sender.getName() + " -> You) +$" + amount);
         } else {
-            sender.sendMessage("(Anonymous -> You) +$" + amount);
+            player.sendMessage("(Anonymous -> You) +$" + amount);
         }
     }
 }
