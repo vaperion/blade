@@ -18,7 +18,7 @@ public class EnumArgument implements ArgumentProvider<Enum> {
 
     @Override
     public @Nullable Enum provide(@NotNull Context ctx, @NotNull Argument arg) throws BladeExitMessage {
-        if (enumClass == null) enumClass = (Class<? extends Enum>) arg.getParameter().getType();
+        enumClass = (Class<? extends Enum>) arg.getParameter().getType();
 
         Enum value = null;
         try {
@@ -33,7 +33,7 @@ public class EnumArgument implements ArgumentProvider<Enum> {
 
     @Override
     public @NotNull List<String> suggest(@NotNull Context ctx, @NotNull Argument arg) throws BladeExitMessage {
-        if (enumClass == null) enumClass = (Class<? extends Enum>) arg.getParameter().getType();
+        enumClass = (Class<? extends Enum>) arg.getParameter().getType();
 
         String input = arg.getString().toLowerCase(Locale.ROOT);
         List<String> completions = new ArrayList<>();

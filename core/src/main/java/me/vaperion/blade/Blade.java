@@ -57,10 +57,15 @@ public final class Blade {
         binder.bind(UUID.class, new UUIDArgument());
         binder.bind(String.class, new StringArgument());
         binder.bind(boolean.class, new BooleanArgument());
+        binder.bind(Boolean.class, new BooleanArgument());
         binder.bind(int.class, new IntArgument());
+        binder.bind(Integer.class, new IntArgument());
         binder.bind(long.class, new LongArgument());
+        binder.bind(Long.class, new LongArgument());
         binder.bind(double.class, new DoubleArgument());
+        binder.bind(Double.class, new DoubleArgument());
         binder.bind(float.class, new FloatArgument());
+        binder.bind(Float.class, new FloatArgument());
         binder.bind(Enum.class, new EnumArgument());
 
         for (Binding<?> binding : builder.bindings) {
