@@ -11,7 +11,7 @@ allprojects {
     }
 
     group = 'me.vaperion.blade'
-    version = '3.0.4'
+    version = '3.0.5'
 
     // workaround for gradle issue: https://github.com/gradle/gradle/issues/17236#issuecomment-894385386
     tasks.withType(Copy).all {
