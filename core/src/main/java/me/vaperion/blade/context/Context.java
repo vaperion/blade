@@ -60,9 +60,8 @@ public final class Context {
 
     @Nullable
     public <T> T parseArgument(int index, Class<T> argumentClass) {
-        return parseArgument(index, argumentClass, null);
+        return parseArgument(index, argumentClass, "");
     }
-
 
     @Nullable
     public <T> T parseArgument(int index, Class<T> argumentClass, String defaultValue) {
@@ -76,7 +75,7 @@ public final class Context {
 
     @Nullable
     public <T> T parseArgument(int index, ArgumentProvider<T> provider) {
-        return parseArgument(index, provider, null);
+        return parseArgument(index, provider, "");
     }
 
     @Nullable
