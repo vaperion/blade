@@ -2,8 +2,10 @@ package me.vaperion.blade.platform;
 
 import lombok.Getter;
 import lombok.Setter;
+import me.vaperion.blade.command.Command;
 import me.vaperion.blade.util.Preconditions;
 
+import java.util.Comparator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -25,6 +27,8 @@ public final class BladeConfiguration {
 
     private HelpGenerator helpGenerator;
     private TabCompleter tabCompleter;
+
+    private Comparator<Command> helpSorter = Comparator.comparing(Command::getUsageAlias);
 
     public void validate() {
         Preconditions.checkNotNull(pluginInstance, "Plugin instance cannot be null.");
