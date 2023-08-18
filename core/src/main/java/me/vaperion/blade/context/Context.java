@@ -78,11 +78,20 @@ public final class Context {
         return parseArgument(index, provider, "");
     }
 
+    @SuppressWarnings("unchecked")
     @Nullable
     public <T> T parseArgument(int index, ArgumentProvider<T> provider, String defaultValue) {
+        return parseArgument(index,
+              (Class<T>) ((ParameterizedType) provider.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0],
+              provider,
+              defaultValue);
+    }
+
+    @Nullable
+    public <T> T parseArgument(int index, Class<T> classOfT, ArgumentProvider<T> provider, String defaultValue) {
         Argument arg = new Argument(new Parameter(
               /*name*/ "argument " + (index + 1),
-              /*type*/ (Class<?>) ((ParameterizedType) provider.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0],
+              /*type*/ classOfT,
               /*data*/ Collections.emptyList(),
               /*optional annotation*/ PARSE_OPTIONAL_ARG,
               /*range annotation*/ null,
