@@ -70,7 +70,7 @@ public final class Context {
         if (provider == null)
             throw new IllegalArgumentException("No provider found for " + argumentClass.getName());
 
-        return parseArgument(index, provider, defaultValue);
+        return parseArgument(index, argumentClass, provider, defaultValue);
     }
 
     @Nullable
