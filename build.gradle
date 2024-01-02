@@ -11,10 +11,10 @@ allprojects {
     }
 
     group = 'me.vaperion.blade'
-    version = '3.0.8'
+    version = '3.0.9'
 
     // workaround for gradle issue: https://github.com/gradle/gradle/issues/17236#issuecomment-894385386
-    tasks.withType(Copy).all {
+    tasks.withType(Copy).configureEach {
         duplicatesStrategy DuplicatesStrategy.INCLUDE
         outputs.upToDateWhen { false }
     }
@@ -31,7 +31,7 @@ subprojects {
         }
     }
 
-    tasks.withType(JavaCompile) {
+    tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
     }
 
@@ -43,7 +43,9 @@ subprojects {
 
         publishing {
             publications {
+                //noinspection all
                 maven(MavenPublication) {
+                    //noinspection all
                     artifact shadowJar
                 }
             }

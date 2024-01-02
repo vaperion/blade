@@ -15,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 @RequiredArgsConstructor
@@ -68,7 +67,7 @@ public class CommandCompleter {
                 if (!isFlag || !"true".equals(entry.getValue())) arguments.remove(entry.getValue());
             }
 
-            if (arguments.size() == 0) return;
+            if (arguments.isEmpty()) return;
             if (command.getParameterProviders().size() < arguments.size()) return;
 
             int index = Math.max(0, arguments.size() - 1);

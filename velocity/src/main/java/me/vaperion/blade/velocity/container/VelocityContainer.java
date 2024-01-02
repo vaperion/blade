@@ -16,7 +16,6 @@ import me.vaperion.blade.exception.BladeUsageMessage;
 import me.vaperion.blade.util.Tuple;
 import me.vaperion.blade.velocity.command.VelocityUsageMessage;
 import me.vaperion.blade.velocity.context.VelocitySender;
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.jetbrains.annotations.NotNull;
@@ -25,6 +24,8 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static net.kyori.adventure.text.Component.text;
 
 @Getter
 public class VelocityContainer implements RawCommand, Container {
@@ -101,7 +102,7 @@ public class VelocityContainer implements RawCommand, Container {
     @Override
     public void execute(Invocation invocation) {
         CommandSource sender = invocation.source();
-        String[] args = invocation.arguments().split(" ");
+        String[] args = invocation.arguments().isEmpty() ? new String[0] : invocation.arguments().split(" ");
         String alias = invocation.alias();
 
         Command command = null;
@@ -155,23 +156,23 @@ public class VelocityContainer implements RawCommand, Container {
                 } catch (BladeUsageMessage ex) {
                     sendUsageMessage(context, finalCommand);
                 } catch (BladeExitMessage ex) {
-                    sender.sendMessage(Component.text(ex.getMessage()).color(NamedTextColor.RED));
+                    sender.sendMessage(text(ex.getMessage()).color(NamedTextColor.RED));
                 } catch (InvocationTargetException ex) {
                     if (ex.getTargetException() != null) {
                         if (ex.getTargetException() instanceof BladeUsageMessage) {
                             sendUsageMessage(context, finalCommand);
                             return;
                         } else if (ex.getTargetException() instanceof BladeExitMessage) {
-                            sender.sendMessage(Component.text(ex.getTargetException().getMessage()).color(NamedTextColor.RED));
+                            sender.sendMessage(text(ex.getTargetException().getMessage()).color(NamedTextColor.RED));
                             return;
                         }
                     }
 
                     ex.printStackTrace();
-                    sender.sendMessage(Component.text("An exception was thrown while executing this command.").color(NamedTextColor.RED));
+                    sender.sendMessage(text("An exception was thrown while executing this command.").color(NamedTextColor.RED));
                 } catch (Throwable t) {
                     t.printStackTrace();
-                    sender.sendMessage(Component.text("An exception was thrown while executing this command.").color(NamedTextColor.RED));
+                    sender.sendMessage(text("An exception was thrown while executing this command.").color(NamedTextColor.RED));
                 }
             };
 
@@ -195,10 +196,10 @@ public class VelocityContainer implements RawCommand, Container {
         } catch (BladeUsageMessage ex) {
             sendUsageMessage(context, command);
         } catch (BladeExitMessage ex) {
-            sender.sendMessage(Component.text(ex.getMessage()).color(NamedTextColor.RED));
+            sender.sendMessage(text(ex.getMessage()).color(NamedTextColor.RED));
         } catch (Throwable t) {
             t.printStackTrace();
-            sender.sendMessage(Component.text("An exception was thrown while executing this command.").color(NamedTextColor.RED));
+            sender.sendMessage(text("An exception was thrown while executing this command.").color(NamedTextColor.RED));
         }
     }
 
@@ -233,10 +234,10 @@ public class VelocityContainer implements RawCommand, Container {
             blade.getCompleter().suggest(suggestions, context, command, actualArguments);
             return suggestions;
         } catch (BladeExitMessage ex) {
-            sender.sendMessage(Component.text(ex.getMessage()).color(NamedTextColor.RED));
+            sender.sendMessage(text(ex.getMessage()).color(NamedTextColor.RED));
         } catch (Exception ex) {
             ex.printStackTrace();
-            sender.sendMessage(Component.text("An exception was thrown while completing this command.").color(NamedTextColor.RED));
+            sender.sendMessage(text("An exception was thrown while completing this command.").color(NamedTextColor.RED));
         }
 
         return Collections.emptyList();

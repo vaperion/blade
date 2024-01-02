@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
+import java.util.HashSet;
 import java.util.List;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -27,7 +28,7 @@ public class Provider<T> {
     public boolean doAnnotationsMatch(@Nullable List<Class<? extends Annotation>> annotations) {
         if (annotations == null || requiredAnnotations == null) return false;
         if (annotations.size() != requiredAnnotations.size()) return false;
-        return requiredAnnotations.containsAll(annotations);
+        return new HashSet<>(requiredAnnotations).containsAll(annotations);
     }
 
 }

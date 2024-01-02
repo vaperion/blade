@@ -145,7 +145,7 @@ public class CommandParser {
             }
 
             if (c == ' ' && boundary == '\0') {
-                if (building.length() > 0) {
+                if (!building.isEmpty()) {
                     arguments.add(building.toString());
                     building.setLength(0);
                 }
@@ -155,7 +155,7 @@ public class CommandParser {
             building.append(c);
         }
 
-        if (building.length() > 0) {
+        if (!building.isEmpty()) {
             arguments.add(building.toString());
         }
 

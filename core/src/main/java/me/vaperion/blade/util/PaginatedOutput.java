@@ -21,7 +21,7 @@ public abstract class PaginatedOutput<T> {
     public abstract String formatLine(T result, int index);
 
     public final List<String> generatePage(List<T> results, int page) {
-        if (results.size() == 0) {
+        if (results.isEmpty()) {
             return Collections.singletonList(formatErrorMessage(Error.NO_RESULTS));
         }
 

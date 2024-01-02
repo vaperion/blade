@@ -8,10 +8,14 @@ import me.vaperion.blade.command.Parameter.FlagParameter;
 import me.vaperion.blade.command.UsageMessage;
 import me.vaperion.blade.context.Context;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.jetbrains.annotations.NotNull;
+
+import static net.kyori.adventure.text.Component.empty;
+import static net.kyori.adventure.text.Component.text;
 
 public final class VelocityUsageMessage implements UsageMessage {
 
@@ -23,17 +27,15 @@ public final class VelocityUsageMessage implements UsageMessage {
     }
 
     public VelocityUsageMessage(Command command, boolean addPrefix) {
-        Component component = Component.text((addPrefix ? "Usage: " : "") + "/").color(NamedTextColor.RED)
-              .hoverEvent(HoverEvent.showText(
-                    Component.text(command.getDescription()).color(NamedTextColor.GRAY))
-              ).append(
-                    Component.text(command.getUsageAlias())
-              );
+        TextComponent.Builder builder = text();
+
+        builder.append(text((addPrefix ? "Usage: " : "") + "/", NamedTextColor.RED)
+                    .hoverEvent(HoverEvent.showText(text(command.getDescription(), NamedTextColor.GRAY))))
+              .append(text(command.getUsageAlias(), NamedTextColor.RED));
 
         if (!command.getCustomUsage().isEmpty()) {
-            this.component = component.append(
-                  Component.text(command.getCustomUsage())
-            );
+            builder.append(text(command.getCustomUsage(), NamedTextColor.RED));
+            this.component = builder.build();
             return;
         }
 
@@ -43,59 +45,35 @@ public final class VelocityUsageMessage implements UsageMessage {
             Flag flag = flagParameter.getFlag();
 
             if (first) {
-                component = component.append(
-                      Component.text(" (").color(NamedTextColor.RED)
-                );
+                builder.append(text(" (", NamedTextColor.RED));
                 first = false;
             } else {
-                component = component.append(
-                      Component.text(" | ").color(NamedTextColor.RED)
-                ).hoverEvent(HoverEvent.showText(
-                      Component.text(command.getDescription()).color(NamedTextColor.GRAY))
-                );
+                builder.append(text(" | ", NamedTextColor.RED))
+                      .hoverEvent(HoverEvent.showText(text(command.getDescription(), NamedTextColor.GRAY)));
             }
 
-            component = component.append(
-                        Component.text("-" + flag.value() + (flagParameter.isBooleanFlag() ? "" : " <" + flagParameter.getName() + ">"))
-                  ).color(NamedTextColor.AQUA)
-                  .hoverEvent(HoverEvent.showText(
-                        Component.text(flag.description()).color(NamedTextColor.GRAY))
-                  );
+            builder
+                  .append(text("-" + flag.value() + (flagParameter.isBooleanFlag() ? "" : " <" + flagParameter.getName() + ">"), NamedTextColor.AQUA))
+                  .hoverEvent(HoverEvent.showText(text(flag.description(), NamedTextColor.GRAY)));
         }
-        if (!first) component = component.append(
-              Component.text(")").color(NamedTextColor.RED)
-        ).hoverEvent(HoverEvent.showText(
-              Component.text(command.getDescription()).color(NamedTextColor.GRAY))
-        );
+        if (!first) builder.append(text(")", NamedTextColor.RED))
+              .hoverEvent(HoverEvent.showText(text(command.getDescription(), NamedTextColor.GRAY)));
 
         // Add real parameters
         for (CommandParameter commandParameter : command.getCommandParameters()) {
-            component = component.append(
-                  Component.text(" ")
-            );
-
-            component = component.append(
-                  Component.text(commandParameter.isOptional() ? "(" : "<")
-            );
-            component = component.append(
-                  Component.text(commandParameter.getName())
-            );
-            if (commandParameter.isText()) component = component.append(
-                  Component.text("...")
-            );
-            component = component.append(
-                  Component.text(commandParameter.isOptional() ? ")" : ">")
-            );
+            builder.append(text(" ", NamedTextColor.RED))
+                  .append(text(commandParameter.isOptional() ? "(" : "<", NamedTextColor.RED))
+                  .append(text(commandParameter.getName(), NamedTextColor.RED))
+                  .append(commandParameter.isText() ? text("...", NamedTextColor.RED) : empty())
+                  .append(text(commandParameter.isOptional() ? ")" : ">", NamedTextColor.RED));
         }
 
         // Add extra usage
         if (!command.getExtraUsageData().isEmpty()) {
-            component = component.append(
-                  Component.text(" " + command.getExtraUsageData().trim())
-            );
+            builder.append(text(" " + command.getExtraUsageData().trim(), NamedTextColor.RED));
         }
 
-        this.component = component;
+        this.component = builder.build();
     }
 
     @Override

@@ -82,8 +82,9 @@ public class Parameter {
         }
     }
 
+    @Getter
     public static final class FlagParameter extends Parameter {
-        @Getter private final Flag flag;
+        private final Flag flag;
 
         public FlagParameter(String name, Class<?> type, Optional optional, AnnotatedElement element, Flag flag) {
             super(name, type, Collections.emptyList(), optional, null, null, false, element);
