@@ -120,6 +120,7 @@ public class CommandParser {
         return map;
     }
 
+    @SuppressWarnings("SizeReplaceableByIsEmpty") // Not available in Java 8
     @NotNull
     public static List<String> combineQuotedArguments(@NotNull List<String> args) {
         String whole = String.join(" ", args);
@@ -145,7 +146,7 @@ public class CommandParser {
             }
 
             if (c == ' ' && boundary == '\0') {
-                if (!building.isEmpty()) {
+                if (building.length() > 0) {
                     arguments.add(building.toString());
                     building.setLength(0);
                 }
@@ -155,7 +156,7 @@ public class CommandParser {
             building.append(c);
         }
 
-        if (!building.isEmpty()) {
+        if (building.length() > 0) {
             arguments.add(building.toString());
         }
 
