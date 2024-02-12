@@ -48,6 +48,7 @@ public class CommandParser {
                         data = arguments.size() > argIndex ? String.join(" ", arguments.subList(argIndex, arguments.size())) : data;
                 } else data = ((FlagParameter) parameter).extractFrom(flags);
                 bladeArgument.setString(data);
+                bladeArgument.getData().addAll(parameter.getData());
 
                 try {
                     ArgumentProvider<?> provider = command.getProviders().get(providerIndex);
