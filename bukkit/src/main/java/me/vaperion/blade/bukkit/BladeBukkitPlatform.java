@@ -22,7 +22,7 @@ import java.lang.reflect.Method;
 import java.util.Locale;
 
 @RequiredArgsConstructor
-public final class BladeBukkitPlatform implements BladePlatform {
+public class BladeBukkitPlatform implements BladePlatform {
 
     private static final Method SYNC_COMMANDS;
 
