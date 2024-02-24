@@ -1,4 +1,4 @@
-package me.vaperion.blade.bukkit.brigadier;
+package me.vaperion.blade.paper.brigadier;
 
 import lombok.Getter;
 import lombok.ToString;

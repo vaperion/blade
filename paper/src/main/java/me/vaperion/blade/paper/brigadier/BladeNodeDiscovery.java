@@ -1,4 +1,4 @@
-package me.vaperion.blade.bukkit.brigadier;
+package me.vaperion.blade.paper.brigadier;
 
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.command.Command;

@@ -1,4 +1,4 @@
-package me.vaperion.blade.bukkit;
+package me.vaperion.blade.paper;
 
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.Blade;
@@ -6,9 +6,11 @@ import me.vaperion.blade.Blade.Builder.Binder;
 import me.vaperion.blade.bukkit.argument.OfflinePlayerArgument;
 import me.vaperion.blade.bukkit.argument.PlayerArgument;
 import me.vaperion.blade.bukkit.container.BukkitContainer;
+import me.vaperion.blade.bukkit.context.BukkitSender;
 import me.vaperion.blade.bukkit.platform.BukkitHelpGenerator;
 import me.vaperion.blade.bukkit.platform.ProtocolLibTabCompleter;
 import me.vaperion.blade.container.ContainerCreator;
+import me.vaperion.blade.paper.brigadier.BladeBrigadierSupport;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
 import me.vaperion.blade.platform.TabCompleter;
@@ -22,7 +24,7 @@ import java.lang.reflect.Method;
 import java.util.Locale;
 
 @RequiredArgsConstructor
-public final class BladeBukkitPlatform implements BladePlatform {
+public final class BladePaperPlatform implements BladePlatform {
 
     private static final Method SYNC_COMMANDS;
 
@@ -65,6 +67,18 @@ public final class BladeBukkitPlatform implements BladePlatform {
         Binder binder = new Binder(builder, true);
         binder.bind(Player.class, new PlayerArgument());
         binder.bind(OfflinePlayer.class, new OfflinePlayerArgument());
+    }
+
+    @Override
+    public void ingestBlade(@NotNull Blade blade) {
+        try {
+            new BladeBrigadierSupport(blade, BukkitSender::new);
+        } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
+            // No paper / brigadier not supported
+        } catch (Throwable t) {
+            System.err.println("Blade failed to initialize Brigadier support.");
+            t.printStackTrace();
+        }
     }
 
     @Override

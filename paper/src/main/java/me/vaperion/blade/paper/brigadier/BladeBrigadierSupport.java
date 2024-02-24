@@ -1,4 +1,4 @@
-package me.vaperion.blade.bukkit.brigadier;
+package me.vaperion.blade.paper.brigadier;
 
 import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
 import com.destroystokyo.paper.event.brigadier.CommandRegisteredEvent;
