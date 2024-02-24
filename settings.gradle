@@ -3,5 +3,6 @@ rootProject.name = 'blade'
 include(
         'core',
 		'bukkit',
-		'velocity'
+		'velocity',
+		'bukkit-brigadier'
 )

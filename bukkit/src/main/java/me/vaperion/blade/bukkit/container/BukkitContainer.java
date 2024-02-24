@@ -90,7 +90,9 @@ public final class BukkitContainer extends Command implements Container {
             }
         }
 
-        simpleCommandMap.register(blade.getConfiguration().getFallbackPrefix(), this);
+        if (!simpleCommandMap.register(blade.getConfiguration().getFallbackPrefix(), this)) {
+            System.err.println("Blade failed to register the command \"" + alias + "\". This could lead to issues.");
+        }
     }
 
     private boolean doesBukkitCommandConflict(@NotNull Command bukkitCommand, @NotNull String alias, @NotNull me.vaperion.blade.command.Command command) {

@@ -1,6 +1,7 @@
 package me.vaperion.blade.command;
 
 import lombok.Getter;
+import lombok.ToString;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.annotation.argument.*;
 import me.vaperion.blade.annotation.command.*;
@@ -24,6 +25,7 @@ import static me.vaperion.blade.util.Preconditions.checkNotEmpty;
 import static me.vaperion.blade.util.Preconditions.runOrDefault;
 
 @Getter
+@ToString
 public final class Command {
 
     private final Blade blade;

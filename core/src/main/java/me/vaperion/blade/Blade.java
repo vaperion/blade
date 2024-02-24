@@ -77,6 +77,7 @@ public final class Blade {
         }
 
         configuration.getTabCompleter().init(this);
+        platform.ingestBlade(this);
     }
 
     @NotNull

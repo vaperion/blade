@@ -28,6 +28,8 @@ public class CommandRegistrar {
 
                 registerMethod(instance, method);
             }
+
+            blade.getPlatform().postCommandMapUpdate();
         } catch (Exception ex) {
             System.err.println("An exception was thrown while registering commands in class " + clazz.getCanonicalName() + " (instance: " + instance + ")");
             ex.printStackTrace();
@@ -42,6 +44,8 @@ public class CommandRegistrar {
 
                 unregisterMethod(instance, method);
             }
+
+            blade.getPlatform().postCommandMapUpdate();
         } catch (Exception ex) {
             System.err.println("An exception was thrown while registering commands in class " + clazz.getCanonicalName() + " (instance: " + instance + ")");
             ex.printStackTrace();
