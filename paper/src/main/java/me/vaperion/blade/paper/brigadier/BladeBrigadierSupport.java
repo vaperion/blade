@@ -10,6 +10,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import me.vaperion.blade.Blade;
+import me.vaperion.blade.annotation.argument.Range;
 import me.vaperion.blade.command.Parameter;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.context.WrappedSender;
@@ -128,7 +129,7 @@ public final class BladeBrigadierSupport implements Listener {
 
         for (Parameter.CommandParameter parameter : node.getCommand().getCommandParameters()) {
             RequiredArgumentBuilder<BukkitBrigadierCommandSource, Object> builder = RequiredArgumentBuilder
-                  .<BukkitBrigadierCommandSource, Object>argument(parameter.getName(), mapBrigadierType(parameter.getType()))
+                  .<BukkitBrigadierCommandSource, Object>argument(parameter.getName(), mapBrigadierArgument(parameter))
                   .suggests(suggestionProvider)
                   .requires(createPermissionPredicate(node))
                   .executes(brigadierCommand);
@@ -165,19 +166,47 @@ public final class BladeBrigadierSupport implements Listener {
     }
 
     @NotNull
-    private ArgumentType<Object> mapBrigadierType(@NotNull Class<?> clazz) {
-        if (clazz == String.class) return objectifyArgument(StringArgumentType.string());
-        if (clazz == int.class || clazz == Integer.class) return objectifyArgument(IntegerArgumentType.integer());
-        if (clazz == float.class || clazz == Float.class) return objectifyArgument(FloatArgumentType.floatArg());
-        if (clazz == double.class || clazz == Double.class) return objectifyArgument(DoubleArgumentType.doubleArg());
-        if (clazz == boolean.class || clazz == Boolean.class) return objectifyArgument(BoolArgumentType.bool());
-        if (clazz == long.class || clazz == Long.class) return objectifyArgument(LongArgumentType.longArg());
-        return objectifyArgument(StringArgumentType.string()); // Everything else becomes a string
-    }
+    private ArgumentType<Object> mapBrigadierArgument(@NotNull Parameter parameter) {
+        Class<?> clazz = parameter.getType();
+        ArgumentType<?> type = StringArgumentType.string();
 
-    @SuppressWarnings("unchecked")
-    @NotNull
-    private <T> ArgumentType<Object> objectifyArgument(@NotNull ArgumentType<T> type) {
+        if (clazz == String.class) {
+            if (parameter.isText()) type = StringArgumentType.greedyString();
+            else type = StringArgumentType.string();
+        }
+
+        if (clazz == int.class || clazz == Integer.class) {
+            if (parameter.hasRange()) {
+                Range range = parameter.getRange();
+                type = IntegerArgumentType.integer((int) Math.floor(range.min()), (int) Math.ceil(range.max()));
+            } else type = IntegerArgumentType.integer();
+        }
+
+        if (clazz == float.class || clazz == Float.class) {
+            if (parameter.hasRange()) {
+                Range range = parameter.getRange();
+                type = FloatArgumentType.floatArg((float) range.min(), (float) range.max());
+            } else type = FloatArgumentType.floatArg();
+        }
+
+        if (clazz == double.class || clazz == Double.class) {
+            if (parameter.hasRange()) {
+                Range range = parameter.getRange();
+                type = DoubleArgumentType.doubleArg(range.min(), range.max());
+            } else type = DoubleArgumentType.doubleArg();
+        }
+
+        if (clazz == long.class || clazz == Long.class) {
+            if (parameter.hasRange()) {
+                Range range = parameter.getRange();
+                type = LongArgumentType.longArg((long) Math.floor(range.min()), (long) Math.ceil(range.max()));
+            } else type = LongArgumentType.longArg();
+        }
+
+        if (clazz == boolean.class || clazz == Boolean.class)
+            type = BoolArgumentType.bool();
+
+        //noinspection unchecked
         return (ArgumentType<Object>) type;
     }
 }
