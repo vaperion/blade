@@ -77,7 +77,14 @@ public final class BukkitContainer extends Command implements Container {
 
         if (blade.getConfiguration().isOverrideCommands()) {
             Map<String, Command> knownCommands = (Map<String, Command>) KNOWN_COMMANDS.get(simpleCommandMap);
-            Iterator<Map.Entry<String, Command>> iterator = knownCommands.entrySet().iterator();
+            Set<Map.Entry<String, Command>> entrySet = knownCommands.entrySet();
+            Iterator<Map.Entry<String, Command>> iterator = entrySet.iterator();
+
+            List<String> keysToRemove = new ArrayList<>();
+
+            // Paper 1.21 and above provides a custom HashMap implementation that "transparently" forwards to Brigadier
+            // Unfortunately this implementation doesn't support Iterator#remove, so we have to collect the keys
+            boolean lazyRemove = entrySet.getClass().toString().contains("BukkitBrigForwardingMap");
 
             while (iterator.hasNext()) {
                 Map.Entry<String, Command> entry = iterator.next();
@@ -85,9 +92,15 @@ public final class BukkitContainer extends Command implements Container {
 
                 if (doesBukkitCommandConflict(registeredCommand, alias, command)) {
                     registeredCommand.unregister(simpleCommandMap);
-                    iterator.remove();
+
+                    if (!lazyRemove)
+                        iterator.remove();
+                    else
+                        keysToRemove.add(entry.getKey());
                 }
             }
+
+            keysToRemove.forEach(knownCommands::remove);
         }
 
         if (!simpleCommandMap.register(blade.getConfiguration().getFallbackPrefix(), this)) {
