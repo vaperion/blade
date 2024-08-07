@@ -4,6 +4,10 @@ import me.vaperion.blade.Blade;
 import me.vaperion.blade.bukkit.BladeBukkitPlatform;
 import me.vaperion.blade.bukkit.context.BukkitSender;
 import me.vaperion.blade.paper.brigadier.BladeBrigadierSupport;
+import me.vaperion.blade.paper.platform.NewProtocolLibTabCompleter;
+import me.vaperion.blade.platform.BladeConfiguration;
+import me.vaperion.blade.platform.TabCompleter;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,5 +27,12 @@ public final class BladePaperPlatform extends BladeBukkitPlatform {
             System.err.println("Blade failed to initialize Brigadier support.");
             t.printStackTrace();
         }
+    }
+
+    @Override
+    public void configureTabCompleter(@NotNull BladeConfiguration configuration) {
+        configuration.setTabCompleter(Bukkit.getPluginManager().isPluginEnabled("ProtocolLib")
+              ? new NewProtocolLibTabCompleter(plugin)
+              : new TabCompleter.Default());
     }
 }

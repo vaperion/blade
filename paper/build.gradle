@@ -12,9 +12,12 @@ targetCompatibility = JavaVersion.VERSION_17
 
 dependencies {
     implementation project(":core")
-    implementation project(":bukkit")
+
+    implementation(project(":bukkit")) {
+        exclude group: 'com.comphenix.protocol', module: 'ProtocolLib'
+    }
 
     compileOnly 'io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT'
     compileOnly 'io.papermc.paper:paper-mojangapi:1.20.4-R0.1-SNAPSHOT'
-    compileOnly 'com.comphenix.protocol:ProtocolLib:4.6.0'
+    compileOnly 'com.comphenix.protocol:ProtocolLib:5.3.0-SNAPSHOT'
 }

@@ -43,7 +43,7 @@ public class BladeBukkitPlatform implements BladePlatform {
         SYNC_COMMANDS = syncCommands;
     }
 
-    private final JavaPlugin plugin;
+    protected final JavaPlugin plugin;
 
     @Override
     public @NotNull Object getPluginInstance() {
@@ -60,11 +60,17 @@ public class BladeBukkitPlatform implements BladePlatform {
         configuration.setPluginInstance(plugin);
         configuration.setFallbackPrefix(plugin.getName().toLowerCase(Locale.ROOT));
         configuration.setHelpGenerator(new BukkitHelpGenerator());
-        configuration.setTabCompleter(Bukkit.getPluginManager().isPluginEnabled("ProtocolLib") ? new ProtocolLibTabCompleter(plugin) : new TabCompleter.Default());
+        configureTabCompleter(configuration);
 
         Binder binder = new Binder(builder, true);
         binder.bind(Player.class, new PlayerArgument());
         binder.bind(OfflinePlayer.class, new OfflinePlayerArgument());
+    }
+
+    public void configureTabCompleter(@NotNull BladeConfiguration configuration) {
+        configuration.setTabCompleter(Bukkit.getPluginManager().isPluginEnabled("ProtocolLib")
+              ? new ProtocolLibTabCompleter(plugin)
+              : new TabCompleter.Default());
     }
 
     @Override

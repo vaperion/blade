@@ -5,6 +5,7 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.reflect.FieldAccessException;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.bukkit.context.BukkitSender;
 import me.vaperion.blade.platform.TabCompleter;
@@ -48,7 +49,14 @@ public class ProtocolLibTabCompleter extends PacketAdapter implements TabComplet
             ProtocolLibrary.getProtocolManager().sendServerPacket(player, tabComplete);
         } catch (Exception ex) {
             System.err.println("An exception was thrown while attempting to tab complete '" + commandLine + "' for player " + player.getName());
+
             ex.printStackTrace();
+
+            if (ex instanceof FieldAccessException) {
+                System.err.println("This is likely due to a version incompatibility between Blade and ProtocolLib. " +
+                      "If your server is running Minecraft 1.13 or newer, please consider using BladePaperPlatform instead of BladeBukkitPlatform," +
+                      " as it properly adds support for Brigadier. If this is not your plugin, please relay this information to the plugin author.");
+            }
         }
     }
 }
