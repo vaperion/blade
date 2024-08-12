@@ -32,7 +32,7 @@ You also need to shade the library into your final jar. You can do this by choos
 <dependencies>
 <dependency>
     <groupId>com.github.vaperion.blade</groupId>
-    <!-- Replace PLATFORM with the platform you want to use: bukkit or velocity -->
+    <!-- Replace PLATFORM with the platform you want to use: paper (for 1.13+ Paper servers), bukkit (for <1.13 Paper servers & all Bukkit servers), or velocity -->
     <artifactId>PLATFORM</artifactId>
     <!-- Replace VERSION with your desired version -->
     <version>VERSION</version>
