@@ -1,8 +1,0 @@
-rootProject.name = 'blade'
-
-include(
-        'core',
-		'bukkit',
-		'velocity',
-		'paper'
-)
