@@ -10,6 +10,7 @@ import me.vaperion.blade.command.Parameter;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.context.WrappedSender;
 import me.vaperion.blade.exception.BladeExitMessage;
+import me.vaperion.blade.exception.StacklessErrorMessage;
 import me.vaperion.blade.util.Tuple;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -80,7 +81,11 @@ public class CommandCompleter {
                 : command.getParameterProviders().get(index);
 
             if (parameterProvider == null) {
-                throw new BladeExitMessage("Could not find provider for argument " + index + ".");
+                throw new StacklessErrorMessage(
+                    "Could not find argument provider for parameter '%s' (%s) for command '%s'.",
+                    parameter != null ? parameter.getName() : ("@ index " + index),
+                    parameter != null ? parameter.getType().getCanonicalName() : "unknown",
+                    command.getAliases()[0]);
             }
 
             Argument bladeArgument = new Argument(parameter);

@@ -11,6 +11,7 @@ import me.vaperion.blade.command.Parameter.FlagParameter;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.exception.BladeExitMessage;
 import me.vaperion.blade.exception.BladeUsageMessage;
+import me.vaperion.blade.exception.StacklessErrorMessage;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -54,8 +55,11 @@ public class CommandParser {
 
                 try {
                     ArgumentProvider<?> provider = command.getProviders().get(providerIndex);
-                    if (provider == null)
-                        throw new BladeExitMessage("Could not find provider for type '" + parameter.getType().getCanonicalName() + "'.");
+                    if (provider == null) {
+                        throw new StacklessErrorMessage(
+                            "Could not find argument provider for parameter '%s' (%s) for command '%s'.",
+                            parameter.getName(), parameter.getType().getCanonicalName(), command.getAliases()[0]);
+                    }
 
                     Object parsed;
                     if (bladeArgument.getType() == Type.OPTIONAL && bladeArgument.getParameter().defaultsToNull())
