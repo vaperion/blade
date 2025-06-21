@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
+@SuppressWarnings("ClassCanBeRecord")
 @Getter
 @ToString
 public class SimpleBladeNode {

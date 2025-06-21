@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+@SuppressWarnings("unused")
 @UtilityClass
 public class ClassUtil {
 
@@ -51,17 +52,19 @@ public class ClassUtil {
 
                     try {
                         classes.add(Class.forName(className));
-                    } catch (ClassNotFoundException ignored) {}
+                    } catch (ClassNotFoundException ignored) {
+                    }
                 }
             }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to get classes in package " + packageName, e);
+        } catch (Throwable t) {
+            throw new RuntimeException("Failed to get classes in package " + packageName, t);
         }
 
         return classes;
     }
 
-    public Class<?> getGenericOrRawType(Parameter parameter) {
+    @NotNull
+    public Class<?> getGenericOrRawType(@NotNull Parameter parameter) {
         Type type = parameter.getParameterizedType();
         if (type instanceof ParameterizedType) {
             return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];

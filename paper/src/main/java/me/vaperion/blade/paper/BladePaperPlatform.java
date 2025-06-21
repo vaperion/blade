@@ -11,6 +11,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
+@SuppressWarnings("unused")
 public final class BladePaperPlatform extends BladeBukkitPlatform {
 
     public BladePaperPlatform(JavaPlugin plugin) {
@@ -24,15 +25,14 @@ public final class BladePaperPlatform extends BladeBukkitPlatform {
         } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
             // No paper / brigadier not supported
         } catch (Throwable t) {
-            System.err.println("Blade failed to initialize Brigadier support.");
-            t.printStackTrace();
+            blade.logger().error(t, "Failed to initialize Brigadier support!");
         }
     }
 
     @Override
     public void configureTabCompleter(@NotNull BladeConfiguration configuration) {
         configuration.setTabCompleter(Bukkit.getPluginManager().isPluginEnabled("ProtocolLib")
-              ? new NewProtocolLibTabCompleter(plugin)
-              : new TabCompleter.Default());
+            ? new NewProtocolLibTabCompleter(plugin)
+            : new TabCompleter.Default());
     }
 }

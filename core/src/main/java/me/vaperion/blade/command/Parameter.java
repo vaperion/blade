@@ -8,6 +8,8 @@ import me.vaperion.blade.annotation.argument.Optional;
 import me.vaperion.blade.annotation.argument.Range;
 import me.vaperion.blade.argument.ArgumentProvider;
 import me.vaperion.blade.exception.BladeExitMessage;
+import me.vaperion.blade.log.BladeLogger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.AnnotatedElement;
@@ -52,14 +54,18 @@ public class Parameter {
             return COMPLETER_CACHE.computeIfAbsent(completer.value(), c -> {
                 try {
                     return c.newInstance();
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
+                } catch (Throwable t) {
+                    throw new RuntimeException(t);
                 }
             });
-        } catch (Exception e) {
-            if (e.getCause() != null) e.getCause().printStackTrace();
-            else e.printStackTrace();
-            throw new BladeExitMessage("An exception was thrown while attempting to load the custom tab completer.");
+        } catch (Throwable t) {
+            BladeLogger.DEFAULT.error(
+                t.getCause() != null ? t.getCause() : t,
+                "An error occurred while attempting to load the custom tab completer for parameter '%s' of type '%s'.",
+                name, type.getCanonicalName()
+            );
+
+            throw new BladeExitMessage("An error occurred while attempting to load the custom tab completer.");
         }
     }
 
@@ -77,7 +83,14 @@ public class Parameter {
     }
 
     public static final class CommandParameter extends Parameter {
-        public CommandParameter(String name, Class<?> type, List<String> data, Optional optional, Range range, Completer completer, boolean text, AnnotatedElement element) {
+        public CommandParameter(@NotNull String name,
+                                @NotNull Class<?> type,
+                                @NotNull List<String> data,
+                                @Nullable Optional optional,
+                                @Nullable Range range,
+                                @Nullable Completer completer,
+                                boolean text,
+                                @NotNull AnnotatedElement element) {
             super(name, type, data, optional, range, completer, text, element);
         }
     }
@@ -86,7 +99,11 @@ public class Parameter {
     public static final class FlagParameter extends Parameter {
         private final Flag flag;
 
-        public FlagParameter(String name, Class<?> type, Optional optional, AnnotatedElement element, Flag flag) {
+        public FlagParameter(@NotNull String name,
+                             @NotNull Class<?> type,
+                             @Nullable Optional optional,
+                             @NotNull AnnotatedElement element,
+                             @NotNull Flag flag) {
             super(name, type, Collections.emptyList(), optional, null, null, false, element);
             this.flag = flag;
         }
@@ -96,7 +113,7 @@ public class Parameter {
         }
 
         @Nullable
-        public String extractFrom(Map<Character, String> flagMap) {
+        public String extractFrom(@NotNull Map<Character, String> flagMap) {
             if (!flagMap.containsKey(flag.value())) {
                 if (this.optional != null) return this.optional.value();
                 return isBooleanFlag() ? "false" : null;

@@ -8,6 +8,7 @@ import me.vaperion.blade.argument.Provider;
 import me.vaperion.blade.argument.impl.*;
 import me.vaperion.blade.command.Command;
 import me.vaperion.blade.container.Container;
+import me.vaperion.blade.log.BladeLogger;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
 import me.vaperion.blade.service.*;
@@ -22,6 +23,7 @@ import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.function.Consumer;
 
+@SuppressWarnings({ "unused", "UnusedReturnValue" })
 @Getter
 public final class Blade {
 
@@ -78,6 +80,11 @@ public final class Blade {
 
         configuration.getTabCompleter().init(this);
         platform.ingestBlade(this);
+    }
+
+    @NotNull
+    public BladeLogger logger() {
+        return configuration.getLogger();
     }
 
     @NotNull

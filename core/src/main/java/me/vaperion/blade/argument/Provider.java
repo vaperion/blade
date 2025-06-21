@@ -10,7 +10,7 @@ import java.lang.annotation.Annotation;
 import java.util.HashSet;
 import java.util.List;
 
-@SuppressWarnings({"rawtypes", "unchecked"})
+@SuppressWarnings({ "rawtypes", "unchecked" })
 @Getter
 @RequiredArgsConstructor
 public class Provider<T> {

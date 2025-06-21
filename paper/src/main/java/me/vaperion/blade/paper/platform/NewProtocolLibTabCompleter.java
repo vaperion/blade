@@ -59,23 +59,23 @@ public class NewProtocolLibTabCompleter extends PacketAdapter implements TabComp
                 sendLegacyCompletions(player, suggestions, tabComplete);
             } else if (intCount == 1) {
                 sendModernCompletions(player, commandLine, suggestions,
-                      event.getPacket(), tabComplete);
+                    event.getPacket(), tabComplete);
             } else if (intCount == 3) {
                 sendLatestCompletions(player, commandLine, suggestions,
-                      event.getPacket(), tabComplete);
+                    event.getPacket(), tabComplete);
             } else {
                 throw new UnsupportedOperationException("Unsupported tab complete packet structure, int count: " + intCount);
             }
-        } catch (Exception ex) {
-            System.err.println("An exception was thrown while attempting to tab complete '" + commandLine + "' for player " + player.getName());
-            ex.printStackTrace();
+        } catch (Throwable t) {
+            blade.logger().error(t, "An error occurred while attempting to tab complete '%s' for player %s!",
+                commandLine, player.getName());
         }
     }
 
     private void sendLegacyCompletions(@NotNull Player player,
                                        @NotNull List<String> suggestions,
                                        @NotNull PacketContainer container) {
-        // Used: 1.8 - 1.12.2
+        // Used: 1.8-1.12.2
         // Packet structure: String[] (suggestions)
 
         container.getStringArrays().write(0, suggestions.toArray(new String[0]));
@@ -87,7 +87,7 @@ public class NewProtocolLibTabCompleter extends PacketAdapter implements TabComp
                                        @NotNull List<String> suggestions,
                                        @NotNull PacketContainer received,
                                        @NotNull PacketContainer container) {
-        // Used: 1.13 - 1.20.4
+        // Used: 1.13-1.20.4
         // Packet structure: int (transaction id), Suggestions (suggestions)
 
         int rangeStart = commandLine.lastIndexOf(' ') + 1;
@@ -96,8 +96,8 @@ public class NewProtocolLibTabCompleter extends PacketAdapter implements TabComp
         StringRange stringRange = StringRange.between(rangeStart + 1, rangeEnd + 1);
 
         List<Suggestion> entries = suggestions.stream()
-              .map(suggestion -> new Suggestion(stringRange, suggestion))
-              .toList();
+            .map(suggestion -> new Suggestion(stringRange, suggestion))
+            .toList();
 
         Suggestions brigadierSuggestions = new Suggestions(stringRange, entries);
 
@@ -120,8 +120,8 @@ public class NewProtocolLibTabCompleter extends PacketAdapter implements TabComp
         int rangeEnd = commandLine.length();
 
         List<SuggestionEntry> entries = suggestions.stream()
-              .map(suggestion -> new SuggestionEntry(suggestion, Optional.empty()))
-              .toList();
+            .map(suggestion -> new SuggestionEntry(suggestion, Optional.empty()))
+            .toList();
 
         container.getIntegers().write(0, received.getIntegers().read(0)); // transaction id
 
@@ -138,14 +138,14 @@ public class NewProtocolLibTabCompleter extends PacketAdapter implements TabComp
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     record SuggestionEntry(String text, Optional<Component> tooltip) {
         private static final List<String> CLASS_NAMES = List.of(
-              "net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket$Entry"
+            "net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket$Entry"
         );
 
         @NotNull
         static EquivalentConverter<SuggestionEntry> converter() {
             return Converters.ignoreNull(Converters.handle(SuggestionEntry::toHandle,
-                  SuggestionEntry::fromHandle,
-                  SuggestionEntry.class));
+                SuggestionEntry::fromHandle,
+                SuggestionEntry.class));
         }
 
         @NotNull
@@ -167,8 +167,8 @@ public class NewProtocolLibTabCompleter extends PacketAdapter implements TabComp
             for (String name : CLASS_NAMES) {
                 try {
                     return Class.forName(name)
-                          .getDeclaredConstructor(String.class, Optional.class)
-                          .newInstance(text, tooltip);
+                        .getDeclaredConstructor(String.class, Optional.class)
+                        .newInstance(text, tooltip);
                 } catch (Throwable ignored) {
                 }
             }

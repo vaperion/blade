@@ -18,15 +18,15 @@ public class BukkitHelpGenerator implements HelpGenerator {
     @Override
     public List<String> generate(@NotNull Context context, @NotNull List<Command> commands) {
         commands = commands.stream()
-              .distinct()
-              .filter(c -> !c.isHidden())
-              .sorted(context.blade().getConfiguration().getHelpSorter())
-              .collect(Collectors.toList());
+            .distinct()
+            .filter(c -> !c.isHidden())
+            .sorted(context.blade().getConfiguration().getHelpSorter())
+            .collect(Collectors.toList());
 
         int originalCount = commands.size();
         commands = commands.stream()
-              .filter(c -> context.blade().getPermissionTester().testPermission(context, c))
-              .collect(Collectors.toList());
+            .filter(c -> context.blade().getPermissionTester().testPermission(context, c))
+            .collect(Collectors.toList());
 
         if (originalCount != 0 && commands.isEmpty()) {
             return Collections.singletonList(ChatColor.RED + context.blade().getConfiguration().getDefaultPermissionMessage());

@@ -2,21 +2,27 @@
 
 Blade is an easy-to-use command framework based on annotations. It currently supports Bukkit and Velocity.
 
-If you make any changes or improvements to the project, please consider making a pull request to merge your changes back into the upstream project.
+If you make any changes or improvements to the project, please consider making a pull request to merge your changes back
+into the upstream project.
 If you find any issues please open an issue.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
 ## YourKit
 
-YourKit supports open source projects with innovative and intelligent tools for monitoring and profiling Java and .NET applications. YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/profiler/), [YourKit .NET Profiler](https://www.yourkit.com/.net/profiler/) and [YourKit YouMonitor](https://www.yourkit.com/youmonitor/).
+YourKit supports open source projects with innovative and intelligent tools for monitoring and profiling Java and .NET
+applications. YourKit is the creator
+of [YourKit Java Profiler](https://www.yourkit.com/java/profiler/), [YourKit .NET Profiler](https://www.yourkit.com/.net/profiler/)
+and [YourKit YouMonitor](https://www.yourkit.com/youmonitor/).
 
 ![YourKit](https://www.yourkit.com/images/yklogo.png)
 
 ## Usage
 
-First, you need to set up the dependency. You can do this by following the instructions below depending on your build system.
-You also need to shade the library into your final jar. You can do this by choosing a shade plugin for your build system and shading the library into your final jar.
+First, you need to set up the dependency. You can do this by following the instructions below depending on your build
+system.
+You also need to shade the library into your final jar. You can do this by choosing a shade plugin for your build system
+and shading the library into your final jar.
 
 ### Maven
 

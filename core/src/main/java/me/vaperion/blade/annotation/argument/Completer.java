@@ -1,6 +1,7 @@
 package me.vaperion.blade.annotation.argument;
 
 import me.vaperion.blade.argument.ArgumentProvider;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -13,5 +14,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 public @interface Completer {
+    @NotNull
     Class<? extends ArgumentProvider<?>> value();
 }

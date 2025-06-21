@@ -30,8 +30,8 @@ public final class VelocityUsageMessage implements UsageMessage {
         TextComponent.Builder builder = text();
 
         builder.append(text((addPrefix ? "Usage: " : "") + "/", NamedTextColor.RED)
-                    .hoverEvent(HoverEvent.showText(text(command.getDescription(), NamedTextColor.GRAY))))
-              .append(text(command.getUsageAlias(), NamedTextColor.RED));
+                .hoverEvent(HoverEvent.showText(text(command.getDescription(), NamedTextColor.GRAY))))
+            .append(text(command.getUsageAlias(), NamedTextColor.RED));
 
         if (!command.getCustomUsage().isEmpty()) {
             builder.append(text(command.getCustomUsage(), NamedTextColor.RED));
@@ -49,23 +49,23 @@ public final class VelocityUsageMessage implements UsageMessage {
                 first = false;
             } else {
                 builder.append(text(" | ", NamedTextColor.RED))
-                      .hoverEvent(HoverEvent.showText(text(command.getDescription(), NamedTextColor.GRAY)));
+                    .hoverEvent(HoverEvent.showText(text(command.getDescription(), NamedTextColor.GRAY)));
             }
 
             builder
-                  .append(text("-" + flag.value() + (flagParameter.isBooleanFlag() ? "" : " <" + flagParameter.getName() + ">"), NamedTextColor.AQUA))
-                  .hoverEvent(HoverEvent.showText(text(flag.description(), NamedTextColor.GRAY)));
+                .append(text("-" + flag.value() + (flagParameter.isBooleanFlag() ? "" : " <" + flagParameter.getName() + ">"), NamedTextColor.AQUA))
+                .hoverEvent(HoverEvent.showText(text(flag.description(), NamedTextColor.GRAY)));
         }
         if (!first) builder.append(text(")", NamedTextColor.RED))
-              .hoverEvent(HoverEvent.showText(text(command.getDescription(), NamedTextColor.GRAY)));
+            .hoverEvent(HoverEvent.showText(text(command.getDescription(), NamedTextColor.GRAY)));
 
         // Add real parameters
         for (CommandParameter commandParameter : command.getCommandParameters()) {
             builder.append(text(" ", NamedTextColor.RED))
-                  .append(text(commandParameter.isOptional() ? "(" : "<", NamedTextColor.RED))
-                  .append(text(commandParameter.getName(), NamedTextColor.RED))
-                  .append(commandParameter.isText() ? text("...", NamedTextColor.RED) : empty())
-                  .append(text(commandParameter.isOptional() ? ")" : ">", NamedTextColor.RED));
+                .append(text(commandParameter.isOptional() ? "(" : "<", NamedTextColor.RED))
+                .append(text(commandParameter.getName(), NamedTextColor.RED))
+                .append(commandParameter.isText() ? text("...", NamedTextColor.RED) : empty())
+                .append(text(commandParameter.isOptional() ? ")" : ">", NamedTextColor.RED));
         }
 
         // Add extra usage

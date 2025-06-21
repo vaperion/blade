@@ -23,8 +23,8 @@ public final class BukkitUsageMessage implements UsageMessage {
 
     public BukkitUsageMessage(Command command, boolean addPrefix) {
         MessageBuilder messageBuilder = new MessageBuilder((addPrefix ? "Usage: " : "") + "/").color(ChatColor.RED)
-              .hoverWithColor(ChatColor.GRAY, command.getDescription())
-              .append(command.getUsageAlias());
+            .hoverWithColor(ChatColor.GRAY, command.getDescription())
+            .append(command.getUsageAlias());
 
         if (!command.getCustomUsage().isEmpty()) {
             messageBuilder.append(" ").append(command.getCustomUsage());
@@ -45,11 +45,12 @@ public final class BukkitUsageMessage implements UsageMessage {
             }
 
             messageBuilder
-                  .append("-" + flag.value() + (flagParameter.isBooleanFlag() ? "" : " <" + flagParameter.getName() + ">"))
-                  .color(ChatColor.AQUA)
-                  .hoverWithColor(ChatColor.GRAY, flag.description());
+                .append("-" + flag.value() + (flagParameter.isBooleanFlag() ? "" : " <" + flagParameter.getName() + ">"))
+                .color(ChatColor.AQUA)
+                .hoverWithColor(ChatColor.GRAY, flag.description());
         }
-        if (!first) messageBuilder.append(")").reset().color(ChatColor.RED).hoverWithColor(ChatColor.GRAY, command.getDescription());
+        if (!first)
+            messageBuilder.append(")").reset().color(ChatColor.RED).hoverWithColor(ChatColor.GRAY, command.getDescription());
 
         // Add real parameters
         for (CommandParameter commandParameter : command.getCommandParameters()) {

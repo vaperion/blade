@@ -3,6 +3,7 @@ package me.vaperion.blade.platform;
 import lombok.Getter;
 import lombok.Setter;
 import me.vaperion.blade.command.Command;
+import me.vaperion.blade.log.BladeLogger;
 import me.vaperion.blade.util.Preconditions;
 
 import java.util.Comparator;
@@ -25,8 +26,9 @@ public final class BladeConfiguration {
 
     private Consumer<Runnable> asyncExecutor = EXECUTOR_SERVICE::execute;
 
-    private HelpGenerator helpGenerator;
-    private TabCompleter tabCompleter;
+    private TabCompleter tabCompleter = new TabCompleter.Default();
+    private HelpGenerator helpGenerator = new HelpGenerator.Default();
+    private BladeLogger logger = BladeLogger.DEFAULT;
 
     private Comparator<Command> helpSorter = Comparator.comparing(Command::getUsageAlias);
 

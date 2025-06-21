@@ -9,6 +9,7 @@ import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.exception.BladeExitMessage;
 import me.vaperion.blade.exception.BladeUsageMessage;
+import me.vaperion.blade.log.BladeLogger;
 import me.vaperion.blade.util.Tuple;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -41,9 +42,8 @@ public final class BukkitContainer extends Command implements Container {
 
             unknownCommandField.setAccessible(true);
             unknownCommandMessage = ChatColor.WHITE + (String) unknownCommandField.get(null);
-        } catch (Exception ex) {
-            System.err.println("Failed to grab unknown command message from SpigotConfig.");
-            ex.printStackTrace();
+        } catch (Throwable t) {
+            BladeLogger.DEFAULT.error(t, "Failed to grab SpigotConfig#unknownCommandMessage. Using default message instead.");
         }
 
         try {
@@ -52,9 +52,8 @@ public final class BukkitContainer extends Command implements Container {
 
             mapField.setAccessible(true);
             commandsField.setAccessible(true);
-        } catch (Exception ex) {
-            System.err.println("Failed to grab commandMap from the plugin manager.");
-            ex.printStackTrace();
+        } catch (Throwable t) {
+            BladeLogger.DEFAULT.error(t, "Failed to grab commandMap and knownCommands from the plugin manager!");
         }
 
         COMMAND_MAP = mapField;
@@ -66,7 +65,9 @@ public final class BukkitContainer extends Command implements Container {
     private final me.vaperion.blade.command.Command baseCommand;
 
     @SuppressWarnings("unchecked")
-    private BukkitContainer(@NotNull Blade blade, @NotNull me.vaperion.blade.command.Command command, @NotNull String alias) throws Exception {
+    private BukkitContainer(@NotNull Blade blade,
+                            @NotNull me.vaperion.blade.command.Command command,
+                            @NotNull String alias) throws Exception {
         super(alias, command.getDescription(), "/" + alias, new ArrayList<>());
 
         this.blade = blade;
@@ -154,8 +155,8 @@ public final class BukkitContainer extends Command implements Container {
             return new Tuple<>(false, "This command failed to execute as we couldn't find its registration.");
 
         return new Tuple<>(
-              blade.getPermissionTester().testPermission(context, command),
-              command.isHidden() ? UNKNOWN_COMMAND_MESSAGE : command.getPermissionMessage());
+            blade.getPermissionTester().testPermission(context, command),
+            command.isHidden() ? UNKNOWN_COMMAND_MESSAGE : command.getPermissionMessage());
     }
 
     private String[] joinAliasToArgs(String alias, String[] args) {
@@ -183,8 +184,8 @@ public final class BukkitContainer extends Command implements Container {
             Tuple<me.vaperion.blade.command.Command, String> resolved = resolveCommand(joined);
             if (resolved == null) {
                 List<me.vaperion.blade.command.Command> availableCommands = blade.getCommands()
-                      .stream().filter(c -> Arrays.stream(c.getAliases()).anyMatch(a -> a.toLowerCase().startsWith(alias.toLowerCase(Locale.ROOT) + " ") || a.equalsIgnoreCase(alias)))
-                      .collect(Collectors.toList());
+                    .stream().filter(c -> Arrays.stream(c.getAliases()).anyMatch(a -> a.toLowerCase().startsWith(alias.toLowerCase(Locale.ROOT) + " ") || a.equalsIgnoreCase(alias)))
+                    .collect(Collectors.toList());
 
                 for (String line : blade.getConfiguration().getHelpGenerator().generate(context, availableCommands)) {
                     sender.sendMessage(line);
@@ -239,11 +240,13 @@ public final class BukkitContainer extends Command implements Container {
                         }
                     }
 
-                    ex.printStackTrace();
-                    sender.sendMessage(ChatColor.RED + "An exception was thrown while executing this command.");
+                    blade.logger().error(ex, "An error occurred while %s was executing the command '%s' (%s#%s).",
+                        sender.getName(), finalResolvedAlias, finalCommand.getMethod().getDeclaringClass().getName(), finalCommand.getMethod().getName());
+
+                    sender.sendMessage(ChatColor.RED + "An error occurred while executing this command. Please contact the server administrator if this issue persists.");
                 } catch (Throwable t) {
-                    t.printStackTrace();
-                    sender.sendMessage(ChatColor.RED + "An exception was thrown while executing this command.");
+                    blade.logger().error(t, "An error occurred while %s was executing the command '%s' (%s#%s).",
+                        sender.getName(), finalResolvedAlias, finalCommand.getMethod().getDeclaringClass().getName(), finalCommand.getMethod().getName());
                 }
             };
 
@@ -255,13 +258,13 @@ public final class BukkitContainer extends Command implements Container {
                 long elapsed = (System.nanoTime() - time) / 1000000;
 
                 if (elapsed >= blade.getConfiguration().getExecutionTimeWarningThreshold()) {
-                    Bukkit.getLogger().warning(String.format(
-                          "[Blade] Command '%s' (%s#%s) took %d milliseconds to execute!",
-                          finalResolvedAlias,
-                          finalCommand.getMethod().getDeclaringClass().getName(),
-                          finalCommand.getMethod().getName(),
-                          elapsed
-                    ));
+                    blade.logger().warn(
+                        "[Blade] Command '%s' (%s#%s) took %d milliseconds to execute!",
+                        finalResolvedAlias,
+                        finalCommand.getMethod().getDeclaringClass().getName(),
+                        finalCommand.getMethod().getName(),
+                        elapsed
+                    );
                 }
             }
 
@@ -271,8 +274,14 @@ public final class BukkitContainer extends Command implements Container {
         } catch (BladeExitMessage ex) {
             sender.sendMessage(ChatColor.RED + ex.getMessage());
         } catch (Throwable t) {
-            t.printStackTrace();
-            sender.sendMessage(ChatColor.RED + "An exception was thrown while executing this command.");
+            blade.logger().error(t, "An error occurred while %s was executing the command '%s' (%s#%s).",
+                sender.getName(), alias,
+                command == null
+                    ? "unknown"
+                    : command.getMethod().getDeclaringClass().getName(),
+                command == null
+                    ? "unknown"
+                    : command.getMethod().getName());
         }
 
         return false;
@@ -284,6 +293,8 @@ public final class BukkitContainer extends Command implements Container {
         if (!blade.getConfiguration().getTabCompleter().isDefault()) return Collections.emptyList();
         if (!hasPermission(sender, args)) return Collections.emptyList();
 
+        me.vaperion.blade.command.Command command = null;
+
         try {
             Tuple<me.vaperion.blade.command.Command, String> resolved = resolveCommand(joinAliasToArgs(alias, args));
             if (resolved == null) {
@@ -291,7 +302,7 @@ public final class BukkitContainer extends Command implements Container {
                 return Collections.emptyList();
             }
 
-            me.vaperion.blade.command.Command command = resolved.getLeft();
+            command = resolved.getLeft();
             String foundAlias = resolved.getRight();
 
             List<String> argList = new ArrayList<>(Arrays.asList(args));
@@ -307,9 +318,15 @@ public final class BukkitContainer extends Command implements Container {
             return suggestions;
         } catch (BladeExitMessage ex) {
             sender.sendMessage(ChatColor.RED + ex.getMessage());
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            sender.sendMessage(ChatColor.RED + "An exception was thrown while completing this command.");
+        } catch (Throwable t) {
+            blade.logger().error(t, "An error occurred while %s was tab completing the command '%s' (%s#%s).",
+                sender.getName(), alias,
+                command == null
+                    ? "unknown"
+                    : command.getMethod().getDeclaringClass().getName(),
+                command == null
+                    ? "unknown"
+                    : command.getMethod().getName());
         }
 
         return Collections.emptyList();

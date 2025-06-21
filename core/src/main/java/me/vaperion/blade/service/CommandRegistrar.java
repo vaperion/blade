@@ -13,6 +13,9 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import static me.vaperion.blade.util.Preconditions.mustGetAnnotation;
+
+@SuppressWarnings("unused")
 @RequiredArgsConstructor
 public class CommandRegistrar {
 
@@ -30,9 +33,9 @@ public class CommandRegistrar {
             }
 
             blade.getPlatform().postCommandMapUpdate();
-        } catch (Exception ex) {
-            System.err.println("An exception was thrown while registering commands in class " + clazz.getCanonicalName() + " (instance: " + instance + ")");
-            ex.printStackTrace();
+        } catch (Throwable t) {
+            blade.logger().error(t, "An error occurred while registering %s commands in class %s",
+                instance == null ? "static" : "instance", clazz.getCanonicalName());
         }
     }
 
@@ -46,9 +49,9 @@ public class CommandRegistrar {
             }
 
             blade.getPlatform().postCommandMapUpdate();
-        } catch (Exception ex) {
-            System.err.println("An exception was thrown while registering commands in class " + clazz.getCanonicalName() + " (instance: " + instance + ")");
-            ex.printStackTrace();
+        } catch (Throwable t) {
+            blade.logger().error(t, "An error occurred while unregistering %s commands in class %s",
+                instance == null ? "static" : "instance", clazz.getCanonicalName());
         }
     }
 
@@ -67,7 +70,8 @@ public class CommandRegistrar {
     }
 
     public void unregisterMethod(@Nullable Object instance, @NotNull Method method) {
-        me.vaperion.blade.annotation.command.Command command = method.getAnnotation(me.vaperion.blade.annotation.command.Command.class);
+        me.vaperion.blade.annotation.command.Command command =
+            mustGetAnnotation(method, me.vaperion.blade.annotation.command.Command.class);
 
         String[] aliases = command.value();
         aliases = Arrays.stream(aliases).map(String::toLowerCase).toArray(String[]::new);

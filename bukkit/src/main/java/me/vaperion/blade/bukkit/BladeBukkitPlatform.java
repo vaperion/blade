@@ -9,6 +9,7 @@ import me.vaperion.blade.bukkit.container.BukkitContainer;
 import me.vaperion.blade.bukkit.platform.BukkitHelpGenerator;
 import me.vaperion.blade.bukkit.platform.ProtocolLibTabCompleter;
 import me.vaperion.blade.container.ContainerCreator;
+import me.vaperion.blade.log.BladeLogger;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
 import me.vaperion.blade.platform.TabCompleter;
@@ -35,15 +36,20 @@ public class BladeBukkitPlatform implements BladePlatform {
             syncCommands.setAccessible(true);
         } catch (NoSuchMethodException ignored) {
             // Doesn't exist in 1.8
-        } catch (Exception ex) {
-            System.err.println("Failed to grab CraftServer#syncCommands method.");
-            ex.printStackTrace();
+        } catch (Throwable t) {
+            BladeLogger.DEFAULT.error(t, "Failed to grab CraftServer#syncCommands method.");
         }
 
         SYNC_COMMANDS = syncCommands;
     }
 
     protected final JavaPlugin plugin;
+    protected Blade blade;
+
+    @Override
+    public void ingestBlade(@NotNull Blade blade) {
+        this.blade = blade;
+    }
 
     @Override
     public @NotNull Object getPluginInstance() {
@@ -69,8 +75,8 @@ public class BladeBukkitPlatform implements BladePlatform {
 
     public void configureTabCompleter(@NotNull BladeConfiguration configuration) {
         configuration.setTabCompleter(Bukkit.getPluginManager().isPluginEnabled("ProtocolLib")
-              ? new ProtocolLibTabCompleter(plugin)
-              : new TabCompleter.Default());
+            ? new ProtocolLibTabCompleter(plugin)
+            : new TabCompleter.Default());
     }
 
     @Override
@@ -79,8 +85,7 @@ public class BladeBukkitPlatform implements BladePlatform {
             try {
                 SYNC_COMMANDS.invoke(Bukkit.getServer());
             } catch (Throwable t) {
-                System.err.println("Blade failed to invoke CraftServer#syncCommands method, Brigadier may not recognize new commands.");
-                t.printStackTrace();
+                blade.logger().error(t, "Failed to invoke CraftServer#syncCommands method, Brigadier may not recognize new commands.");
             }
         }
     }

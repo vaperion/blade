@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-@SuppressWarnings({"rawtypes", "unchecked"})
+@SuppressWarnings({ "rawtypes", "unchecked" })
 public class EnumArgument implements ArgumentProvider<Enum> {
 
     private static Class<? extends Enum> enumClass;
@@ -23,7 +23,8 @@ public class EnumArgument implements ArgumentProvider<Enum> {
         Enum value = null;
         try {
             value = Enum.valueOf(enumClass, arg.getString().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ignored) {}
+        } catch (IllegalArgumentException ignored) {
+        }
 
         if (value == null && !arg.getParameter().ignoreFailedArgumentParse())
             throw new BladeExitMessage("Error: '" + arg.getString() + "' is not a valid enum value.");

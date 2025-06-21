@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+@SuppressWarnings("unused")
 public class LoadedValue<T> {
 
     private T value;

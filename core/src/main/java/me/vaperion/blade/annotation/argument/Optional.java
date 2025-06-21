@@ -1,5 +1,7 @@
 package me.vaperion.blade.annotation.argument;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -22,6 +24,7 @@ public @interface Optional {
      * <p>
      * All other values will be parsed using the registered argument providers.
      */
+    @NotNull
     String value() default "null";
 
     /**

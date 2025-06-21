@@ -21,7 +21,9 @@ public class CommandParser {
     private final Blade blade;
 
     @NotNull
-    public List<Object> parseArguments(@NotNull Command command, @NotNull Context context, @NotNull String[] argArray) throws BladeExitMessage {
+    public List<Object> parseArguments(@NotNull Command command,
+                                       @NotNull Context context,
+                                       @NotNull String[] argArray) throws BladeExitMessage {
         List<String> args = new ArrayList<>(Arrays.asList(argArray));
         List<Object> result = new ArrayList<>(command.getParameters().size());
 
@@ -69,8 +71,12 @@ public class CommandParser {
                     providerIndex++;
                 } catch (BladeExitMessage ex) {
                     throw ex;
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                } catch (Throwable t) {
+                    blade.logger().error(
+                        t.getCause() != null ? t.getCause() : t,
+                        "An error occurred while parsing argument '%s' of type '%s' for command '%s'.",
+                        parameter.getName(), parameter.getType().getCanonicalName(), command.getAliases()[0]);
+
                     throw new BladeExitMessage("Failed to parse one of your arguments.");
                 }
             }
@@ -78,9 +84,13 @@ public class CommandParser {
             return result;
         } catch (BladeExitMessage ex) {
             throw ex;
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            throw new BladeExitMessage("An exception was thrown while parsing your arguments.");
+        } catch (Throwable t) {
+            blade.logger().error(
+                t.getCause() != null ? t.getCause() : t,
+                "An error occurred while parsing arguments for command '%s'.",
+                command.getAliases()[0]);
+
+            throw new BladeExitMessage("An error occurred while parsing your arguments.");
         }
     }
 
@@ -103,8 +113,8 @@ public class CommandParser {
                 char flag = arg.charAt(1);
 
                 FlagParameter flagParameter = command.getFlagParameters().stream()
-                      .filter(param -> param.getFlag().value() == flag)
-                      .findFirst().orElse(null);
+                    .filter(param -> param.getFlag().value() == flag)
+                    .findFirst().orElse(null);
                 if (flagParameter == null) continue;
 
                 it.remove();
@@ -121,7 +131,6 @@ public class CommandParser {
         return map;
     }
 
-    @SuppressWarnings("SizeReplaceableByIsEmpty") // Not available in Java 8
     @NotNull
     public static List<String> combineQuotedArguments(@NotNull List<String> args) {
         String whole = String.join(" ", args);

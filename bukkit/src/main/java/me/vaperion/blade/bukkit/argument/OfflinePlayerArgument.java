@@ -55,6 +55,7 @@ public class OfflinePlayerArgument implements ArgumentProvider<OfflinePlayer> {
         return UUID_PATTERN.matcher(input).matches();
     }
 
+    @SuppressWarnings("deprecation")
     @NotNull
     private OfflinePlayer getOfflinePlayer(@NotNull String input) {
         if (isUUID(input)) return Bukkit.getOfflinePlayer(UUID.fromString(input));

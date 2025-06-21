@@ -34,7 +34,7 @@ public class VelocityContainer implements RawCommand, Container {
     private final Blade blade;
     private final Command baseCommand;
 
-    private VelocityContainer(@NotNull Blade blade, @NotNull Command command, @NotNull String alias) throws Exception {
+    private VelocityContainer(@NotNull Blade blade, @NotNull Command command, @NotNull String alias) {
         this.blade = blade;
         this.baseCommand = command;
 
@@ -42,8 +42,8 @@ public class VelocityContainer implements RawCommand, Container {
         CommandManager commandManager = proxyServer.getCommandManager();
 
         CommandMeta meta = commandManager.metaBuilder(alias)
-              .aliases(command.getBaseCommands())
-              .build();
+            .aliases(command.getBaseCommands())
+            .build();
         commandManager.register(meta, this);
     }
 
@@ -82,8 +82,8 @@ public class VelocityContainer implements RawCommand, Container {
             return new Tuple<>(false, "This command failed to execute as we couldn't find its registration.");
 
         return new Tuple<>(
-              blade.getPermissionTester().testPermission(context, command),
-              command.isHidden() ? "" : command.getPermissionMessage());
+            blade.getPermissionTester().testPermission(context, command),
+            command.isHidden() ? "" : command.getPermissionMessage());
     }
 
     private String[] joinAliasToArgs(String alias, String[] args) {
@@ -115,8 +115,8 @@ public class VelocityContainer implements RawCommand, Container {
             Tuple<Command, String> resolved = resolveCommand(joined);
             if (resolved == null) {
                 List<Command> availableCommands = blade.getCommands()
-                      .stream().filter(c -> Arrays.stream(c.getAliases()).anyMatch(a -> a.toLowerCase().startsWith(alias.toLowerCase(Locale.ROOT) + " ") || a.equalsIgnoreCase(alias)))
-                      .collect(Collectors.toList());
+                    .stream().filter(c -> Arrays.stream(c.getAliases()).anyMatch(a -> a.toLowerCase().startsWith(alias.toLowerCase(Locale.ROOT) + " ") || a.equalsIgnoreCase(alias)))
+                    .collect(Collectors.toList());
 
                 for (String line : blade.getConfiguration().getHelpGenerator().generate(context, availableCommands)) {
                     sender.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(line));
@@ -168,11 +168,15 @@ public class VelocityContainer implements RawCommand, Container {
                         }
                     }
 
-                    ex.printStackTrace();
-                    sender.sendMessage(text("An exception was thrown while executing this command.").color(NamedTextColor.RED));
+                    blade.logger().error(ex, "An error occurred while %s was executing the command '%s' (%s#%s).",
+                        sender.toString(), finalResolvedAlias, finalCommand.getMethod().getDeclaringClass().getName(), finalCommand.getMethod().getName());
+
+                    sender.sendMessage(text("An error occurred while executing this command.").color(NamedTextColor.RED));
                 } catch (Throwable t) {
-                    t.printStackTrace();
-                    sender.sendMessage(text("An exception was thrown while executing this command.").color(NamedTextColor.RED));
+                    blade.logger().error(t, "An error occurred while %s was executing the command '%s' (%s#%s).",
+                        sender.toString(), finalResolvedAlias, finalCommand.getMethod().getDeclaringClass().getName(), finalCommand.getMethod().getName());
+
+                    sender.sendMessage(text("An error occurred while executing this command.").color(NamedTextColor.RED));
                 }
             };
 
@@ -185,11 +189,11 @@ public class VelocityContainer implements RawCommand, Container {
 
                 if (elapsed >= blade.getConfiguration().getExecutionTimeWarningThreshold()) {
                     System.out.printf(
-                          "[Blade] Command '%s' (%s#%s) took %d milliseconds to execute!%n",
-                          finalResolvedAlias,
-                          finalCommand.getMethod().getDeclaringClass().getName(),
-                          finalCommand.getMethod().getName(),
-                          elapsed
+                        "[Blade] Command '%s' (%s#%s) took %d milliseconds to execute!%n",
+                        finalResolvedAlias,
+                        finalCommand.getMethod().getDeclaringClass().getName(),
+                        finalCommand.getMethod().getName(),
+                        elapsed
                     );
                 }
             }
@@ -198,8 +202,16 @@ public class VelocityContainer implements RawCommand, Container {
         } catch (BladeExitMessage ex) {
             sender.sendMessage(text(ex.getMessage()).color(NamedTextColor.RED));
         } catch (Throwable t) {
-            t.printStackTrace();
-            sender.sendMessage(text("An exception was thrown while executing this command.").color(NamedTextColor.RED));
+            blade.logger().error(t, "An error occurred while %s was executing the command '%s' (%s#%s).",
+                sender.toString(), alias,
+                command == null
+                    ? "unknown"
+                    : command.getMethod().getDeclaringClass().getName(),
+                command == null
+                    ? "unknown"
+                    : command.getMethod().getName());
+
+            sender.sendMessage(text("An error occurred while executing this command.").color(NamedTextColor.RED));
         }
     }
 
@@ -212,6 +224,8 @@ public class VelocityContainer implements RawCommand, Container {
         if (!blade.getConfiguration().getTabCompleter().isDefault()) return Collections.emptyList();
         if (!hasPermission(sender, args)) return Collections.emptyList();
 
+        Command command = null;
+
         try {
             Tuple<Command, String> resolved = resolveCommand(joinAliasToArgs(alias, args));
             if (resolved == null) {
@@ -219,7 +233,7 @@ public class VelocityContainer implements RawCommand, Container {
                 return Collections.emptyList();
             }
 
-            Command command = resolved.getLeft();
+            command = resolved.getLeft();
             String foundAlias = resolved.getRight();
 
             List<String> argList = new ArrayList<>(Arrays.asList(args));
@@ -235,9 +249,17 @@ public class VelocityContainer implements RawCommand, Container {
             return suggestions;
         } catch (BladeExitMessage ex) {
             sender.sendMessage(text(ex.getMessage()).color(NamedTextColor.RED));
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            sender.sendMessage(text("An exception was thrown while completing this command.").color(NamedTextColor.RED));
+        } catch (Throwable t) {
+            blade.logger().error(t, "An error occurred while %s was tab completing the command '%s' (%s#%s).",
+                sender.toString(), alias,
+                command == null
+                    ? "unknown"
+                    : command.getMethod().getDeclaringClass().getName(),
+                command == null
+                    ? "unknown"
+                    : command.getMethod().getName());
+
+            sender.sendMessage(text("An error occurred while completing this command.").color(NamedTextColor.RED));
         }
 
         return Collections.emptyList();

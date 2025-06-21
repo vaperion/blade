@@ -47,15 +47,13 @@ public class ProtocolLibTabCompleter extends PacketAdapter implements TabComplet
             PacketContainer tabComplete = new PacketContainer(PacketType.Play.Server.TAB_COMPLETE);
             tabComplete.getStringArrays().write(0, suggestions.toArray(new String[0]));
             ProtocolLibrary.getProtocolManager().sendServerPacket(player, tabComplete);
-        } catch (Exception ex) {
-            System.err.println("An exception was thrown while attempting to tab complete '" + commandLine + "' for player " + player.getName());
+        } catch (Throwable t) {
+            blade.logger().error(t, "Failed to tab complete command '%s' for player '%s'", commandLine, player.getName());
 
-            ex.printStackTrace();
-
-            if (ex instanceof FieldAccessException) {
+            if (t instanceof FieldAccessException) {
                 System.err.println("This is likely due to a version incompatibility between Blade and ProtocolLib. " +
-                      "If your server is running Minecraft 1.13 or newer, please consider using BladePaperPlatform instead of BladeBukkitPlatform," +
-                      " as it properly adds support for Brigadier. If this is not your plugin, please relay this information to the plugin author.");
+                    "If your server is running Minecraft 1.13 or newer, please consider using BladePaperPlatform instead of BladeBukkitPlatform," +
+                    " as it properly adds support for Brigadier. If this is not your plugin, please relay this information to the plugin author.");
             }
         }
     }

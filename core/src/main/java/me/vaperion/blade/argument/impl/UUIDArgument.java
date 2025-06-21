@@ -14,7 +14,7 @@ public class UUIDArgument implements ArgumentProvider<UUID> {
     public @Nullable UUID provide(@NotNull Context ctx, @NotNull Argument arg) throws BladeExitMessage {
         try {
             return UUID.fromString(arg.getString());
-        } catch (Exception ex) {
+        } catch (Throwable t) {
             if (arg.getParameter().ignoreFailedArgumentParse()) return null;
             throw new BladeExitMessage("Error: '" + arg.getString() + "' is not a valid UUID.");
         }

@@ -23,7 +23,8 @@ public class CommandCompleter {
     private final Blade blade;
 
     @Nullable
-    public List<String> suggest(@NotNull String commandLine, @NotNull Supplier<WrappedSender<?>> senderSupplier) {
+    public List<String> suggest(@NotNull String commandLine,
+                                @NotNull Supplier<WrappedSender<?>> senderSupplier) {
         List<String> suggestions = new ArrayList<>();
         suggestSubCommand(suggestions, commandLine, senderSupplier);
 
@@ -75,7 +76,8 @@ public class CommandCompleter {
 
             Parameter parameter = index < command.getParameters().size() ? command.getParameters().get(index) : null;
             ArgumentProvider<?> parameterProvider = parameter != null && parameter.hasCustomCompleter()
-                  ? parameter.getCustomCompleter() : command.getParameterProviders().get(index);
+                ? parameter.getCustomCompleter()
+                : command.getParameterProviders().get(index);
 
             if (parameterProvider == null) {
                 throw new BladeExitMessage("Could not find provider for argument " + index + ".");
@@ -84,19 +86,33 @@ public class CommandCompleter {
             Argument bladeArgument = new Argument(parameter);
             bladeArgument.setType(index < arguments.size() ? Type.PROVIDED : Type.OPTIONAL);
             bladeArgument.setString(argument);
-            if (parameter != null) bladeArgument.getData().addAll(parameter.getData());
+
+            if (parameter != null) {
+                bladeArgument.getData().addAll(parameter.getData());
+
+                if (parameter.getElement() != null) {
+                    bladeArgument.addAnnotations(Arrays.asList(parameter.getElement().getAnnotations()));
+                }
+            }
 
             List<String> suggested = parameterProvider.suggest(context, bladeArgument);
             suggestions.addAll(suggested);
         } catch (BladeExitMessage ex) {
             throw ex;
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            throw new BladeExitMessage("An exception was thrown while parsing your arguments.");
+        } catch (Throwable t) {
+            blade.logger().error(
+                t.getCause() != null ? t.getCause() : t,
+                "An error occurred while parsing arguments for command '%s'.",
+                command.getAliases()[0]
+            );
+
+            throw new BladeExitMessage("An error occurred while parsing your arguments.");
         }
     }
 
-    public void suggestSubCommand(@NotNull List<String> suggestions, @NotNull String commandLine, @NotNull Supplier<WrappedSender<?>> senderSupplier) throws BladeExitMessage {
+    public void suggestSubCommand(@NotNull List<String> suggestions,
+                                  @NotNull String commandLine,
+                                  @NotNull Supplier<WrappedSender<?>> senderSupplier) throws BladeExitMessage {
         String[] commandLineParts = commandLine.split(" ");
         if (commandLineParts.length == 0) return;
         String baseCommand = commandLineParts[0];

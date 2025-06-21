@@ -12,6 +12,7 @@ public interface HelpGenerator {
     @NotNull
     List<String> generate(@NotNull Context context, @NotNull List<Command> commands);
 
+    @SuppressWarnings("unused")
     final class Default implements HelpGenerator {
         @NotNull
         @Override

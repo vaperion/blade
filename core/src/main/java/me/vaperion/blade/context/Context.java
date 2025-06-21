@@ -13,12 +13,13 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collections;
 
+@SuppressWarnings("unused")
 @RequiredArgsConstructor
 public final class Context {
 
     private static final Optional PARSE_OPTIONAL_ARG = new Optional() {
         @Override
-        public String value() {
+        public @NotNull String value() {
             return "null"; // This is not used inside argument providers, so we can set it statically here.
         }
 
@@ -59,12 +60,12 @@ public final class Context {
     }
 
     @Nullable
-    public <T> T parseArgument(int index, Class<T> argumentClass) {
+    public <T> T parseArgument(int index, @NotNull Class<T> argumentClass) {
         return parseArgument(index, argumentClass, "");
     }
 
     @Nullable
-    public <T> T parseArgument(int index, Class<T> argumentClass, String defaultValue) {
+    public <T> T parseArgument(int index, @NotNull Class<T> argumentClass, @NotNull String defaultValue) {
         ArgumentProvider<T> provider = blade.getResolver().recursiveResolveProvider(argumentClass, Collections.emptyList());
 
         if (provider == null)
@@ -74,30 +75,31 @@ public final class Context {
     }
 
     @Nullable
-    public <T> T parseArgument(int index, ArgumentProvider<T> provider) {
+    public <T> T parseArgument(int index, @NotNull ArgumentProvider<T> provider) {
         return parseArgument(index, provider, "");
     }
 
     @SuppressWarnings("unchecked")
     @Nullable
-    public <T> T parseArgument(int index, ArgumentProvider<T> provider, String defaultValue) {
+    public <T> T parseArgument(int index, @NotNull ArgumentProvider<T> provider, @NotNull String defaultValue) {
         return parseArgument(index,
-              (Class<T>) ((ParameterizedType) provider.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0],
-              provider,
-              defaultValue);
+            (Class<T>) ((ParameterizedType) provider.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0],
+            provider,
+            defaultValue);
     }
 
     @Nullable
-    public <T> T parseArgument(int index, Class<T> classOfT, ArgumentProvider<T> provider, String defaultValue) {
+    public <T> T parseArgument(int index, @NotNull Class<T> classOfT,
+                               @NotNull ArgumentProvider<T> provider, @NotNull String defaultValue) {
         Argument arg = new Argument(new Parameter(
-              /*name*/ "argument " + (index + 1),
-              /*type*/ classOfT,
-              /*data*/ Collections.emptyList(),
-              /*optional annotation*/ PARSE_OPTIONAL_ARG,
-              /*range annotation*/ null,
-              /*completer annotation*/null,
-              /*text?*/ false,
-              /*element*/ null
+            /*name*/ "argument " + (index + 1),
+            /*type*/ classOfT,
+            /*data*/ Collections.emptyList(),
+            /*optional annotation*/ PARSE_OPTIONAL_ARG,
+            /*range annotation*/ null,
+            /*completer annotation*/null,
+            /*text?*/ false,
+            /*element*/ null
         ));
 
         String provided = argument(index);

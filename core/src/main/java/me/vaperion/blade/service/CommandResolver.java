@@ -21,10 +21,10 @@ import java.util.stream.Collectors;
 public class CommandResolver {
 
     private static final List<Class<? extends Annotation>> INTERNAL_ANNOTATIONS = Arrays.asList(
-          Completer.class, Data.class, Flag.class, Name.class, Optional.class, Range.class, Sender.class, Text.class,
+        Completer.class, Data.class, Flag.class, Name.class, Optional.class, Range.class, Sender.class, Text.class,
 
-          Async.class, me.vaperion.blade.annotation.command.Command.class, Description.class, ExtraUsage.class, Hidden.class,
-          ParseQuotes.class, Permission.class, Usage.class, UsageAlias.class
+        Async.class, me.vaperion.blade.annotation.command.Command.class, Description.class, ExtraUsage.class, Hidden.class,
+        ParseQuotes.class, Permission.class, Usage.class, UsageAlias.class
     );
 
     private final Blade blade;
@@ -71,18 +71,18 @@ public class CommandResolver {
     @Nullable
     private <T> ArgumentProvider<T> resolveProvider(Class<T> clazz, List<Annotation> annotations) {
         List<Class<? extends Annotation>> inputAnnotations = annotations.stream()
-              .map(Annotation::annotationType)
-              .map(c -> (Class<? extends Annotation>) c)
-              .collect(Collectors.toList());
+            .map(Annotation::annotationType)
+            .map(c -> (Class<? extends Annotation>) c)
+            .collect(Collectors.toList());
         inputAnnotations.removeIf(INTERNAL_ANNOTATIONS::contains);
 
         return blade.getProviders().stream()
-              .filter(container -> container.getType() == clazz)
-              .filter(container -> container.doAnnotationsMatch(inputAnnotations))
-              .limit(1)
-              .map(Provider::getProvider)
-              .map(provider -> (ArgumentProvider<T>) provider)
-              .findFirst().orElse(null);
+            .filter(container -> container.getType() == clazz)
+            .filter(container -> container.doAnnotationsMatch(inputAnnotations))
+            .limit(1)
+            .map(Provider::getProvider)
+            .map(provider -> (ArgumentProvider<T>) provider)
+            .findFirst().orElse(null);
     }
 
 }

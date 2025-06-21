@@ -1,5 +1,7 @@
 package me.vaperion.blade.annotation.command;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -18,11 +20,13 @@ public @interface Permission {
      * and checked accordingly against the registered permission predicates. If the predicate is not registered,
      * the command will be executed without any permission check.
      */
+    @NotNull
     String value() default "";
 
     /**
      * The message that gets displayed if the player does not have permission to execute the command.
      * <p> If the message is not set, the default message will be displayed, set in the {@link me.vaperion.blade.Blade} builder.
      */
+    @NotNull
     String message() default "";
 }

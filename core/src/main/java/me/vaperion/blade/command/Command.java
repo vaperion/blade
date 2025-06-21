@@ -13,6 +13,7 @@ import me.vaperion.blade.context.WrappedSender;
 import me.vaperion.blade.util.ClassUtil;
 import me.vaperion.blade.util.LoadedValue;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -21,8 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static me.vaperion.blade.util.Preconditions.checkNotEmpty;
-import static me.vaperion.blade.util.Preconditions.runOrDefault;
+import static me.vaperion.blade.util.Preconditions.*;
 
 @Getter
 @ToString
@@ -45,13 +45,16 @@ public final class Command {
 
     private final LoadedValue<UsageMessage> usageMessage = new LoadedValue<>(), helpMessage = new LoadedValue<>();
 
-    public Command(Blade blade, Object instance, Method method) {
+    public Command(@NotNull Blade blade,
+                   @Nullable Object instance,
+                   @NotNull Method method) {
         this.blade = blade;
 
         this.instance = instance;
         this.method = method;
 
-        this.aliases = method.getAnnotation(me.vaperion.blade.annotation.command.Command.class).value();
+        this.aliases = mustGetAnnotation(method, me.vaperion.blade.annotation.command.Command.class).value();
+
         this.description = runOrDefault(method.getAnnotation(Description.class), "", Description::value);
         this.async = runOrDefault(method.getAnnotation(Async.class), false, $ -> true);
         this.hidden = runOrDefault(method.getAnnotation(Hidden.class), false, $ -> true);
@@ -60,9 +63,9 @@ public final class Command {
         this.extraUsageData = runOrDefault(method.getAnnotation(ExtraUsage.class), "", ExtraUsage::value);
 
         this.baseCommands = Arrays.stream(aliases)
-              .map(String::toLowerCase)
-              .map(s -> s.split(" ")[0])
-              .distinct().toArray(String[]::new);
+            .map(String::toLowerCase)
+            .map(s -> s.split(" ")[0])
+            .distinct().toArray(String[]::new);
 
         Permission permission = method.getAnnotation(Permission.class);
         this.permission = permission != null ? permission.value() : "";
@@ -86,17 +89,20 @@ public final class Command {
 
             Class<?> type = ClassUtil.getGenericOrRawType(parameter);
 
-            String parameterName = parameter.isAnnotationPresent(Name.class) ? parameter.getAnnotation(Name.class).value() : parameter.getName();
-            String[] parameterData = parameter.isAnnotationPresent(Data.class) ? parameter.getAnnotation(Data.class).value() : null;
+            String parameterName = parameter.isAnnotationPresent(Name.class)
+                ? mustGetAnnotation(parameter, Name.class).value() : parameter.getName();
+            String[] parameterData = parameter.isAnnotationPresent(Data.class)
+                ? mustGetAnnotation(parameter, Data.class).value() : null;
+
             Parameter bladeParameter;
 
             if (parameter.isAnnotationPresent(Flag.class)) {
-                Flag flag = parameter.getAnnotation(Flag.class);
+                Flag flag = mustGetAnnotation(parameter, Flag.class);
                 bladeParameter = new FlagParameter(parameterName, type, parameter.getAnnotation(Optional.class), parameter, flag);
             } else {
                 bladeParameter = new CommandParameter(parameterName, type,
-                      parameterData == null ? Collections.emptyList() : Arrays.asList(parameterData), parameter.getAnnotation(Optional.class),
-                      parameter.getAnnotation(Range.class), parameter.getAnnotation(Completer.class), parameter.isAnnotationPresent(Text.class), parameter);
+                    parameterData == null ? Collections.emptyList() : Arrays.asList(parameterData), parameter.getAnnotation(Optional.class),
+                    parameter.getAnnotation(Range.class), parameter.getAnnotation(Completer.class), parameter.isAnnotationPresent(Text.class), parameter);
             }
 
             ArgumentProvider<?> provider = blade.getResolver().recursiveResolveProvider(type, Arrays.asList(parameter.getAnnotations()));
@@ -116,17 +122,17 @@ public final class Command {
     @NotNull
     public List<CommandParameter> getCommandParameters() {
         return parameters.stream()
-              .filter(CommandParameter.class::isInstance)
-              .map(CommandParameter.class::cast)
-              .collect(Collectors.toList());
+            .filter(CommandParameter.class::isInstance)
+            .map(CommandParameter.class::cast)
+            .collect(Collectors.toList());
     }
 
     @NotNull
     public List<FlagParameter> getFlagParameters() {
         return parameters.stream()
-              .filter(FlagParameter.class::isInstance)
-              .map(FlagParameter.class::cast)
-              .collect(Collectors.toList());
+            .filter(FlagParameter.class::isInstance)
+            .map(FlagParameter.class::cast)
+            .collect(Collectors.toList());
     }
 
 }

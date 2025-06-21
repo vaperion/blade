@@ -27,10 +27,11 @@ public class BladeNodeDiscovery {
         return String.join(" ", parts);
     }
 
+    @SuppressWarnings("ReplaceNullCheck")
     @Nullable
     public SimpleBladeNode discoverCommand(@NotNull String label) {
         label = removeCommandQualifier(label);
-        Tuple<Command, String> bladeCommand = blade.getResolver().resolveCommand(new String[]{label});
+        Tuple<Command, String> bladeCommand = blade.getResolver().resolveCommand(new String[]{ label });
 
         if (bladeCommand != null) {
             // This is the simple case: if a command is registered with that exact label (e.g. "/hello"), we can just return it

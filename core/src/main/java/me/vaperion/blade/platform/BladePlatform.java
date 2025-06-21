@@ -14,7 +14,9 @@ public interface BladePlatform {
 
     void configureBlade(@NotNull Builder builder, @NotNull BladeConfiguration configuration);
 
-    default void ingestBlade(@NotNull Blade blade) {}
+    default void ingestBlade(@NotNull Blade blade) {
+    }
 
-    default void postCommandMapUpdate() {}
+    default void postCommandMapUpdate() {
+    }
 }

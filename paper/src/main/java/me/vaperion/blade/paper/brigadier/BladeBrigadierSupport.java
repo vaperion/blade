@@ -48,22 +48,22 @@ public final class BladeBrigadierSupport implements Listener {
         if (node == null) return;
 
         event.setLiteral(buildLiteral(
-              node,
-              event.getCommandLabel(),
-              event.getBrigadierCommand(),
-              event.getBrigadierCommand()
+            node,
+            event.getCommandLabel(),
+            event.getBrigadierCommand(),
+            event.getBrigadierCommand()
         ));
     }
 
     @NotNull
     private LiteralCommandNode<BukkitBrigadierCommandSource> buildLiteral(
-          @NotNull SimpleBladeNode node,
-          @NotNull String label,
-          @NotNull SuggestionProvider<BukkitBrigadierCommandSource> suggestionProvider,
-          @NotNull Command<BukkitBrigadierCommandSource> brigadierCommand) {
+        @NotNull SimpleBladeNode node,
+        @NotNull String label,
+        @NotNull SuggestionProvider<BukkitBrigadierCommandSource> suggestionProvider,
+        @NotNull Command<BukkitBrigadierCommandSource> brigadierCommand) {
         LiteralArgumentBuilder<BukkitBrigadierCommandSource> builder = LiteralArgumentBuilder.<BukkitBrigadierCommandSource>literal(label)
-              .requires(createPermissionPredicate(node))
-              .executes(brigadierCommand);
+            .requires(createPermissionPredicate(node))
+            .executes(brigadierCommand);
 
         LiteralCommandNode<BukkitBrigadierCommandSource> root = builder.build();
 
@@ -99,9 +99,9 @@ public final class BladeBrigadierSupport implements Listener {
 
             if (subCommandNode == null) {
                 subCommandNode = LiteralArgumentBuilder.<BukkitBrigadierCommandSource>literal(stubName)
-                      .requires(createPermissionPredicate(subCommand))
-                      .executes(brigadierCommand)
-                      .build();
+                    .requires(createPermissionPredicate(subCommand))
+                    .executes(brigadierCommand)
+                    .build();
             }
 
             root.addChild(subCommandNode);
@@ -111,9 +111,9 @@ public final class BladeBrigadierSupport implements Listener {
 
             if (subCommandNode == null) {
                 subCommandNode = LiteralArgumentBuilder.<BukkitBrigadierCommandSource>literal(label)
-                      .requires(createPermissionPredicate(subCommand))
-                      .executes(brigadierCommand)
-                      .build();
+                    .requires(createPermissionPredicate(subCommand))
+                    .executes(brigadierCommand)
+                    .build();
             }
 
             root.addChild(subCommandNode);
@@ -129,10 +129,10 @@ public final class BladeBrigadierSupport implements Listener {
 
         for (Parameter.CommandParameter parameter : node.getCommand().getCommandParameters()) {
             RequiredArgumentBuilder<BukkitBrigadierCommandSource, Object> builder = RequiredArgumentBuilder
-                  .<BukkitBrigadierCommandSource, Object>argument(parameter.getName(), mapBrigadierArgument(parameter))
-                  .suggests(suggestionProvider)
-                  .requires(createPermissionPredicate(node))
-                  .executes(brigadierCommand);
+                .<BukkitBrigadierCommandSource, Object>argument(parameter.getName(), mapBrigadierArgument(parameter))
+                .suggests(suggestionProvider)
+                .requires(createPermissionPredicate(node))
+                .executes(brigadierCommand);
 
             CommandNode<BukkitBrigadierCommandSource> argument = builder.build();
             commandNode.addChild(argument);

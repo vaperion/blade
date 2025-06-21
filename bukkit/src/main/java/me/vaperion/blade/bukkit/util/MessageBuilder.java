@@ -7,14 +7,18 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@SuppressWarnings({ "unused", "deprecation" })
 public class MessageBuilder {
 
-    public static String toStringFormat(BaseComponent[] components) {
+    @NotNull
+    public static String toStringFormat(@NotNull BaseComponent[] components) {
         StringBuilder strBuilder = new StringBuilder();
 
         for (BaseComponent component : components) {
@@ -24,7 +28,7 @@ public class MessageBuilder {
         return strBuilder.toString();
     }
 
-    public static void send(CommandSender sender, BaseComponent[] components) {
+    public static void send(@NotNull CommandSender sender, @NotNull BaseComponent[] components) {
         if (sender instanceof Player) {
             ((Player) sender).spigot().sendMessage(components);
             return;
@@ -35,67 +39,90 @@ public class MessageBuilder {
 
     private final ComponentBuilder builder;
 
-    public MessageBuilder(String mainText) {
+    public MessageBuilder(@NotNull String mainText) {
         builder = new ComponentBuilder(mainText);
     }
 
-    public MessageBuilder color(ChatColor color) {
+    @Contract("_ -> this")
+    @NotNull
+    public MessageBuilder color(@NotNull ChatColor color) {
         builder.color(color);
         return this;
     }
 
-    public MessageBuilder append(String text) {
+    @Contract("_ -> this")
+    @NotNull
+    public MessageBuilder append(@NotNull String text) {
         builder.append(text);
         return this;
     }
 
-    public MessageBuilder hover(String... lines) {
+    @Contract("_ -> this")
+    @NotNull
+    public MessageBuilder hover(@NotNull String... lines) {
         return hover(Arrays.asList(lines));
     }
 
-    public MessageBuilder hoverWithColor(ChatColor color, String... lines) {
+    @Contract("_, _ -> this")
+    @NotNull
+    public MessageBuilder hoverWithColor(@NotNull ChatColor color, @NotNull String... lines) {
         return hoverWithColor(color, Arrays.asList(lines));
     }
 
-    public MessageBuilder hover(List<String> lines) {
+    @Contract("_ -> this")
+    @NotNull
+    public MessageBuilder hover(@NotNull List<String> lines) {
         if (lines.isEmpty() || lines.stream().allMatch(String::isEmpty)) return this;
         builder.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(combineMultiLine(lines)).create()));
         return this;
     }
 
-    public MessageBuilder hoverWithColor(ChatColor color, List<String> lines) {
+    @Contract("_, _ -> this")
+    @NotNull
+    public MessageBuilder hoverWithColor(@NotNull ChatColor color, @NotNull List<String> lines) {
         if (lines.isEmpty() || lines.stream().allMatch(String::isEmpty)) return this;
-        builder.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(lines.stream().map(s -> color.toString() + s).collect(Collectors.joining("\n"))).create()));
+        builder.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(
+            lines.stream().map(s -> color + s)
+                .collect(Collectors.joining("\n"))).create()));
         return this;
     }
 
-    public MessageBuilder click(String command, boolean instant) {
-        builder.event(new ClickEvent(instant ? ClickEvent.Action.RUN_COMMAND : ClickEvent.Action.SUGGEST_COMMAND, command));
+    @Contract("_, _ -> this")
+    @NotNull
+    public MessageBuilder click(@NotNull String command, boolean instant) {
+        builder.event(new ClickEvent(instant
+            ? ClickEvent.Action.RUN_COMMAND : ClickEvent.Action.SUGGEST_COMMAND, command));
         return this;
     }
 
+    @Contract(" -> this")
+    @NotNull
     public MessageBuilder reset() {
         builder.reset();
         return this;
     }
 
+    @NotNull
     public BaseComponent[] build() {
         return builder.create();
     }
 
-    private String combineMultiLine(String[] lines) {
-        return String.join("\n", lines);
-    }
-
-    private String combineMultiLine(List<String> lines) {
-        return String.join("\n", lines);
-    }
-
+    @NotNull
     public String toStringFormat() {
         return toStringFormat(build());
     }
 
-    public void sendTo(CommandSender sender) {
+    public void sendTo(@NotNull CommandSender sender) {
         send(sender, build());
+    }
+
+    @NotNull
+    private static String combineMultiLine(@NotNull String[] lines) {
+        return String.join("\n", lines);
+    }
+
+    @NotNull
+    private static String combineMultiLine(@NotNull List<String> lines) {
+        return String.join("\n", lines);
     }
 }
