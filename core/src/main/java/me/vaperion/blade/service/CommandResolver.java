@@ -72,6 +72,7 @@ public class CommandResolver {
     private <T> ArgumentProvider<T> resolveProvider(Class<T> clazz, List<Annotation> annotations) {
         List<Class<? extends Annotation>> inputAnnotations = annotations.stream()
             .map(Annotation::annotationType)
+            .filter(c -> !c.isAnnotationPresent(ForwardedAnnotation.class))
             .map(c -> (Class<? extends Annotation>) c)
             .collect(Collectors.toList());
         inputAnnotations.removeIf(INTERNAL_ANNOTATIONS::contains);
