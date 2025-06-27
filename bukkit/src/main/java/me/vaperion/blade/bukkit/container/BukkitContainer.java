@@ -4,12 +4,14 @@ import lombok.Getter;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.bukkit.command.BukkitUsageMessage;
 import me.vaperion.blade.bukkit.context.BukkitSender;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.Container;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.exception.BladeExitMessage;
 import me.vaperion.blade.exception.BladeUsageMessage;
 import me.vaperion.blade.log.BladeLogger;
+import me.vaperion.blade.util.BladeHelper;
 import me.vaperion.blade.util.Tuple;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -62,11 +64,11 @@ public final class BukkitContainer extends Command implements Container {
     }
 
     private final Blade blade;
-    private final me.vaperion.blade.command.Command baseCommand;
+    private final BladeCommand baseCommand;
 
     @SuppressWarnings("unchecked")
     private BukkitContainer(@NotNull Blade blade,
-                            @NotNull me.vaperion.blade.command.Command command,
+                            @NotNull BladeCommand command,
                             @NotNull String alias) throws Exception {
         super(alias, command.getDescription(), "/" + alias, new ArrayList<>());
 
@@ -109,7 +111,7 @@ public final class BukkitContainer extends Command implements Container {
         }
     }
 
-    private boolean doesBukkitCommandConflict(@NotNull Command bukkitCommand, @NotNull String alias, @NotNull me.vaperion.blade.command.Command command) {
+    private boolean doesBukkitCommandConflict(@NotNull Command bukkitCommand, @NotNull String alias, @NotNull BladeCommand command) {
         if (bukkitCommand instanceof BukkitContainer) return false; // don't override our own commands
         if (bukkitCommand.getName().equalsIgnoreCase(alias) || bukkitCommand.getAliases().stream().anyMatch(a -> a.equalsIgnoreCase(alias)))
             return true;
@@ -121,12 +123,12 @@ public final class BukkitContainer extends Command implements Container {
     }
 
     @Nullable
-    private Tuple<me.vaperion.blade.command.Command, String> resolveCommand(@NotNull String[] arguments) throws BladeExitMessage {
+    private Tuple<BladeCommand, String> resolveCommand(@NotNull String[] arguments) throws BladeExitMessage {
         return blade.getResolver().resolveCommand(arguments);
     }
 
-    @NotNull
-    private String getSenderType(@NotNull Class<?> clazz) {
+    @Nullable
+    private String getSenderTypeName(@NotNull Class<?> clazz) {
         switch (clazz.getSimpleName()) {
             case "Player":
                 return "players";
@@ -135,22 +137,22 @@ public final class BukkitContainer extends Command implements Container {
                 return "the console";
 
             default:
-                return "everyone";
+                return null;
         }
     }
 
-    private void sendUsageMessage(@NotNull Context context, @Nullable me.vaperion.blade.command.Command command) {
+    private void sendUsageMessage(@NotNull Context context, @Nullable BladeCommand command) {
         if (command == null) return;
         command.getUsageMessage().ensureGetOrLoad(() -> new BukkitUsageMessage(command)).sendTo(context);
     }
 
     private boolean hasPermission(@NotNull CommandSender sender, String[] args) throws BladeExitMessage {
-        Tuple<me.vaperion.blade.command.Command, String> command = resolveCommand(joinAliasToArgs(baseCommand.getAliases()[0], args));
+        Tuple<BladeCommand, String> command = resolveCommand(joinAliasToArgs(baseCommand.getAliases()[0], args));
         Context context = new Context(blade, new BukkitSender(sender), command == null ? "" : command.getRight(), args);
         return checkPermission(context, command == null ? null : command.getLeft()).getLeft();
     }
 
-    private Tuple<Boolean, String> checkPermission(@NotNull Context context, @Nullable me.vaperion.blade.command.Command command) throws BladeExitMessage {
+    private Tuple<Boolean, String> checkPermission(@NotNull Context context, @Nullable BladeCommand command) throws BladeExitMessage {
         if (command == null)
             return new Tuple<>(false, "This command failed to execute as we couldn't find its registration.");
 
@@ -174,16 +176,16 @@ public final class BukkitContainer extends Command implements Container {
 
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
-        me.vaperion.blade.command.Command command = null;
+        BladeCommand command = null;
         String resolvedAlias;
 
         String[] joined = joinAliasToArgs(alias, args);
         Context context = new Context(blade, new BukkitSender(sender), alias, args);
 
         try {
-            Tuple<me.vaperion.blade.command.Command, String> resolved = resolveCommand(joined);
+            Tuple<BladeCommand, String> resolved = resolveCommand(joined);
             if (resolved == null) {
-                List<me.vaperion.blade.command.Command> availableCommands = blade.getCommands()
+                List<BladeCommand> availableCommands = blade.getCommands()
                     .stream().filter(c -> Arrays.stream(c.getAliases()).anyMatch(a -> a.toLowerCase().startsWith(alias.toLowerCase(Locale.ROOT) + " ") || a.equalsIgnoreCase(alias)))
                     .collect(Collectors.toList());
 
@@ -201,10 +203,21 @@ public final class BukkitContainer extends Command implements Container {
             resolvedAlias = resolved.getRight();
             int offset = Math.min(args.length, resolvedAlias.split(" ").length - 1);
 
-            if (command.isHasSenderParameter() && !command.isWrappedSenderBased() && !command.isContextBased() && !command.getSenderType().isInstance(sender))
-                throw new BladeExitMessage("This command can only be executed by " + getSenderType(command.getSenderType()) + ".");
+            if (command.isHasSenderParameter()
+                && !command.isWrappedSenderBased()
+                && !command.isContextBased()
+                && !command.getSenderType().isInstance(sender)) {
+                String senderTypeName = getSenderTypeName(sender.getClass());
 
-            final me.vaperion.blade.command.Command finalCommand = command;
+                if (senderTypeName != null) {
+                    throw new BladeExitMessage("This command can only be executed by " + senderTypeName + ".");
+                }
+
+                // If it is null, the sender is probably a custom type.
+                // We'll verify it later.
+            }
+
+            final BladeCommand finalCommand = command;
             final String finalResolvedAlias = resolvedAlias;
 
             if (finalCommand.getMethod() == null) {
@@ -213,18 +226,14 @@ public final class BukkitContainer extends Command implements Container {
 
             Runnable runnable = () -> {
                 try {
-                    List<Object> parsed;
-                    if (finalCommand.isContextBased()) {
-                        parsed = Collections.singletonList(context);
-                    } else {
-                        parsed = blade.getParser().parseArguments(finalCommand, context, Arrays.copyOfRange(args, offset, args.length));
-                        if (finalCommand.isHasSenderParameter()) {
-                            if (finalCommand.isWrappedSenderBased()) parsed.add(0, context.sender());
-                            else parsed.add(0, sender);
-                        }
-                    }
+                    List<Object> methodArgs = BladeHelper.makeMethodArguments(
+                        blade, finalCommand, context,
+                        Arrays.copyOfRange(args, offset, args.length),
+                        sender
+                    );
 
-                    finalCommand.getMethod().invoke(finalCommand.getInstance(), parsed.toArray(new Object[0]));
+                    finalCommand.getMethod().invoke(finalCommand.getInstance(),
+                        methodArgs.toArray(new Object[0]));
                 } catch (BladeUsageMessage ex) {
                     sendUsageMessage(context, finalCommand);
                 } catch (BladeExitMessage ex) {
@@ -293,10 +302,10 @@ public final class BukkitContainer extends Command implements Container {
         if (!blade.getConfiguration().getTabCompleter().isDefault()) return Collections.emptyList();
         if (!hasPermission(sender, args)) return Collections.emptyList();
 
-        me.vaperion.blade.command.Command command = null;
+        BladeCommand command = null;
 
         try {
-            Tuple<me.vaperion.blade.command.Command, String> resolved = resolveCommand(joinAliasToArgs(alias, args));
+            Tuple<BladeCommand, String> resolved = resolveCommand(joinAliasToArgs(alias, args));
             if (resolved == null) {
                 // maybe suggest subcommands?
                 return Collections.emptyList();

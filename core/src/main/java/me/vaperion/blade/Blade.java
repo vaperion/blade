@@ -4,15 +4,18 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.Blade.Builder.Binder;
 import me.vaperion.blade.argument.ArgumentProvider;
-import me.vaperion.blade.argument.Provider;
 import me.vaperion.blade.argument.impl.*;
-import me.vaperion.blade.command.Command;
+import me.vaperion.blade.argument.internal.ArgBinding;
+import me.vaperion.blade.argument.internal.ArgProvider;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.Container;
 import me.vaperion.blade.log.BladeLogger;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
+import me.vaperion.blade.sender.SenderProvider;
+import me.vaperion.blade.sender.internal.SndBinding;
+import me.vaperion.blade.sender.internal.SndProvider;
 import me.vaperion.blade.service.*;
-import me.vaperion.blade.util.Binding;
 import me.vaperion.blade.util.ClassUtil;
 import me.vaperion.blade.util.PermissionPredicate;
 import org.jetbrains.annotations.Contract;
@@ -38,9 +41,10 @@ public final class Blade {
 
     private final Map<String, PermissionPredicate> permissionPredicates = new HashMap<>();
 
-    private final List<Provider<?>> providers = new ArrayList<>();
-    private final List<Command> commands = new ArrayList<>();
-    private final Map<String, List<Command>> aliasToCommands = new HashMap<>();
+    private final List<ArgProvider<?>> providers = new ArrayList<>();
+    private final List<SndProvider<?>> senderProviders = new ArrayList<>();
+    private final List<BladeCommand> commands = new ArrayList<>();
+    private final Map<String, List<BladeCommand>> aliasToCommands = new HashMap<>();
     private final Map<String, Container> containers = new HashMap<>();
 
     private final CommandRegistrar registrar = new CommandRegistrar(this);
@@ -70,11 +74,19 @@ public final class Blade {
         binder.bind(Float.class, new FloatArgument());
         binder.bind(Enum.class, new EnumArgument());
 
-        for (Binding<?> binding : builder.bindings) {
-            if (binding instanceof Binding.Release) {
+        for (ArgBinding<?> binding : builder.bindings) {
+            if (binding instanceof ArgBinding.Release) {
                 providers.removeIf(provider -> binding.getType() == provider.getType() && provider.doAnnotationsMatch(binding.getAnnotations()));
             } else {
-                providers.add(Provider.unsafe(binding.getType(), binding.getProvider(), binding.getAnnotations()));
+                providers.add(ArgProvider.unsafe(binding.getType(), binding.getProvider(), binding.getAnnotations()));
+            }
+        }
+
+        for (SndBinding<?> binding : builder.senderBindings) {
+            if (binding instanceof SndBinding.Release) {
+                senderProviders.removeIf(provider -> binding.getType() == provider.getType());
+            } else {
+                senderProviders.add(SndProvider.unsafe(binding.getType(), binding.getProvider()));
             }
         }
 
@@ -120,7 +132,8 @@ public final class Blade {
         private final BladeConfiguration configuration;
 
         private final Map<String, PermissionPredicate> permissionPredicates = new HashMap<>();
-        private final List<Binding<?>> bindings = new ArrayList<>();
+        private final List<ArgBinding<?>> bindings = new ArrayList<>();
+        private final List<SndBinding<?>> senderBindings = new ArrayList<>();
 
         private Builder(BladePlatform platform) {
             this.platform = platform;
@@ -140,6 +153,14 @@ public final class Blade {
         @Contract("_ -> this")
         public Builder bind(@NotNull Consumer<Binder> consumer) {
             Binder binder = new Binder(this, false);
+            consumer.accept(binder);
+            return this;
+        }
+
+        @NotNull
+        @Contract("_ -> this")
+        public Builder bindSender(@NotNull Consumer<SenderBinder> consumer) {
+            SenderBinder binder = new SenderBinder(this, false);
             consumer.accept(binder);
             return this;
         }
@@ -169,7 +190,8 @@ public final class Blade {
             }
 
             public <T> void bind(@NotNull Class<T> type, @NotNull ArgumentProvider<T> provider, @NotNull List<Class<? extends Annotation>> annotations) {
-                Binding<T> binding = new Binding<>(type, provider, annotations);
+                ArgBinding<T> binding = new ArgBinding<>(type, provider, annotations);
+
                 if (insertToBeginning) {
                     builder.bindings.add(0, binding);
                 } else {
@@ -183,7 +205,8 @@ public final class Blade {
             }
 
             public <T> void unsafeBind(@NotNull Class<T> type, @NotNull ArgumentProvider<?> provider, @NotNull List<Class<? extends Annotation>> annotations) {
-                Binding<?> binding = Binding.unsafe(type, provider, annotations);
+                ArgBinding<?> binding = ArgBinding.unsafe(type, provider, annotations);
+
                 if (insertToBeginning) {
                     builder.bindings.add(0, binding);
                 } else {
@@ -197,11 +220,49 @@ public final class Blade {
             }
 
             public <T> void release(@NotNull Class<T> type, @NotNull List<Class<? extends Annotation>> annotations) {
-                Binding<?> binding = Binding.release(type, annotations);
+                ArgBinding<?> binding = ArgBinding.release(type, annotations);
                 if (insertToBeginning) {
                     builder.bindings.add(0, binding);
                 } else {
                     builder.bindings.add(binding);
+                }
+            }
+        }
+
+        @RequiredArgsConstructor
+        public static final class SenderBinder {
+            private final Builder builder;
+            private final boolean insertToBeginning;
+
+            public <T> void bind(@NotNull Class<T> type,
+                                 @NotNull SenderProvider<T> provider) {
+                SndBinding<T> binding = new SndBinding<>(type, provider);
+
+                if (insertToBeginning) {
+                    builder.senderBindings.add(0, binding);
+                } else {
+                    builder.senderBindings.add(binding);
+                }
+            }
+
+            public <T> void unsafeBind(@NotNull Class<T> type,
+                                       @NotNull SenderProvider<?> provider) {
+                SndBinding<?> binding = SndBinding.unsafe(type, provider);
+
+                if (insertToBeginning) {
+                    builder.senderBindings.add(0, binding);
+                } else {
+                    builder.senderBindings.add(binding);
+                }
+            }
+
+            public <T> void release(@NotNull Class<T> type) {
+                SndBinding<?> binding = SndBinding.release(type);
+
+                if (insertToBeginning) {
+                    builder.senderBindings.add(0, binding);
+                } else {
+                    builder.senderBindings.add(binding);
                 }
             }
         }

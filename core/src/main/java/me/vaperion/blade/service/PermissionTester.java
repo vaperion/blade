@@ -2,7 +2,7 @@ package me.vaperion.blade.service;
 
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.Blade;
-import me.vaperion.blade.command.Command;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.util.PermissionPredicate;
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +14,7 @@ public class PermissionTester {
 
     private final Blade blade;
 
-    public boolean testPermission(@NotNull Context context, @NotNull Command command) {
+    public boolean testPermission(@NotNull Context context, @NotNull BladeCommand command) {
         String permission = command.getPermission();
 
         if (permission == null || permission.isEmpty()) { // If the command doesn't have a permission, it's allowed

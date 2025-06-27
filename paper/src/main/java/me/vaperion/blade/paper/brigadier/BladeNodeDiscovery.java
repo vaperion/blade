@@ -1,7 +1,7 @@
 package me.vaperion.blade.paper.brigadier;
 
 import me.vaperion.blade.Blade;
-import me.vaperion.blade.command.Command;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.util.Tuple;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,7 +31,7 @@ public class BladeNodeDiscovery {
     @Nullable
     public SimpleBladeNode discoverCommand(@NotNull String label) {
         label = removeCommandQualifier(label);
-        Tuple<Command, String> bladeCommand = blade.getResolver().resolveCommand(new String[]{ label });
+        Tuple<BladeCommand, String> bladeCommand = blade.getResolver().resolveCommand(new String[]{ label });
 
         if (bladeCommand != null) {
             // This is the simple case: if a command is registered with that exact label (e.g. "/hello"), we can just return it
@@ -39,11 +39,11 @@ public class BladeNodeDiscovery {
         }
 
         // If no command was found, we have to search for "stub" parent commands, e.g. if you register "/hello world", "hello" would be a stub
-        List<Command> commands = blade.getAliasToCommands().get(label);
+        List<BladeCommand> commands = blade.getAliasToCommands().get(label);
         if (commands == null || commands.isEmpty()) return null;
 
         List<SimpleBladeNode> resolved = new ArrayList<>();
-        for (Command command : commands) {
+        for (BladeCommand command : commands) {
             SimpleBladeNode subcommand = discoverCommand(command.getAliases()[0]);
 
             if (subcommand == null)

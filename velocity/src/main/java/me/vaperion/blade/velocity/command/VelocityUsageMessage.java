@@ -2,7 +2,7 @@ package me.vaperion.blade.velocity.command;
 
 import com.velocitypowered.api.command.CommandSource;
 import me.vaperion.blade.annotation.argument.Flag;
-import me.vaperion.blade.command.Command;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.command.Parameter.CommandParameter;
 import me.vaperion.blade.command.Parameter.FlagParameter;
 import me.vaperion.blade.command.UsageMessage;
@@ -22,11 +22,11 @@ public final class VelocityUsageMessage implements UsageMessage {
     private final Component component;
     private String toString;
 
-    public VelocityUsageMessage(Command command) {
+    public VelocityUsageMessage(BladeCommand command) {
         this(command, true);
     }
 
-    public VelocityUsageMessage(Command command, boolean addPrefix) {
+    public VelocityUsageMessage(BladeCommand command, boolean addPrefix) {
         TextComponent.Builder builder = text();
 
         builder.append(text((addPrefix ? "Usage: " : "") + "/", NamedTextColor.RED)

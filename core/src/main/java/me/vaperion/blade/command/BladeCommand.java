@@ -10,6 +10,8 @@ import me.vaperion.blade.command.Parameter.CommandParameter;
 import me.vaperion.blade.command.Parameter.FlagParameter;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.context.WrappedSender;
+import me.vaperion.blade.sender.internal.SndProvider;
+import me.vaperion.blade.util.BladeHelper;
 import me.vaperion.blade.util.ClassUtil;
 import me.vaperion.blade.util.LoadedValue;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +28,7 @@ import static me.vaperion.blade.util.Preconditions.*;
 
 @Getter
 @ToString
-public final class Command {
+public final class BladeCommand {
 
     private final Blade blade;
 
@@ -41,19 +43,27 @@ public final class Command {
     private final Class<?> senderType;
 
     private final List<Parameter> parameters = new ArrayList<>();
-    private final List<ArgumentProvider<?>> providers = new ArrayList<>(), parameterProviders = new ArrayList<>(), flagProviders = new ArrayList<>();
+
+    private final List<ArgumentProvider<?>> providers = new ArrayList<>(),
+        parameterProviders = new ArrayList<>(),
+        flagProviders = new ArrayList<>();
+
+    private final List<SndProvider<?>> senderProviders = new ArrayList<>();
 
     private final LoadedValue<UsageMessage> usageMessage = new LoadedValue<>(), helpMessage = new LoadedValue<>();
 
-    public Command(@NotNull Blade blade,
-                   @Nullable Object instance,
-                   @NotNull Method method) {
+    public BladeCommand(@NotNull Blade blade,
+                        @Nullable Object instance,
+                        @NotNull Method method) {
         this.blade = blade;
 
         this.instance = instance;
         this.method = method;
 
-        this.aliases = mustGetAnnotation(method, me.vaperion.blade.annotation.command.Command.class).value();
+        this.aliases = BladeHelper.generateAliases(
+                mustGetAnnotation(method, Command.class),
+                method.getDeclaringClass().getAnnotation(Command.class))
+            .toArray(new String[0]);
 
         this.description = runOrDefault(method.getAnnotation(Description.class), "", Description::value);
         this.async = runOrDefault(method.getAnnotation(Async.class), false, $ -> true);
@@ -62,7 +72,7 @@ public final class Command {
         this.customUsage = runOrDefault(method.getAnnotation(Usage.class), "", Usage::value);
         this.extraUsageData = runOrDefault(method.getAnnotation(ExtraUsage.class), "", ExtraUsage::value);
 
-        this.baseCommands = Arrays.stream(aliases)
+        this.baseCommands = Arrays.stream(this.aliases)
             .map(String::toLowerCase)
             .map(s -> s.split(" ")[0])
             .distinct().toArray(String[]::new);
@@ -83,6 +93,19 @@ public final class Command {
         int i = 0;
         for (java.lang.reflect.Parameter parameter : method.getParameters()) {
             if (i == 0 && hasSenderParameter) {
+                for (SndProvider<?> provider : blade.getSenderProviders()) {
+                    if (provider.getType().isAssignableFrom(this.senderType)) {
+                        senderProviders.add(provider);
+                    }
+                }
+
+                // Sort providers so exact type match comes first
+                senderProviders.sort((a, b) -> {
+                    if (a.getType().equals(this.senderType)) return -1;
+                    if (b.getType().equals(this.senderType)) return 1;
+                    return 0;
+                });
+
                 i++;
                 continue;
             }
@@ -105,7 +128,9 @@ public final class Command {
                     parameter.getAnnotation(Range.class), parameter.getAnnotation(Completer.class), parameter.isAnnotationPresent(Text.class), parameter);
             }
 
-            ArgumentProvider<?> provider = blade.getResolver().recursiveResolveProvider(type, Arrays.asList(parameter.getAnnotations()));
+            ArgumentProvider<?> provider = blade.getResolver()
+                .recursiveResolveProvider(type,
+                    Arrays.asList(parameter.getAnnotations()));
 
             parameters.add(bladeParameter);
             providers.add(provider);

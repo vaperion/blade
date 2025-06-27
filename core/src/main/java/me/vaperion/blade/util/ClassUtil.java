@@ -66,9 +66,11 @@ public class ClassUtil {
     @NotNull
     public Class<?> getGenericOrRawType(@NotNull Parameter parameter) {
         Type type = parameter.getParameterizedType();
+
         if (type instanceof ParameterizedType) {
             return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
         }
+
         return parameter.getType();
     }
 

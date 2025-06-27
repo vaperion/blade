@@ -1,7 +1,7 @@
 package me.vaperion.blade.bukkit.platform;
 
 import me.vaperion.blade.bukkit.command.BukkitUsageMessage;
-import me.vaperion.blade.command.Command;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.platform.HelpGenerator;
 import me.vaperion.blade.util.PaginatedOutput;
@@ -16,7 +16,7 @@ public class BukkitHelpGenerator implements HelpGenerator {
 
     @NotNull
     @Override
-    public List<String> generate(@NotNull Context context, @NotNull List<Command> commands) {
+    public List<String> generate(@NotNull Context context, @NotNull List<BladeCommand> commands) {
         commands = commands.stream()
             .distinct()
             .filter(c -> !c.isHidden())
@@ -32,7 +32,7 @@ public class BukkitHelpGenerator implements HelpGenerator {
             return Collections.singletonList(ChatColor.RED + context.blade().getConfiguration().getDefaultPermissionMessage());
         }
 
-        return new PaginatedOutput<Command>(10) {
+        return new PaginatedOutput<BladeCommand>(10) {
             @Override
             public String formatErrorMessage(Error error, Object... args) {
                 switch (error) {
@@ -55,7 +55,7 @@ public class BukkitHelpGenerator implements HelpGenerator {
             }
 
             @Override
-            public String formatLine(Command result, int index) {
+            public String formatLine(BladeCommand result, int index) {
                 String help = ChatColor.stripColor(result.getHelpMessage().ensureGetOrLoad(() -> new BukkitUsageMessage(result, false)).toString());
                 return ChatColor.AQUA + " - " + ChatColor.YELLOW + help + (result.getDescription().isEmpty() ? "" : (" - " + ChatColor.GRAY + result.getDescription()));
             }

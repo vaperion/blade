@@ -7,12 +7,13 @@ import com.velocitypowered.api.command.RawCommand;
 import com.velocitypowered.api.proxy.ProxyServer;
 import lombok.Getter;
 import me.vaperion.blade.Blade;
-import me.vaperion.blade.command.Command;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.Container;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.exception.BladeExitMessage;
 import me.vaperion.blade.exception.BladeUsageMessage;
+import me.vaperion.blade.util.BladeHelper;
 import me.vaperion.blade.util.Tuple;
 import me.vaperion.blade.velocity.command.VelocityUsageMessage;
 import me.vaperion.blade.velocity.context.VelocitySender;
@@ -32,9 +33,9 @@ public class VelocityContainer implements RawCommand, Container {
 
     public static final ContainerCreator<VelocityContainer> CREATOR = VelocityContainer::new;
     private final Blade blade;
-    private final Command baseCommand;
+    private final BladeCommand baseCommand;
 
-    private VelocityContainer(@NotNull Blade blade, @NotNull Command command, @NotNull String alias) {
+    private VelocityContainer(@NotNull Blade blade, @NotNull BladeCommand command, @NotNull String alias) {
         this.blade = blade;
         this.baseCommand = command;
 
@@ -48,12 +49,12 @@ public class VelocityContainer implements RawCommand, Container {
     }
 
     @Nullable
-    private Tuple<Command, String> resolveCommand(@NotNull String[] arguments) throws BladeExitMessage {
+    private Tuple<BladeCommand, String> resolveCommand(@NotNull String[] arguments) throws BladeExitMessage {
         return blade.getResolver().resolveCommand(arguments);
     }
 
-    @NotNull
-    private String getSenderType(@NotNull Class<?> clazz) {
+    @Nullable
+    private String getSenderTypeName(@NotNull Class<?> clazz) {
         switch (clazz.getSimpleName()) {
             case "Player":
                 return "players";
@@ -62,22 +63,22 @@ public class VelocityContainer implements RawCommand, Container {
                 return "the console";
 
             default:
-                return "everyone";
+                return null;
         }
     }
 
-    private void sendUsageMessage(@NotNull Context context, @Nullable Command command) {
+    private void sendUsageMessage(@NotNull Context context, @Nullable BladeCommand command) {
         if (command == null) return;
         command.getUsageMessage().ensureGetOrLoad(() -> new VelocityUsageMessage(command)).sendTo(context);
     }
 
     private boolean hasPermission(@NotNull CommandSource sender, String[] args) throws BladeExitMessage {
-        Tuple<Command, String> command = resolveCommand(joinAliasToArgs(this.baseCommand.getAliases()[0], args));
+        Tuple<BladeCommand, String> command = resolveCommand(joinAliasToArgs(this.baseCommand.getAliases()[0], args));
         Context context = new Context(blade, new VelocitySender(sender), command == null ? "" : command.getRight(), args);
         return checkPermission(context, command == null ? null : command.getLeft()).getLeft();
     }
 
-    private Tuple<Boolean, String> checkPermission(@NotNull Context context, @Nullable Command command) throws BladeExitMessage {
+    private Tuple<Boolean, String> checkPermission(@NotNull Context context, @Nullable BladeCommand command) throws BladeExitMessage {
         if (command == null)
             return new Tuple<>(false, "This command failed to execute as we couldn't find its registration.");
 
@@ -105,16 +106,16 @@ public class VelocityContainer implements RawCommand, Container {
         String[] args = invocation.arguments().isEmpty() ? new String[0] : invocation.arguments().split(" ");
         String alias = invocation.alias();
 
-        Command command = null;
+        BladeCommand command = null;
         String resolvedAlias;
 
         String[] joined = joinAliasToArgs(alias, args);
         Context context = new Context(blade, new VelocitySender(sender), alias, args);
 
         try {
-            Tuple<Command, String> resolved = resolveCommand(joined);
+            Tuple<BladeCommand, String> resolved = resolveCommand(joined);
             if (resolved == null) {
-                List<Command> availableCommands = blade.getCommands()
+                List<BladeCommand> availableCommands = blade.getCommands()
                     .stream().filter(c -> Arrays.stream(c.getAliases()).anyMatch(a -> a.toLowerCase().startsWith(alias.toLowerCase(Locale.ROOT) + " ") || a.equalsIgnoreCase(alias)))
                     .collect(Collectors.toList());
 
@@ -132,10 +133,21 @@ public class VelocityContainer implements RawCommand, Container {
             resolvedAlias = resolved.getRight();
             int offset = Math.min(args.length, resolvedAlias.split(" ").length - 1);
 
-            if (command.isHasSenderParameter() && !command.getSenderType().isInstance(sender))
-                throw new BladeExitMessage("This command can only be executed by " + getSenderType(command.getSenderType()) + ".");
+            if (command.isHasSenderParameter()
+                && !command.isWrappedSenderBased()
+                && !command.isContextBased()
+                && !command.getSenderType().isInstance(sender)) {
+                String senderTypeName = getSenderTypeName(sender.getClass());
 
-            final Command finalCommand = command;
+                if (senderTypeName != null) {
+                    throw new BladeExitMessage("This command can only be executed by " + senderTypeName + ".");
+                }
+
+                // If it is null, the sender is probably a custom type.
+                // We'll verify it later.
+            }
+
+            final BladeCommand finalCommand = command;
             final String finalResolvedAlias = resolvedAlias;
 
             if (finalCommand.getMethod() == null) {
@@ -144,15 +156,14 @@ public class VelocityContainer implements RawCommand, Container {
 
             Runnable runnable = () -> {
                 try {
-                    List<Object> parsed;
-                    if (finalCommand.isContextBased()) {
-                        parsed = Collections.singletonList(context);
-                    } else {
-                        parsed = blade.getParser().parseArguments(finalCommand, context, Arrays.copyOfRange(args, offset, args.length));
-                        if (finalCommand.isHasSenderParameter()) parsed.add(0, sender);
-                    }
+                    List<Object> methodArgs = BladeHelper.makeMethodArguments(
+                        blade, finalCommand, context,
+                        Arrays.copyOfRange(args, offset, args.length),
+                        sender
+                    );
 
-                    finalCommand.getMethod().invoke(finalCommand.getInstance(), parsed.toArray(new Object[0]));
+                    finalCommand.getMethod().invoke(finalCommand.getInstance(),
+                        methodArgs.toArray(new Object[0]));
                 } catch (BladeUsageMessage ex) {
                     sendUsageMessage(context, finalCommand);
                 } catch (BladeExitMessage ex) {
@@ -224,10 +235,10 @@ public class VelocityContainer implements RawCommand, Container {
         if (!blade.getConfiguration().getTabCompleter().isDefault()) return Collections.emptyList();
         if (!hasPermission(sender, args)) return Collections.emptyList();
 
-        Command command = null;
+        BladeCommand command = null;
 
         try {
-            Tuple<Command, String> resolved = resolveCommand(joinAliasToArgs(alias, args));
+            Tuple<BladeCommand, String> resolved = resolveCommand(joinAliasToArgs(alias, args));
             if (resolved == null) {
                 // maybe suggest subcommands?
                 return Collections.emptyList();

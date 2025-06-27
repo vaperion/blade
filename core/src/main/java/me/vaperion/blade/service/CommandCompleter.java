@@ -5,7 +5,7 @@ import me.vaperion.blade.Blade;
 import me.vaperion.blade.argument.Argument;
 import me.vaperion.blade.argument.Argument.Type;
 import me.vaperion.blade.argument.ArgumentProvider;
-import me.vaperion.blade.command.Command;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.command.Parameter;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.context.WrappedSender;
@@ -30,13 +30,13 @@ public class CommandCompleter {
         suggestSubCommand(suggestions, commandLine, senderSupplier);
 
         String[] commandParts = commandLine.split(" ");
-        Tuple<Command, String> resolved = blade.getResolver().resolveCommand(commandParts);
+        Tuple<BladeCommand, String> resolved = blade.getResolver().resolveCommand(commandParts);
 
         if (resolved == null) return suggestions.isEmpty() ? null : suggestions;
         if (resolved.getLeft().isContextBased())
             return suggestions.isEmpty() ? null : suggestions;
 
-        Command command = resolved.getLeft();
+        BladeCommand command = resolved.getLeft();
         String foundAlias = resolved.getRight();
 
         List<String> argList = new ArrayList<>(Arrays.asList(commandParts));
@@ -54,12 +54,14 @@ public class CommandCompleter {
     }
 
     public void suggest(@NotNull List<String> suggestions, @NotNull Context context,
-                        @NotNull Command command, @NotNull String[] args) throws BladeExitMessage {
+                        @NotNull BladeCommand command, @NotNull String[] args) throws BladeExitMessage {
         if (command.isContextBased()) return;
 
         try {
             List<String> argumentList = new ArrayList<>(Arrays.asList(args));
-            List<String> arguments = command.isQuoted() ? CommandParser.combineQuotedArguments(argumentList) : argumentList;
+            List<String> arguments = command.isQuoted()
+                ? CommandParser.combineQuotedArguments(argumentList)
+                : argumentList;
 
             Map<Character, String> flags = blade.getParser().parseFlags(command, arguments);
             for (Map.Entry<Character, String> entry : flags.entrySet()) {
@@ -122,13 +124,13 @@ public class CommandCompleter {
         if (commandLineParts.length == 0) return;
         String baseCommand = commandLineParts[0];
 
-        List<Command> commandsWithBase = blade.getAliasToCommands().get(baseCommand);
+        List<BladeCommand> commandsWithBase = blade.getAliasToCommands().get(baseCommand);
         if (commandsWithBase == null) return;
 
         int currentWordIndex = commandLineParts.length - 1 + (commandLine.endsWith(" ") ? 1 : 0);
         if (currentWordIndex == 0) return;
 
-        for (Command bladeCommand : commandsWithBase) {
+        for (BladeCommand bladeCommand : commandsWithBase) {
             if (bladeCommand.isHidden()) continue;
 
             Context context = new Context(blade, senderSupplier.get(), bladeCommand.getAliases()[0], new String[0]);

@@ -5,8 +5,8 @@ import me.vaperion.blade.Blade;
 import me.vaperion.blade.annotation.argument.*;
 import me.vaperion.blade.annotation.command.*;
 import me.vaperion.blade.argument.ArgumentProvider;
-import me.vaperion.blade.argument.Provider;
-import me.vaperion.blade.command.Command;
+import me.vaperion.blade.argument.internal.ArgProvider;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.util.Tuple;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,25 +23,25 @@ public class CommandResolver {
     private static final List<Class<? extends Annotation>> INTERNAL_ANNOTATIONS = Arrays.asList(
         Completer.class, Data.class, Flag.class, Name.class, Optional.class, Range.class, Sender.class, Text.class,
 
-        Async.class, me.vaperion.blade.annotation.command.Command.class, Description.class, ExtraUsage.class, Hidden.class,
+        Async.class, Command.class, Description.class, ExtraUsage.class, Hidden.class,
         ParseQuotes.class, Permission.class, Usage.class, UsageAlias.class
     );
 
     private final Blade blade;
 
     @Nullable
-    public Tuple<Command, String> resolveCommand(@NotNull String[] input) {
+    public Tuple<BladeCommand, String> resolveCommand(@NotNull String[] input) {
         if (input.length == 0) return null;
         String[] commandParts = Arrays.copyOf(input, input.length);
         if (commandParts[0].contains(":")) commandParts[0] = commandParts[0].split(":", 2)[1];
 
         String baseCommand = commandParts[0].toLowerCase();
-        List<Command> tree = blade.getAliasToCommands().getOrDefault(baseCommand, new ArrayList<>());
+        List<BladeCommand> tree = blade.getAliasToCommands().getOrDefault(baseCommand, new ArrayList<>());
 
         do {
             String checking = String.join(" ", commandParts);
 
-            for (Command subCommand : tree) {
+            for (BladeCommand subCommand : tree) {
                 for (String commandAlias : subCommand.getAliases()) {
                     if (commandAlias.equalsIgnoreCase(checking)) return new Tuple<>(subCommand, commandAlias);
                 }
@@ -81,7 +81,7 @@ public class CommandResolver {
             .filter(container -> container.getType() == clazz)
             .filter(container -> container.doAnnotationsMatch(inputAnnotations))
             .limit(1)
-            .map(Provider::getProvider)
+            .map(ArgProvider::getProvider)
             .map(provider -> (ArgumentProvider<T>) provider)
             .findFirst().orElse(null);
     }

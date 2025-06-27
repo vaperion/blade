@@ -5,7 +5,7 @@ import me.vaperion.blade.Blade;
 import me.vaperion.blade.argument.Argument;
 import me.vaperion.blade.argument.Argument.Type;
 import me.vaperion.blade.argument.ArgumentProvider;
-import me.vaperion.blade.command.Command;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.command.Parameter;
 import me.vaperion.blade.command.Parameter.FlagParameter;
 import me.vaperion.blade.context.Context;
@@ -22,14 +22,17 @@ public class CommandParser {
     private final Blade blade;
 
     @NotNull
-    public List<Object> parseArguments(@NotNull Command command,
+    public List<Object> parseArguments(@NotNull BladeCommand command,
                                        @NotNull Context context,
                                        @NotNull String[] argArray) throws BladeExitMessage {
         List<String> args = new ArrayList<>(Arrays.asList(argArray));
         List<Object> result = new ArrayList<>(command.getParameters().size());
 
         try {
-            List<String> arguments = command.isQuoted() ? combineQuotedArguments(args) : args;
+            List<String> arguments = command.isQuoted()
+                ? combineQuotedArguments(args)
+                : args;
+
             Map<Character, String> flags = parseFlags(command, arguments);
 
             int argIndex = 0, providerIndex = 0;
@@ -99,7 +102,7 @@ public class CommandParser {
     }
 
     @NotNull
-    public Map<Character, String> parseFlags(@NotNull Command command, @NotNull List<String> args) throws BladeExitMessage {
+    public Map<Character, String> parseFlags(@NotNull BladeCommand command, @NotNull List<String> args) throws BladeExitMessage {
         Map<Character, String> map = new LinkedHashMap<>();
         Character pendingFlag = null;
 

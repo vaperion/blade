@@ -2,7 +2,7 @@ package me.vaperion.blade.platform;
 
 import lombok.Getter;
 import lombok.Setter;
-import me.vaperion.blade.command.Command;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.log.BladeLogger;
 import me.vaperion.blade.util.Preconditions;
 
@@ -30,7 +30,7 @@ public final class BladeConfiguration {
     private HelpGenerator helpGenerator = new HelpGenerator.Default();
     private BladeLogger logger = BladeLogger.DEFAULT;
 
-    private Comparator<Command> helpSorter = Comparator.comparing(Command::getUsageAlias);
+    private Comparator<BladeCommand> helpSorter = Comparator.comparing(BladeCommand::getUsageAlias);
 
     public void validate() {
         Preconditions.checkNotNull(pluginInstance, "Plugin instance cannot be null.");

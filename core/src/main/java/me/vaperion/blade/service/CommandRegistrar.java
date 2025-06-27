@@ -2,7 +2,9 @@ package me.vaperion.blade.service;
 
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.Blade;
-import me.vaperion.blade.command.Command;
+import me.vaperion.blade.annotation.command.Command;
+import me.vaperion.blade.command.BladeCommand;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,14 +21,16 @@ import static me.vaperion.blade.util.Preconditions.mustGetAnnotation;
 @RequiredArgsConstructor
 public class CommandRegistrar {
 
-    private static final List<Command> EMPTY_COMMAND_LIST = new ArrayList<>();
+    private static final List<BladeCommand> EMPTY_COMMAND_LIST = new ArrayList<>();
 
     private final Blade blade;
 
-    public void registerClass(@Nullable Object instance, @NotNull Class<?> clazz) {
+    @ApiStatus.Internal
+    public void registerClass(@Nullable Object instance,
+                              @NotNull Class<?> clazz) {
         try {
             for (Method method : clazz.getMethods()) {
-                if (!method.isAnnotationPresent(me.vaperion.blade.annotation.command.Command.class)) continue;
+                if (!method.isAnnotationPresent(Command.class)) continue;
                 if ((instance == null) != Modifier.isStatic(method.getModifiers())) continue;
 
                 registerMethod(instance, method);
@@ -39,10 +43,12 @@ public class CommandRegistrar {
         }
     }
 
-    public void unregisterClass(@Nullable Object instance, @NotNull Class<?> clazz) {
+    @ApiStatus.Internal
+    public void unregisterClass(@Nullable Object instance,
+                                @NotNull Class<?> clazz) {
         try {
             for (Method method : clazz.getMethods()) {
-                if (!method.isAnnotationPresent(me.vaperion.blade.annotation.command.Command.class)) continue;
+                if (!method.isAnnotationPresent(Command.class)) continue;
                 if ((instance == null) != Modifier.isStatic(method.getModifiers())) continue;
 
                 unregisterMethod(instance, method);
@@ -55,46 +61,61 @@ public class CommandRegistrar {
         }
     }
 
-    public void registerMethod(@Nullable Object instance, @NotNull Method method) throws Exception {
-        Command cmd = new Command(blade, instance, method);
+    @ApiStatus.Internal
+    public void registerMethod(@Nullable Object instance,
+                               @NotNull Method method) throws Exception {
+        BladeCommand cmd = new BladeCommand(blade, instance, method);
         blade.getCommands().add(cmd);
 
         for (String alias : cmd.getAliases()) {
             String realAlias = alias.split(" ")[0];
 
-            blade.getAliasToCommands().computeIfAbsent(realAlias, $ -> new LinkedList<>()).add(cmd);
+            blade.getAliasToCommands()
+                .computeIfAbsent(realAlias, $ -> new LinkedList<>())
+                .add(cmd);
 
             if (blade.getContainers().containsKey(realAlias)) continue;
-            blade.getContainers().put(realAlias, blade.getPlatform().getContainerCreator().create(blade, cmd, realAlias));
+
+            blade.getContainers()
+                .put(realAlias, blade.getPlatform().getContainerCreator()
+                    .create(blade, cmd, realAlias));
         }
     }
 
-    public void unregisterMethod(@Nullable Object instance, @NotNull Method method) {
-        me.vaperion.blade.annotation.command.Command command =
-            mustGetAnnotation(method, me.vaperion.blade.annotation.command.Command.class);
+    @ApiStatus.Internal
+    public void unregisterMethod(@Nullable Object instance,
+                                 @NotNull Method method) {
+        Command command =
+            mustGetAnnotation(method, Command.class);
 
         String[] aliases = command.value();
         aliases = Arrays.stream(aliases).map(String::toLowerCase).toArray(String[]::new);
 
-        Command cmd = blade.getCommands().stream().filter(c -> c.getInstance() == instance && c.getMethod() == method).findFirst().orElse(null);
+        BladeCommand cmd = blade.getCommands().stream().filter(c -> c.getInstance() == instance && c.getMethod() == method).findFirst().orElse(null);
         if (cmd == null) return;
         blade.getCommands().remove(cmd);
 
         for (String alias : aliases) {
             String realAlias = alias.split(" ")[0];
 
-            List<Command> commandList = blade.getAliasToCommands().getOrDefault(realAlias, EMPTY_COMMAND_LIST);
+            List<BladeCommand> commandList = blade.getAliasToCommands()
+                .getOrDefault(realAlias, EMPTY_COMMAND_LIST);
+
             commandList.remove(cmd);
-            if (commandList.isEmpty()) blade.getAliasToCommands().remove(realAlias);
+            if (commandList.isEmpty())
+                blade.getAliasToCommands().remove(realAlias);
         }
     }
 
+    @ApiStatus.Internal
     public void unregisterAlias(@NotNull String alias) {
         List<Runnable> calls = new ArrayList<>();
 
-        for (Command command : blade.getCommands()) {
+        for (BladeCommand command : blade.getCommands()) {
             String[] aliases = command.getAliases();
-            if (Arrays.stream(aliases).noneMatch(a -> a.equalsIgnoreCase(alias))) continue;
+
+            if (Arrays.stream(aliases)
+                .noneMatch(a -> a.equalsIgnoreCase(alias))) continue;
 
             calls.add(() -> unregisterMethod(command.getInstance(), command.getMethod()));
         }

@@ -8,11 +8,29 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This annotation is used to mark a method as a command.
- * You must provide at least one name for the command.
+ * Marks a method or class as a command.
+ *
+ * <h3>Usage Patterns:</h3>
+ * <ul>
+ *   <li><strong>Method-level:</strong> Registers the method as a standalone command</li>
+ *   <li><strong>Class-level:</strong> Acts as a prefix for all command methods within the class</li>
+ * </ul>
+ *
+ * <h3>Example:</h3>
+ * <pre>{@code
+ * @Command("mycommand")
+ * public class MyCommandClass {
+ *     @Command("subcommand")
+ *     public static void mySubCommand(@Sender Player player) {
+ *         player.sendMessage("This is a subcommand!");
+ *     }
+ * }
+ * }</pre>
+ *
+ * <p>In this example the command registers as: {@code /mycommand subcommand}</p>
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
+@Target({ ElementType.METHOD, ElementType.TYPE })
 public @interface Command {
     @NotNull
     String[] value();

@@ -2,7 +2,7 @@ package me.vaperion.blade.bukkit.command;
 
 import me.vaperion.blade.annotation.argument.Flag;
 import me.vaperion.blade.bukkit.util.MessageBuilder;
-import me.vaperion.blade.command.Command;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.command.Parameter.CommandParameter;
 import me.vaperion.blade.command.Parameter.FlagParameter;
 import me.vaperion.blade.command.UsageMessage;
@@ -17,11 +17,11 @@ public final class BukkitUsageMessage implements UsageMessage {
     private final BaseComponent[] components;
     private String toString;
 
-    public BukkitUsageMessage(Command command) {
+    public BukkitUsageMessage(BladeCommand command) {
         this(command, true);
     }
 
-    public BukkitUsageMessage(Command command, boolean addPrefix) {
+    public BukkitUsageMessage(BladeCommand command, boolean addPrefix) {
         MessageBuilder messageBuilder = new MessageBuilder((addPrefix ? "Usage: " : "") + "/").color(ChatColor.RED)
             .hoverWithColor(ChatColor.GRAY, command.getDescription())
             .append(command.getUsageAlias());
