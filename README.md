@@ -80,6 +80,7 @@ public class ExampleCommand {
           // Command sender, required:
           @Sender CommandSender sender,
           // Type can be: CommandSender, Player, ConsoleCommandSender
+          // Or any custom type if you register a SenderProvider<T>.
 
           // Regular arguments:
           @Name("player") Player player,
@@ -167,9 +168,10 @@ public class MyPlugin extends JavaPlugin {
               .bind(binder -> {
                   binder.release(Player.class); // To remove the default provider
                   binder.bind(Player.class, new MyPlayerProvider()); // To add your own
+                  binder.bindSender(MySender.class, new MySenderProvider()); // To add your own sender provider
               })
               .build()
-              // Now, you can register all commands in a package:
+              // Now, you can register all commands in a package (including sub-packages):
               .registerPackage(MyPlugin.class, "com.example.commands")
               // or, you can register them individually:
               .register(ExampleCommand.class).register(AnotherCommand.class)
