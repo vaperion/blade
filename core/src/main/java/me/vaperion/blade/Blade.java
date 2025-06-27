@@ -157,6 +157,10 @@ public final class Blade {
             return this;
         }
 
+        /**
+         * @deprecated Use {@link #bind(Consumer)} instead.
+         */
+        @Deprecated
         @NotNull
         @Contract("_ -> this")
         public Builder bindSender(@NotNull Consumer<SenderBinder> consumer) {
@@ -184,12 +188,33 @@ public final class Blade {
             private final Builder builder;
             private final boolean insertToBeginning;
 
+            /**
+             * Register a binding for an argument provider.
+             *
+             * @param type        the type of the argument
+             * @param provider    the provider
+             * @param annotations the required annotations for the argument
+             * @param <T>         the type
+             */
             @SafeVarargs
-            public final <T> void bind(@NotNull Class<T> type, @NotNull ArgumentProvider<T> provider, @NotNull Class<? extends Annotation>... annotations) {
+            public final <T> void bind(@NotNull Class<T> type,
+                                       @NotNull ArgumentProvider<T> provider,
+                                       @NotNull Class<? extends Annotation>... annotations) {
                 bind(type, provider, Arrays.asList(annotations));
             }
 
-            public <T> void bind(@NotNull Class<T> type, @NotNull ArgumentProvider<T> provider, @NotNull List<Class<? extends Annotation>> annotations) {
+
+            /**
+             * Register a binding for an argument provider.
+             *
+             * @param type        the type of the argument
+             * @param provider    the provider
+             * @param annotations the required annotations for the argument
+             * @param <T>         the type
+             */
+            public <T> void bind(@NotNull Class<T> type,
+                                 @NotNull ArgumentProvider<T> provider,
+                                 @NotNull List<Class<? extends Annotation>> annotations) {
                 ArgBinding<T> binding = new ArgBinding<>(type, provider, annotations);
 
                 if (insertToBeginning) {
@@ -199,12 +224,32 @@ public final class Blade {
                 }
             }
 
+            /**
+             * Register a binding for an argument provider without type safety.
+             *
+             * @param type        the type of the argument
+             * @param provider    the unsafe provider
+             * @param annotations the required annotations for the argument
+             * @param <T>         the type
+             */
             @SafeVarargs
-            public final <T> void unsafeBind(@NotNull Class<T> type, @NotNull ArgumentProvider<?> provider, @NotNull Class<? extends Annotation>... annotations) {
+            public final <T> void unsafeBind(@NotNull Class<T> type,
+                                             @NotNull ArgumentProvider<?> provider,
+                                             @NotNull Class<? extends Annotation>... annotations) {
                 unsafeBind(type, provider, Arrays.asList(annotations));
             }
 
-            public <T> void unsafeBind(@NotNull Class<T> type, @NotNull ArgumentProvider<?> provider, @NotNull List<Class<? extends Annotation>> annotations) {
+            /**
+             * Register a binding for an argument provider without type safety.
+             *
+             * @param type        the type of the argument
+             * @param provider    the unsafe provider
+             * @param annotations the required annotations for the argument
+             * @param <T>         the type
+             */
+            public <T> void unsafeBind(@NotNull Class<T> type,
+                                       @NotNull ArgumentProvider<?> provider,
+                                       @NotNull List<Class<? extends Annotation>> annotations) {
                 ArgBinding<?> binding = ArgBinding.unsafe(type, provider, annotations);
 
                 if (insertToBeginning) {
@@ -214,17 +259,85 @@ public final class Blade {
                 }
             }
 
+            /**
+             * Release a binding for an argument type.
+             *
+             * @param type        the type of the argument
+             * @param annotations the required annotations
+             * @param <T>         the type
+             */
             @SafeVarargs
-            public final <T> void release(@NotNull Class<T> type, @NotNull Class<? extends Annotation>... annotations) {
+            public final <T> void release(@NotNull Class<T> type,
+                                          @NotNull Class<? extends Annotation>... annotations) {
                 release(type, Arrays.asList(annotations));
             }
 
-            public <T> void release(@NotNull Class<T> type, @NotNull List<Class<? extends Annotation>> annotations) {
+            /**
+             * Release a binding for an argument type.
+             *
+             * @param type        the type of the argument
+             * @param annotations the required annotations
+             * @param <T>         the type
+             */
+            public <T> void release(@NotNull Class<T> type,
+                                    @NotNull List<Class<? extends Annotation>> annotations) {
                 ArgBinding<?> binding = ArgBinding.release(type, annotations);
                 if (insertToBeginning) {
                     builder.bindings.add(0, binding);
                 } else {
                     builder.bindings.add(binding);
+                }
+            }
+
+            /**
+             * Register a binding for a sender provider.
+             *
+             * @param type     the type of the sender
+             * @param provider the provider
+             * @param <T>      the type of the sender
+             */
+            public <T> void bindSender(@NotNull Class<T> type,
+                                       @NotNull SenderProvider<T> provider) {
+                SndBinding<T> binding = new SndBinding<>(type, provider);
+
+                if (insertToBeginning) {
+                    builder.senderBindings.add(0, binding);
+                } else {
+                    builder.senderBindings.add(binding);
+                }
+            }
+
+            /**
+             * Register a binding for a sender provider without type safety.
+             *
+             * @param type     the type of the sender
+             * @param provider the unsafe provider
+             * @param <T>      the type of the sender
+             */
+            public <T> void unsafeBindSender(@NotNull Class<T> type,
+                                             @NotNull SenderProvider<?> provider) {
+                SndBinding<?> binding = SndBinding.unsafe(type, provider);
+
+                if (insertToBeginning) {
+                    builder.senderBindings.add(0, binding);
+                } else {
+                    builder.senderBindings.add(binding);
+                }
+            }
+
+            /**
+             * Release a binding for a sender type.
+             *
+             * @param type the type of the sender
+             * @param <T>  the type of the sender
+             */
+            public <T> void releaseSender(@NotNull Class<T> type) {
+                SndBinding<?> binding = SndBinding.release(type);
+
+                if (insertToBeginning) {
+                    builder.senderBindings.add(0, binding);
+                } else {
+                    builder.senderBindings.add(binding);
                 }
             }
         }
@@ -234,6 +347,10 @@ public final class Blade {
             private final Builder builder;
             private final boolean insertToBeginning;
 
+            /**
+             * @deprecated Use {@link Binder#bindSender(Class, SenderProvider)} instead.
+             */
+            @Deprecated
             public <T> void bind(@NotNull Class<T> type,
                                  @NotNull SenderProvider<T> provider) {
                 SndBinding<T> binding = new SndBinding<>(type, provider);
@@ -245,6 +362,10 @@ public final class Blade {
                 }
             }
 
+            /**
+             * @deprecated Use {@link Binder#unsafeBindSender(Class, SenderProvider)} instead.
+             */
+            @Deprecated
             public <T> void unsafeBind(@NotNull Class<T> type,
                                        @NotNull SenderProvider<?> provider) {
                 SndBinding<?> binding = SndBinding.unsafe(type, provider);
@@ -256,6 +377,10 @@ public final class Blade {
                 }
             }
 
+            /**
+             * @deprecated Use {@link Binder#releaseSender(Class)} instead.
+             */
+            @Deprecated
             public <T> void release(@NotNull Class<T> type) {
                 SndBinding<?> binding = SndBinding.release(type);
 
