@@ -12,6 +12,7 @@ import me.vaperion.blade.log.BladeLogger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.util.Collections;
 import java.util.List;
@@ -104,7 +105,8 @@ public class Parameter {
                              @NotNull AnnotatedElement element,
                              @NotNull Flag flag) {
             super(name, type, Collections.emptyList(),
-                null, null, null, false, element);
+                makeFakeOptionalFlag(flag, type), null, null, false, element);
+
             this.flag = flag;
         }
 
@@ -122,23 +124,28 @@ public class Parameter {
             return flagMap.get(flag.value());
         }
 
-        @Override
-        public boolean isOptional() {
-            return !flag.required();
-        }
-
-        @Override
-        public @Nullable String getDefault() {
+        @Nullable
+        private static Optional makeFakeOptionalFlag(@NotNull Flag flag,
+                                                     @NotNull Class<?> type) {
             if (flag.required())
-                return super.getDefault();
-            return this.type == boolean.class ? "false" : null;
-        }
+                return null;
 
-        @Override
-        public boolean defaultsToNull() {
-            if (flag.required())
-                return super.defaultsToNull();
-            else return true;
+            return new Optional() {
+                @Override
+                public Class<? extends Annotation> annotationType() {
+                    return Optional.class;
+                }
+
+                @Override
+                public @NotNull String value() {
+                    return type == boolean.class ? "false" : "null";
+                }
+
+                @Override
+                public boolean ignoreFailedArgumentParse() {
+                    return false;
+                }
+            };
         }
     }
 

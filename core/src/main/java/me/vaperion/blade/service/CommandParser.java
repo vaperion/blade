@@ -41,6 +41,7 @@ public class CommandParser {
                 Argument bladeArgument = new Argument(parameter);
 
                 String data;
+
                 if (!isFlag) {
                     if (arguments.size() > argIndex) {
                         data = arguments.get(argIndex);
@@ -56,7 +57,15 @@ public class CommandParser {
                             : data;
                     }
                 } else {
-                    data = ((FlagParameter) parameter).extractFrom(flags);
+                    FlagParameter flagParameter = (FlagParameter) parameter;
+
+                    if (!flags.containsKey(flagParameter.getFlag().value())) {
+                        data = flagParameter.getDefault();
+                        bladeArgument.setType(Type.OPTIONAL);
+                    } else {
+                        data = flagParameter.extractFrom(flags);
+                        bladeArgument.setType(Type.PROVIDED);
+                    }
                 }
 
                 bladeArgument.setString(data);
@@ -78,14 +87,10 @@ public class CommandParser {
                         parsed = provider.provide(context, bladeArgument);
                     result.add(parsed);
 
-                    if (parsed == null) {
-                        if (isFlag && !parameter.defaultsToNull()) {
-                            throw new BladeUsageMessage();
-                        } else if (!isFlag
-                            && !parameter.defaultsToNull()
-                            && !parameter.ignoreFailedArgumentParse()) {
-                            throw new BladeExitMessage("Failed to parse argument '" + parameter.getName() + "'.");
-                        }
+                    if (parsed == null
+                        && !parameter.defaultsToNull()
+                        && !parameter.ignoreFailedArgumentParse()) {
+                        throw new BladeExitMessage("Failed to parse argument '" + parameter.getName() + "'.");
                     }
 
                     if (!isFlag) argIndex++;
