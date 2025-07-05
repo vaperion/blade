@@ -63,12 +63,18 @@ public class CommandCompleter {
                 ? CommandParser.combineQuotedArguments(argumentList)
                 : argumentList;
 
-            Map<Character, String> flags = blade.getParser().parseFlags(command, arguments);
+            Map<Character, String> flags = blade.getParser().parseFlags(command, arguments, true);
+
             for (Map.Entry<Character, String> entry : flags.entrySet()) {
                 arguments.remove("-" + entry.getKey());
 
-                boolean isFlag = command.getFlagParameters().stream().anyMatch(flag -> flag.getFlag().value() == entry.getKey());
-                if (!isFlag || !"true".equals(entry.getValue())) arguments.remove(entry.getValue());
+                boolean isFlag = command.getFlagParameters()
+                    .stream()
+                    .anyMatch(flag ->
+                        flag.getFlag().value() == entry.getKey());
+
+                if (!isFlag || !"true".equals(entry.getValue()))
+                    arguments.remove(entry.getValue());
             }
 
             if (arguments.isEmpty()) return;

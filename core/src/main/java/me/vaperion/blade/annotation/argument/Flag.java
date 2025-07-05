@@ -17,4 +17,6 @@ public @interface Flag {
 
     @NotNull
     String description() default "";
+
+    boolean required() default false;
 }

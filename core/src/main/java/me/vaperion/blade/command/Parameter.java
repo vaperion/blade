@@ -101,10 +101,10 @@ public class Parameter {
 
         public FlagParameter(@NotNull String name,
                              @NotNull Class<?> type,
-                             @Nullable Optional optional,
                              @NotNull AnnotatedElement element,
                              @NotNull Flag flag) {
-            super(name, type, Collections.emptyList(), optional, null, null, false, element);
+            super(name, type, Collections.emptyList(),
+                null, null, null, false, element);
             this.flag = flag;
         }
 
@@ -120,6 +120,25 @@ public class Parameter {
             }
 
             return flagMap.get(flag.value());
+        }
+
+        @Override
+        public boolean isOptional() {
+            return !flag.required();
+        }
+
+        @Override
+        public @Nullable String getDefault() {
+            if (flag.required())
+                return super.getDefault();
+            return this.type == boolean.class ? "false" : null;
+        }
+
+        @Override
+        public boolean defaultsToNull() {
+            if (flag.required())
+                return super.defaultsToNull();
+            else return true;
         }
     }
 

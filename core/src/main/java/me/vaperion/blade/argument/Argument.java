@@ -67,7 +67,13 @@ public final class Argument {
     }
 
     public enum Type {
+        /**
+         * The argument was provided.
+         */
         PROVIDED,
+        /**
+         * The argument was not provided, and it is marked as optional.
+         */
         OPTIONAL
     }
 

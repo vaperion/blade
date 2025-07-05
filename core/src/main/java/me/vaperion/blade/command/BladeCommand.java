@@ -121,11 +121,19 @@ public final class BladeCommand {
 
             if (parameter.isAnnotationPresent(Flag.class)) {
                 Flag flag = mustGetAnnotation(parameter, Flag.class);
-                bladeParameter = new FlagParameter(parameterName, type, parameter.getAnnotation(Optional.class), parameter, flag);
+
+                bladeParameter = new FlagParameter(parameterName, type, parameter, flag);
             } else {
-                bladeParameter = new CommandParameter(parameterName, type,
-                    parameterData == null ? Collections.emptyList() : Arrays.asList(parameterData), parameter.getAnnotation(Optional.class),
-                    parameter.getAnnotation(Range.class), parameter.getAnnotation(Completer.class), parameter.isAnnotationPresent(Text.class), parameter);
+                bladeParameter = new CommandParameter(parameterName,
+                    type,
+                    parameterData == null
+                        ? Collections.emptyList()
+                        : Arrays.asList(parameterData),
+                    parameter.getAnnotation(Optional.class),
+                    parameter.getAnnotation(Range.class),
+                    parameter.getAnnotation(Completer.class),
+                    parameter.isAnnotationPresent(Text.class),
+                    parameter);
             }
 
             ArgumentProvider<?> provider = blade.getResolver()

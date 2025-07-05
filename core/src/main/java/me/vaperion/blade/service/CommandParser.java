@@ -37,11 +37,11 @@ public class CommandParser {
 
             int argIndex = 0, providerIndex = 0;
             for (Parameter parameter : command.getParameters()) {
-                boolean flag = parameter instanceof FlagParameter;
+                boolean isFlag = parameter instanceof FlagParameter;
                 Argument bladeArgument = new Argument(parameter);
 
                 String data;
-                if (!flag) {
+                if (!isFlag) {
                     if (arguments.size() > argIndex) {
                         data = arguments.get(argIndex);
                         bladeArgument.setType(Type.PROVIDED);
@@ -50,9 +50,15 @@ public class CommandParser {
                         bladeArgument.setType(Type.OPTIONAL);
                     } else throw new BladeUsageMessage();
 
-                    if (parameter.isText())
-                        data = arguments.size() > argIndex ? String.join(" ", arguments.subList(argIndex, arguments.size())) : data;
-                } else data = ((FlagParameter) parameter).extractFrom(flags);
+                    if (parameter.isText()) {
+                        data = arguments.size() > argIndex
+                            ? String.join(" ", arguments.subList(argIndex, arguments.size()))
+                            : data;
+                    }
+                } else {
+                    data = ((FlagParameter) parameter).extractFrom(flags);
+                }
+
                 bladeArgument.setString(data);
                 bladeArgument.getData().addAll(parameter.getData());
 
@@ -65,16 +71,24 @@ public class CommandParser {
                     }
 
                     Object parsed;
-                    if (bladeArgument.getType() == Type.OPTIONAL && bladeArgument.getParameter().defaultsToNull())
+                    if (bladeArgument.getType() == Type.OPTIONAL
+                        && bladeArgument.getParameter().defaultsToNull())
                         parsed = null;
                     else
                         parsed = provider.provide(context, bladeArgument);
                     result.add(parsed);
 
-                    if (parsed == null && !parameter.defaultsToNull() && !parameter.ignoreFailedArgumentParse())
-                        throw new BladeUsageMessage();
+                    if (parsed == null) {
+                        if (isFlag && !parameter.defaultsToNull()) {
+                            throw new BladeUsageMessage();
+                        } else if (!isFlag
+                            && !parameter.defaultsToNull()
+                            && !parameter.ignoreFailedArgumentParse()) {
+                            throw new BladeExitMessage("Failed to parse argument '" + parameter.getName() + "'.");
+                        }
+                    }
 
-                    if (!flag) argIndex++;
+                    if (!isFlag) argIndex++;
                     providerIndex++;
                 } catch (BladeExitMessage ex) {
                     throw ex;
@@ -102,7 +116,15 @@ public class CommandParser {
     }
 
     @NotNull
-    public Map<Character, String> parseFlags(@NotNull BladeCommand command, @NotNull List<String> args) throws BladeExitMessage {
+    public Map<Character, String> parseFlags(@NotNull BladeCommand command,
+                                             @NotNull List<String> args) throws BladeExitMessage {
+        return parseFlags(command, args, false);
+    }
+
+    @NotNull
+    public Map<Character, String> parseFlags(@NotNull BladeCommand command,
+                                             @NotNull List<String> args,
+                                             boolean allowPending) throws BladeExitMessage {
         Map<Character, String> map = new LinkedHashMap<>();
         Character pendingFlag = null;
 
@@ -122,6 +144,7 @@ public class CommandParser {
                 FlagParameter flagParameter = command.getFlagParameters().stream()
                     .filter(param -> param.getFlag().value() == flag)
                     .findFirst().orElse(null);
+
                 if (flagParameter == null) continue;
 
                 it.remove();
@@ -132,7 +155,7 @@ public class CommandParser {
             }
         }
 
-        if (pendingFlag != null)
+        if (!allowPending && pendingFlag != null)
             throw new BladeExitMessage("The '-" + pendingFlag + "' flag requires a value.");
 
         return map;

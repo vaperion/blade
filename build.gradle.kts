@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "me.vaperion.blade"
-version = "3.0.21"
+version = "3.0.22"
 
 subprojects {
     apply(plugin = "com.gradleup.shadow")
