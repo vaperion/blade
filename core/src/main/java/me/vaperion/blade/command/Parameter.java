@@ -103,9 +103,11 @@ public class Parameter {
         public FlagParameter(@NotNull String name,
                              @NotNull Class<?> type,
                              @NotNull AnnotatedElement element,
-                             @NotNull Flag flag) {
+                             @NotNull Flag flag,
+                             @Nullable Optional presentOptional) {
             super(name, type, Collections.emptyList(),
-                makeFakeOptionalFlag(flag, type), null, null, false, element);
+                makeFakeOptionalFlag(flag, type, presentOptional),
+                null, null, false, element);
 
             this.flag = flag;
         }
@@ -126,7 +128,8 @@ public class Parameter {
 
         @Nullable
         private static Optional makeFakeOptionalFlag(@NotNull Flag flag,
-                                                     @NotNull Class<?> type) {
+                                                     @NotNull Class<?> type,
+                                                     @Nullable Optional presentOptional) {
             if (flag.required())
                 return null;
 
@@ -138,11 +141,30 @@ public class Parameter {
 
                 @Override
                 public @NotNull String value() {
-                    return type == boolean.class ? "false" : "null";
+                    String value = "null";
+
+                    if (presentOptional != null)
+                        value = presentOptional.value();
+
+                    if ("null".equals(value) && type.isPrimitive()) {
+                        // Returning "null" for primitive types will fail.
+
+                        if (type == boolean.class) {
+                            value = "false";
+                        } else {
+                            // "0" works for every numeric primitive type.
+                            value = "0";
+                        }
+                    }
+
+                    return value;
                 }
 
                 @Override
                 public boolean ignoreFailedArgumentParse() {
+                    if (presentOptional != null)
+                        return presentOptional.ignoreFailedArgumentParse();
+
                     return false;
                 }
             };

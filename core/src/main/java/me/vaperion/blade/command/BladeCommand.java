@@ -122,7 +122,11 @@ public final class BladeCommand {
             if (parameter.isAnnotationPresent(Flag.class)) {
                 Flag flag = mustGetAnnotation(parameter, Flag.class);
 
-                bladeParameter = new FlagParameter(parameterName, type, parameter, flag);
+                bladeParameter = new FlagParameter(parameterName,
+                    type,
+                    parameter,
+                    flag,
+                    parameter.getAnnotation(Optional.class));
             } else {
                 bladeParameter = new CommandParameter(parameterName,
                     type,
