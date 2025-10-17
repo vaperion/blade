@@ -1,18 +1,16 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-
 plugins {
-    alias(libs.plugins.shadow)
     alias(libs.plugins.lombok)
+    alias(libs.plugins.publishing)
     `java-library`
     `maven-publish`
 }
 
-group = "me.vaperion.blade"
-version = "3.0.25"
+group = "io.github.vaperion.blade"
+version = "1.0.0-rc.1"
 
 subprojects {
-    apply(plugin = "com.gradleup.shadow")
     apply(plugin = "io.freefair.lombok")
+    apply(plugin = "com.vanniktech.maven.publish")
     apply(plugin = "java-library")
     apply(plugin = "maven-publish")
 
@@ -31,20 +29,45 @@ subprojects {
         options.encoding = "UTF-8"
     }
 
-    tasks.named<ShadowJar>("shadowJar") {
-        archiveClassifier.set("")
-        archiveFileName.set("blade-${project.name}.jar")
-    }
+    mavenPublishing {
+        publishToMavenCentral()
+        signAllPublications()
 
-    publishing {
-        publications {
-            create<MavenPublication>("maven") {
-                artifact(tasks.named<ShadowJar>("shadowJar"))
+        coordinates(
+            groupId = project.group.toString(),
+            artifactId = project.name,
+            version = project.version.toString()
+        )
+
+        pom {
+            name.set(project.name)
+            description.set("Blade is an easy-to-use command framework based on annotations.")
+
+            inceptionYear.set("2021")
+            url.set("https://github.com/vaperion/blade/")
+
+            licenses {
+                license {
+                    name.set("The Unlicense")
+                    url.set("http://opensource.org/license/unlicense")
+                    distribution.set("http://opensource.org/license/unlicense")
+                }
+            }
+
+            developers {
+                developer {
+                    id.set("vaperion")
+                    name.set("vaperion")
+                    url.set("https://github.com/vaperion")
+                }
+            }
+
+            scm {
+                url.set("https://github.com/vaperion/blade")
+                connection.set("scm:git:git://github.com/vaperion/blade.git")
+                developerConnection.set("scm:git:ssh://git@github.com/vaperion/blade.git")
             }
         }
     }
 
-    tasks.named("build") {
-        dependsOn(tasks.named("shadowJar"))
-    }
 }

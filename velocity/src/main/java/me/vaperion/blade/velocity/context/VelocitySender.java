@@ -4,22 +4,32 @@ import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.proxy.ConsoleCommandSource;
 import com.velocitypowered.api.proxy.Player;
 import lombok.RequiredArgsConstructor;
-import me.vaperion.blade.context.WrappedSender;
-import net.kyori.adventure.text.Component;
+import me.vaperion.blade.command.BladeCommand;
+import me.vaperion.blade.context.Sender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @RequiredArgsConstructor
-public class VelocitySender implements WrappedSender<CommandSource> {
+public class VelocitySender implements Sender<CommandSource> {
     private final CommandSource commandSource;
 
     @Override
-    public @NotNull CommandSource getSender() {
+    public @NotNull CommandSource rawSender() {
         return commandSource;
     }
 
     @Override
-    public @NotNull String getName() {
+    public @NotNull Object underlyingSender() {
+        return commandSource;
+    }
+
+    @Override
+    public @NotNull Class<?> underlyingSenderType() {
+        return commandSource.getClass();
+    }
+
+    @Override
+    public @NotNull String name() {
         if (commandSource instanceof Player)
             return ((Player) commandSource).getUsername();
         else if (commandSource instanceof ConsoleCommandSource)
@@ -34,21 +44,12 @@ public class VelocitySender implements WrappedSender<CommandSource> {
         return commandSource.hasPermission(permissionNode);
     }
 
-    @Override
-    public void sendMessage(@NotNull String message) {
-        commandSource.sendMessage(Component.text(message));
-    }
-
-    @Override
-    public void sendMessage(@NotNull String... messages) {
-        for (String message : messages)
-            sendMessage(message);
-    }
-
     @SuppressWarnings("unchecked")
     @Nullable
     @Override
     public <T> T parseAs(@NotNull Class<T> clazz) {
+        // We do exact comparisons instead of isAssignableFrom / others here on purpose
+
         if (clazz.equals(Player.class) && commandSource instanceof Player)
             return (T) commandSource;
         else if (clazz.equals(ConsoleCommandSource.class) && commandSource instanceof ConsoleCommandSource)
@@ -57,5 +58,10 @@ public class VelocitySender implements WrappedSender<CommandSource> {
             return (T) commandSource;
 
         return null;
+    }
+
+    @Override
+    public boolean isExpectedType(@NotNull BladeCommand command) {
+        return parseAs(command.senderType()) != null;
     }
 }

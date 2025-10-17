@@ -1,34 +1,54 @@
+pluginManagement {
+    repositories {
+        mavenCentral()
+        maven { url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") }
+        maven { url = uri("https://repo.papermc.io/repository/maven-public/") }
+        maven { url = uri("https://maven.fabricmc.net/") }
+    }
+}
+
 dependencyResolutionManagement {
     @Suppress("UnstableApiUsage")
     repositories {
         mavenCentral()
         maven { url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") }
         maven { url = uri("https://repo.papermc.io/repository/maven-public/") }
-        maven { url = uri("https://jitpack.io") }
+        maven { url = uri("https://maven.fabricmc.net/") }
+        maven { url = uri("https://libraries.minecraft.net") }
     }
 
     versionCatalogs {
         create("libs") {
-            version("shadow", "9.0.0-beta9")
             version("lombok", "8.13.1")
+            version("loom", "1.11-SNAPSHOT")
+            version("publishing", "0.34.0")
 
-            plugin("shadow", "com.gradleup.shadow").versionRef("shadow")
             plugin("lombok", "io.freefair.lombok").versionRef("lombok")
+            plugin("loom", "fabric-loom").versionRef("loom")
+            plugin("publishing", "com.vanniktech.maven.publish").versionRef("publishing")
 
             version("annotations", "26.0.2")
             version("paper", "1.20.4-R0.1-SNAPSHOT")
             version("velocity", "3.0.1")
-            version("protocollib.new", "5.3.0")
-            version("protocollib.old", "4.6.0")
+
+            version("brigadier", "1.0.18")
+
+            version("fabric.minecraft", "1.21.10")
+            version("fabric.mappings", "1.21.10+build.2")
+            version("fabric.loader", "0.17.3")
+            version("fabric.api", "0.135.0+1.21.10")
+            version("lucko.permissions", "0.3.3")
         }
     }
 }
 
 include(
     "core",
+    "brigadier",
     "bukkit",
     "velocity",
-    "paper"
+    "paper",
+    "fabric"
 )
 
 rootProject.name = "blade"

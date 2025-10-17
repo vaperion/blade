@@ -8,8 +8,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This annotation is used to set a custom usage message for a command.
- * If this annotation is not present, a usage message will be generated automatically.
+ * Sets a custom usage message for a command.
+ * <p>
+ * If not specified, a usage message will be generated automatically based on the command's parameters.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

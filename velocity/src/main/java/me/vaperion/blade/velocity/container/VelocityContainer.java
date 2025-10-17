@@ -11,218 +11,200 @@ import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.Container;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.context.Context;
-import me.vaperion.blade.exception.BladeExitMessage;
-import me.vaperion.blade.exception.BladeUsageMessage;
-import me.vaperion.blade.util.BladeHelper;
-import me.vaperion.blade.util.Tuple;
-import me.vaperion.blade.velocity.command.VelocityUsageMessage;
+import me.vaperion.blade.exception.internal.BladeFatalError;
+import me.vaperion.blade.exception.internal.BladeInternalError;
+import me.vaperion.blade.exception.internal.BladeInvocationError;
+import me.vaperion.blade.exception.BladeParseError;
+import me.vaperion.blade.impl.node.ResolvedCommandNode;
+import me.vaperion.blade.impl.suggestions.SuggestionType;
+import me.vaperion.blade.tokenizer.TokenizerError;
+import me.vaperion.blade.tokenizer.input.CommandInput;
+import me.vaperion.blade.tokenizer.input.InputOption;
+import me.vaperion.blade.util.ErrorMessage;
+import me.vaperion.blade.velocity.BladeVelocityPlatform;
+import me.vaperion.blade.velocity.command.VelocityInternalUsage;
 import me.vaperion.blade.velocity.context.VelocitySender;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
+import static me.vaperion.blade.util.BladeHelper.*;
 import static net.kyori.adventure.text.Component.text;
 
 @Getter
 public class VelocityContainer implements RawCommand, Container {
 
     public static final ContainerCreator<VelocityContainer> CREATOR = VelocityContainer::new;
+
+    private static final Component UNKNOWN_COMMAND_MESSAGE = text(
+        "Unknown command. Type \"/help\" for help."
+    );
+
     private final Blade blade;
     private final BladeCommand baseCommand;
 
-    private VelocityContainer(@NotNull Blade blade, @NotNull BladeCommand command, @NotNull String alias) {
+    private VelocityContainer(@NotNull Blade blade, @NotNull BladeCommand command, @NotNull String label) {
         this.blade = blade;
         this.baseCommand = command;
 
-        ProxyServer proxyServer = (ProxyServer) blade.getPlatform().getPluginInstance();
+        ProxyServer proxyServer = blade.platformAs(BladeVelocityPlatform.class).server();
         CommandManager commandManager = proxyServer.getCommandManager();
 
-        CommandMeta meta = commandManager.metaBuilder(alias)
-            .aliases(command.getBaseCommands())
+        CommandMeta meta = commandManager.metaBuilder(label)
+            .aliases(command.baseCommands())
             .build();
         commandManager.register(meta, this);
     }
 
-    @Nullable
-    private Tuple<BladeCommand, String> resolveCommand(@NotNull String[] arguments) throws BladeExitMessage {
-        return blade.getResolver().resolveCommand(arguments);
-    }
-
-    @Nullable
-    private String getSenderTypeName(@NotNull Class<?> clazz) {
-        switch (clazz.getSimpleName()) {
-            case "Player":
-                return "players";
-
-            case "ConsoleCommandSource":
-                return "the console";
-
-            default:
-                return null;
-        }
-    }
-
-    private void sendUsageMessage(@NotNull Context context, @Nullable BladeCommand command) {
-        if (command == null) return;
-        command.getUsageMessage().ensureGetOrLoad(() -> new VelocityUsageMessage(command)).sendTo(context);
-    }
-
-    private boolean hasPermission(@NotNull CommandSource sender, String[] args) throws BladeExitMessage {
-        Tuple<BladeCommand, String> command = resolveCommand(joinAliasToArgs(this.baseCommand.getAliases()[0], args));
-        Context context = new Context(blade, new VelocitySender(sender), command == null ? "" : command.getRight(), args);
-        return checkPermission(context, command == null ? null : command.getLeft()).getLeft();
-    }
-
-    private Tuple<Boolean, String> checkPermission(@NotNull Context context, @Nullable BladeCommand command) throws BladeExitMessage {
-        if (command == null)
-            return new Tuple<>(false, "This command failed to execute as we couldn't find its registration.");
-
-        return new Tuple<>(
-            blade.getPermissionTester().testPermission(context, command),
-            command.isHidden() ? "" : command.getPermissionMessage());
-    }
-
-    private String[] joinAliasToArgs(String alias, String[] args) {
-        String[] aliasParts = alias.split(" ");
-        String[] argsWithAlias = new String[args.length + aliasParts.length];
-        System.arraycopy(aliasParts, 0, argsWithAlias, 0, aliasParts.length);
-        System.arraycopy(args, 0, argsWithAlias, aliasParts.length, args.length);
-        return argsWithAlias;
-    }
-
     @Override
     public boolean hasPermission(Invocation invocation) {
-        return hasPermission(invocation.source(), new String[0]);
+        Context context = new Context(
+            blade,
+            new VelocitySender(invocation.source()),
+            this.baseCommand.mainLabel(),
+            new String[0]
+        );
+
+        return this.baseCommand.hasPermission(context);
     }
 
     @Override
     public void execute(Invocation invocation) {
         CommandSource sender = invocation.source();
         String[] args = invocation.arguments().isEmpty() ? new String[0] : invocation.arguments().split(" ");
-        String alias = invocation.alias();
+        String label = invocation.alias();
 
-        BladeCommand command = null;
-        String resolvedAlias;
+        String commandLine = mergeLabelWithArgs(label, args);
 
-        String[] joined = joinAliasToArgs(alias, args);
-        Context context = new Context(blade, new VelocitySender(sender), alias, args);
+        ResolvedCommandNode node = blade.nodeResolver().resolve(
+            commandLine
+        );
+
+        if (node == null) {
+            sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
+
+            blade.logger().warn(
+                "[Blade] %s tried to execute unknown command: `%s`",
+                sender.toString(),
+                commandLine
+            );
+            return;
+        }
+
+        Context context = new Context(
+            blade,
+            new VelocitySender(sender),
+            node.matchedLabelOr(commandLine),
+            args
+        );
+
+        if (node.isStub() || node.command() == null) {
+            sendHelpMessage(sender,
+                context,
+                node.subcommands());
+            return;
+        }
+
+        BladeCommand command = node.command();
+
+        if (!command.hasPermission(context)) {
+            sender.sendMessage(text(command.permissionMessage(), NamedTextColor.RED));
+            return;
+        }
 
         try {
-            Tuple<BladeCommand, String> resolved = resolveCommand(joined);
-            if (resolved == null) {
-                List<BladeCommand> availableCommands = blade.getCommands()
-                    .stream().filter(c -> Arrays.stream(c.getAliases()).anyMatch(a -> a.toLowerCase().startsWith(alias.toLowerCase(Locale.ROOT) + " ") || a.equalsIgnoreCase(alias)))
-                    .collect(Collectors.toList());
-
-                for (String line : blade.getConfiguration().getHelpGenerator().generate(context, availableCommands)) {
-                    sender.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(line));
-                }
-
-                return;
-            }
-
-            Tuple<Boolean, String> permissionResult = checkPermission(context, resolved.getLeft());
-            if (!permissionResult.getLeft()) throw new BladeExitMessage(permissionResult.getRight());
-
-            command = resolved.getLeft();
-            resolvedAlias = resolved.getRight();
-            int offset = Math.min(args.length, resolvedAlias.split(" ").length - 1);
-
-            if (command.isHasSenderParameter()
-                && !command.isWrappedSenderBased()
-                && !command.isContextBased()
-                && !command.getSenderType().isInstance(sender)) {
-                String senderTypeName = getSenderTypeName(sender.getClass());
-
-                if (senderTypeName != null) {
-                    throw new BladeExitMessage("This command can only be executed by " + senderTypeName + ".");
-                }
-
-                // If it is null, the sender is probably a custom type.
-                // We'll verify it later.
-            }
-
-            final BladeCommand finalCommand = command;
-            final String finalResolvedAlias = resolvedAlias;
-
-            if (finalCommand.getMethod() == null) {
-                throw new BladeExitMessage("The command " + finalResolvedAlias + " is a root command and cannot be executed.");
-            }
-
             Runnable runnable = () -> {
                 try {
-                    List<Object> methodArgs = BladeHelper.makeMethodArguments(
-                        blade, finalCommand, context,
-                        Arrays.copyOfRange(args, offset, args.length),
-                        sender
+                    CommandInput input = command.tokenize(
+                        context.sender(),
+                        "/" + removeCommandQualifier(commandLine)
                     );
 
-                    finalCommand.getMethod().invoke(finalCommand.getInstance(),
-                        methodArgs.toArray(new Object[0]));
-                } catch (BladeUsageMessage ex) {
-                    sendUsageMessage(context, finalCommand);
-                } catch (BladeExitMessage ex) {
-                    sender.sendMessage(text(ex.getMessage()).color(NamedTextColor.RED));
-                } catch (InvocationTargetException ex) {
-                    if (ex.getTargetException() != null) {
-                        if (ex.getTargetException() instanceof BladeUsageMessage) {
-                            sendUsageMessage(context, finalCommand);
-                            return;
-                        } else if (ex.getTargetException() instanceof BladeExitMessage) {
-                            sender.sendMessage(text(ex.getTargetException().getMessage()).color(NamedTextColor.RED));
-                            return;
-                        }
+                    if (!input.mergeTokensToFormWholeLabel(node.matchedLabel())) {
+                        // Failed to merge label - can't execute command.
+                        throw new BladeFatalError("Failed to parse command input for execution.");
                     }
 
-                    blade.logger().error(ex, "An error occurred while %s was executing the command '%s' (%s#%s).",
-                        sender.toString(), finalResolvedAlias, finalCommand.getMethod().getDeclaringClass().getName(), finalCommand.getMethod().getName());
+                    ErrorMessage error = blade.executor().execute(context, input, node);
 
-                    sender.sendMessage(text("An error occurred while executing this command.").color(NamedTextColor.RED));
+                    if (error != null) {
+                        switch (error.type()) {
+                            case LINES:
+                                for (String line : error.lines()) {
+                                    sender.sendMessage(text(line, NamedTextColor.RED));
+                                }
+                                break;
+
+                            case SHOW_COMMAND_USAGE:
+                                command.usageMessage().ensureGetOrLoad(
+                                    () -> new VelocityInternalUsage(command, true)
+                                ).sendTo(context);
+                                break;
+                        }
+                    }
+                } catch (BladeParseError | BladeFatalError e) {
+                    sender.sendMessage(
+                        text(e.getMessage(), NamedTextColor.RED)
+                    );
+                } catch (BladeInvocationError e) {
+                    sender.sendMessage(
+                        text(ERROR_MESSAGE, NamedTextColor.RED)
+                    );
+
+                    blade.logger().error(e, "Blade failed to invoke the method for command `%s` executed by %s. This is most likely a bug in your plugin.",
+                        label, sender.toString());
+                } catch (BladeInternalError e) {
+                    sender.sendMessage(
+                        text(ERROR_MESSAGE, NamedTextColor.RED)
+                    );
+                    command.usageMessage().ensureGetOrLoad(
+                        () -> new VelocityInternalUsage(command, true)
+                    ).sendTo(context);
+
+                    blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
+                        sender.toString(), label);
+                } catch (TokenizerError error) {
+                    sender.sendMessage(
+                        text(error.formatForChat(), NamedTextColor.RED)
+                    );
+
+                    if (!error.type().isSilent()) {
+                        blade.logger().error(
+                            "Failed to parse %s's command input for command `%s`: %s",
+                            sender.toString(),
+                            label, TokenizerError.generateFancyMessage(error));
+                    }
                 } catch (Throwable t) {
-                    blade.logger().error(t, "An error occurred while %s was executing the command '%s' (%s#%s).",
-                        sender.toString(), finalResolvedAlias, finalCommand.getMethod().getDeclaringClass().getName(), finalCommand.getMethod().getName());
-
-                    sender.sendMessage(text("An error occurred while executing this command.").color(NamedTextColor.RED));
+                    blade.logger().error(t, "An unexpected error occurred while %s was executing the command `%s`.",
+                        sender.toString(), label);
                 }
             };
 
-            if (command.isAsync()) {
-                blade.getConfiguration().getAsyncExecutor().accept(runnable);
+            if (command.async()) {
+                blade.configuration().asyncExecutor().accept(runnable);
             } else {
                 long time = System.nanoTime();
                 runnable.run();
                 long elapsed = (System.nanoTime() - time) / 1000000;
 
-                if (elapsed >= blade.getConfiguration().getExecutionTimeWarningThreshold()) {
-                    System.out.printf(
-                        "[Blade] Command '%s' (%s#%s) took %d milliseconds to execute!%n",
-                        finalResolvedAlias,
-                        finalCommand.getMethod().getDeclaringClass().getName(),
-                        finalCommand.getMethod().getName(),
+                if (elapsed >= blade.configuration().executionTimeWarningThreshold()) {
+                    blade.logger().warn(
+                        "[Blade] Command `%s` (%s#%s) took %d milliseconds to execute!",
+                        command.mainLabel(),
+                        command.method().getDeclaringClass().getName(),
+                        command.method().getName(),
                         elapsed
                     );
                 }
             }
-        } catch (BladeUsageMessage ex) {
-            sendUsageMessage(context, command);
-        } catch (BladeExitMessage ex) {
-            sender.sendMessage(text(ex.getMessage()).color(NamedTextColor.RED));
         } catch (Throwable t) {
-            blade.logger().error(t, "An error occurred while %s was executing the command '%s' (%s#%s).",
-                sender.toString(), alias,
-                command == null
-                    ? "unknown"
-                    : command.getMethod().getDeclaringClass().getName(),
-                command == null
-                    ? "unknown"
-                    : command.getMethod().getName());
-
-            sender.sendMessage(text("An error occurred while executing this command.").color(NamedTextColor.RED));
+            blade.logger().error(t, "An unexpected error occurred while %s was executing the command `%s`.",
+                sender.toString(), label);
         }
     }
 
@@ -230,49 +212,120 @@ public class VelocityContainer implements RawCommand, Container {
     public List<String> suggest(Invocation invocation) {
         CommandSource sender = invocation.source();
         String[] args = invocation.arguments().split(" ");
-        String alias = invocation.alias();
+        String label = invocation.alias();
 
-        if (!blade.getConfiguration().getTabCompleter().isDefault()) return Collections.emptyList();
-        if (!hasPermission(sender, args)) return Collections.emptyList();
+        if (!blade.configuration().tabCompleter().isDefault())
+            return Collections.emptyList();
 
-        BladeCommand command = null;
+        String commandLine = mergeLabelWithArgs(label, args);
+
+        ResolvedCommandNode node = blade.nodeResolver().resolve(
+            commandLine
+        );
+
+        if (node == null) {
+            // No main command and not a stub either - not a blade command at all?
+            return Collections.emptyList();
+        }
 
         try {
-            Tuple<BladeCommand, String> resolved = resolveCommand(joinAliasToArgs(alias, args));
-            if (resolved == null) {
-                // maybe suggest subcommands?
-                return Collections.emptyList();
+            if (!node.isStub()) {
+                // Found exact command, we can suggest arguments here.
+
+                Context context = new Context(
+                    blade,
+                    new VelocitySender(sender),
+                    node.matchedLabel(),
+                    args
+                );
+
+                CommandInput input = node.command().tokenize(
+                    context.sender(),
+                    "/" + removeCommandQualifier(commandLine)
+                );
+
+                if (!input.mergeTokensToFormWholeLabel(node.matchedLabel())) {
+                    // Failed to merge label - can't suggest arguments.
+                    throw new BladeFatalError("Failed to parse command input for tab completion.");
+                }
+
+                return blade.suggestionProvider().suggest(
+                    context,
+                    input,
+                    SuggestionType.ARGUMENTS
+                );
             }
 
-            command = resolved.getLeft();
-            String foundAlias = resolved.getRight();
+            // Only found command stub - suggest subcommands.
 
-            List<String> argList = new ArrayList<>(Arrays.asList(args));
-            if (foundAlias.split(" ").length > 1) argList.subList(0, foundAlias.split(" ").length - 1).clear();
+            Context context = new Context(
+                blade,
+                new VelocitySender(sender),
+                "",
+                args
+            );
 
-            if (argList.isEmpty()) argList.add("");
-            String[] actualArguments = argList.toArray(new String[0]);
+            CommandInput input = new CommandInput(
+                blade,
+                null,
+                "/" + removeCommandQualifier(commandLine),
+                InputOption.DISALLOW_FLAGS
+            );
 
-            Context context = new Context(blade, new VelocitySender(sender), foundAlias, actualArguments);
+            input.tokenize();
 
-            List<String> suggestions = new ArrayList<>();
-            blade.getCompleter().suggest(suggestions, context, command, actualArguments);
-            return suggestions;
-        } catch (BladeExitMessage ex) {
-            sender.sendMessage(text(ex.getMessage()).color(NamedTextColor.RED));
+            return blade.suggestionProvider().suggest(
+                context,
+                input,
+                SuggestionType.SUBCOMMANDS
+            );
+        } catch (BladeInternalError e) {
+            sender.sendMessage(
+                text(ERROR_MESSAGE, NamedTextColor.RED)
+            );
+
+            blade.logger().error(e, "An error occurred while %s was tab completing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
+                sender.toString(), label);
+        } catch (BladeFatalError ex) {
+            sender.sendMessage(
+                text(ex.getMessage(), NamedTextColor.RED)
+            );
+        } catch (TokenizerError error) {
+            // Don't send tokenizer errors to the user during tab completion - just log them.
+
+            if (!error.type().isSilent()) {
+                blade.logger().error(
+                    "Failed to parse %s's command input for command `%s`: %s",
+                    sender.toString(),
+                    label, TokenizerError.generateFancyMessage(error));
+            }
         } catch (Throwable t) {
-            blade.logger().error(t, "An error occurred while %s was tab completing the command '%s' (%s#%s).",
-                sender.toString(), alias,
-                command == null
-                    ? "unknown"
-                    : command.getMethod().getDeclaringClass().getName(),
-                command == null
-                    ? "unknown"
-                    : command.getMethod().getName());
-
-            sender.sendMessage(text("An error occurred while completing this command.").color(NamedTextColor.RED));
+            blade.logger().error(t, "An error occurred while %s was tab completing the command `%s`.",
+                sender.toString(), label);
         }
 
         return Collections.emptyList();
+    }
+
+    private void sendHelpMessage(@NotNull CommandSource sender,
+                                 @NotNull Context context,
+                                 @NotNull List<ResolvedCommandNode> nodes) {
+        List<BladeCommand> allCommands = new ArrayList<>();
+
+        nodes.forEach(node ->
+            node.collectCommandsInto(allCommands));
+
+        if (allCommands.isEmpty()) {
+            sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
+            return;
+        }
+
+        List<Component> lines = blade.<Component>configuration().helpGenerator().generate(
+            context, allCommands.stream()
+                .filter(c -> c.anyLabelStartsWith(context.label()))
+                .collect(Collectors.toList())
+        );
+
+        lines.forEach(sender::sendMessage);
     }
 }

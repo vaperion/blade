@@ -32,6 +32,13 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.METHOD, ElementType.TYPE })
 public @interface Command {
+    /**
+     * The command labels.
+     * <p>
+     * The first label is used as the primary name in generated help/usage messages.
+     *
+     * @return array of command labels
+     */
     @NotNull
     String[] value();
 }

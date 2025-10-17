@@ -1,9 +1,9 @@
 package me.vaperion.blade.argument.impl;
 
-import me.vaperion.blade.argument.Argument;
 import me.vaperion.blade.argument.ArgumentProvider;
+import me.vaperion.blade.argument.InputArgument;
 import me.vaperion.blade.context.Context;
-import me.vaperion.blade.exception.BladeExitMessage;
+import me.vaperion.blade.exception.BladeParseError;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,12 +11,14 @@ import java.util.UUID;
 
 public class UUIDArgument implements ArgumentProvider<UUID> {
     @Override
-    public @Nullable UUID provide(@NotNull Context ctx, @NotNull Argument arg) throws BladeExitMessage {
+    public @Nullable UUID provide(@NotNull Context ctx, @NotNull InputArgument arg) throws BladeParseError {
         try {
-            return UUID.fromString(arg.getString());
+            return UUID.fromString(arg.requireValue());
         } catch (Throwable t) {
-            if (arg.getParameter().ignoreFailedArgumentParse()) return null;
-            throw new BladeExitMessage("Error: '" + arg.getString() + "' is not a valid UUID.");
+            throw BladeParseError.fatal(String.format(
+                "'%s' is not a valid UUID.",
+                arg.value()
+            ));
         }
     }
 }

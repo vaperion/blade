@@ -8,7 +8,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This annotation is used to add extra data after the generated usage of the command.
+ * Appends additional text to the end of the generated usage message.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

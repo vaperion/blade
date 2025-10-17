@@ -5,13 +5,10 @@ java {
 }
 
 dependencies {
-    implementation(project(":core"))
-
-    implementation(project(":bukkit")) {
-        exclude(group = "com.comphenix.protocol", module = "ProtocolLib")
-    }
+    api(project(":core"))
+    api(project(":brigadier"))
+    api(project(":bukkit"))
 
     compileOnly("io.papermc.paper:paper-api:${libs.versions.paper.get()}")
     compileOnly("io.papermc.paper:paper-mojangapi:${libs.versions.paper.get()}")
-    compileOnly("net.dmulloy2:ProtocolLib:${libs.versions.protocollib.new.get()}")
 }

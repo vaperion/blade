@@ -1,52 +1,28 @@
 package me.vaperion.blade.context;
 
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Setter;
 import me.vaperion.blade.Blade;
-import me.vaperion.blade.annotation.argument.Optional;
-import me.vaperion.blade.argument.Argument;
 import me.vaperion.blade.argument.ArgumentProvider;
-import me.vaperion.blade.command.Parameter;
+import me.vaperion.blade.argument.InputArgument;
+import me.vaperion.blade.command.BladeParameter;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collections;
 
 @SuppressWarnings("unused")
-@RequiredArgsConstructor
+@AllArgsConstructor
 public final class Context {
-
-    private static final Optional PARSE_OPTIONAL_ARG = new Optional() {
-        @Override
-        public @NotNull String value() {
-            return "null"; // This is not used inside argument providers, so we can set it statically here.
-        }
-
-        @Override
-        public boolean ignoreFailedArgumentParse() {
-            return false;
-        }
-
-        @Override
-        public Class<? extends Annotation> annotationType() {
-            return Optional.class;
-        }
-    };
 
     private final Blade blade;
 
-    private final WrappedSender<?> sender;
-    private final String alias;
+    private final Sender<?> sender;
+    @Setter(onMethod_ = @ApiStatus.Internal)
+    private String label;
     private final String[] arguments;
-
-    public void reply(@NotNull String message) {
-        sender.sendMessage(message);
-    }
-
-    public void reply(@NotNull String... message) {
-        sender.sendMessage(message);
-    }
 
     @NotNull
     public String[] arguments() {
@@ -66,7 +42,7 @@ public final class Context {
 
     @Nullable
     public <T> T parseArgument(int index, @NotNull Class<T> argumentClass, @NotNull String defaultValue) {
-        ArgumentProvider<T> provider = blade.getResolver().recursiveResolveProvider(argumentClass, Collections.emptyList());
+        ArgumentProvider<T> provider = blade.providerResolver().resolveRecursively(argumentClass, Collections.emptyList());
 
         if (provider == null)
             throw new IllegalArgumentException("No provider found for " + argumentClass.getName());
@@ -91,39 +67,50 @@ public final class Context {
     @Nullable
     public <T> T parseArgument(int index, @NotNull Class<T> classOfT,
                                @NotNull ArgumentProvider<T> provider, @NotNull String defaultValue) {
-        Argument arg = new Argument(new Parameter(
+        InputArgument arg = new InputArgument(new BladeParameter(
             /*name*/ "argument " + (index + 1),
             /*type*/ classOfT,
             /*data*/ Collections.emptyList(),
-            /*optional annotation*/ PARSE_OPTIONAL_ARG,
-            /*range annotation*/ null,
-            /*completer annotation*/null,
-            /*text?*/ false,
             /*element*/ null
         ));
 
         String provided = argument(index);
         if (provided == null) {
-            arg.setType(Argument.Type.OPTIONAL);
-            arg.setString(defaultValue);
+            arg.status(InputArgument.Status.NOT_PRESENT);
+            arg.value(defaultValue);
         } else {
-            arg.setType(Argument.Type.PROVIDED);
-            arg.setString(provided);
+            arg.status(InputArgument.Status.PRESENT);
+            arg.value(provided);
         }
 
         return provider.provide(this, arg);
     }
 
+    /**
+     * The label that was used to invoke the command.
+     *
+     * @return the label
+     */
     @NotNull
-    public String alias() {
-        return alias;
+    public String label() {
+        return label;
     }
 
+    /**
+     * The sender of the command.
+     *
+     * @return the sender
+     */
     @NotNull
-    public WrappedSender<?> sender() {
+    public Sender<?> sender() {
         return sender;
     }
 
+    /**
+     * The Blade instance.
+     *
+     * @return the blade instance
+     */
     @NotNull
     public Blade blade() {
         return blade;

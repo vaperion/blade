@@ -8,11 +8,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This annotation is used to set the description of the command.
+ * Sets the description for a command, displayed in help messages.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Description {
+    /**
+     * The command description.
+     *
+     * @return the description string
+     */
     @Nullable
     String value();
 }

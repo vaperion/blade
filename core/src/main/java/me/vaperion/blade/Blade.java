@@ -9,15 +9,21 @@ import me.vaperion.blade.argument.internal.ArgBinding;
 import me.vaperion.blade.argument.internal.ArgProvider;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.Container;
+import me.vaperion.blade.impl.CommandRegistrar;
+import me.vaperion.blade.impl.PermissionTester;
+import me.vaperion.blade.impl.argument.ArgumentProviderResolver;
+import me.vaperion.blade.impl.executor.CommandExecutor;
+import me.vaperion.blade.impl.node.CommandNodeResolver;
+import me.vaperion.blade.impl.suggestions.CommandSuggestionProvider;
 import me.vaperion.blade.log.BladeLogger;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
 import me.vaperion.blade.sender.SenderProvider;
 import me.vaperion.blade.sender.internal.SndBinding;
 import me.vaperion.blade.sender.internal.SndProvider;
-import me.vaperion.blade.service.*;
 import me.vaperion.blade.util.ClassUtil;
-import me.vaperion.blade.util.PermissionPredicate;
+import me.vaperion.blade.util.command.PermissionPredicate;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,40 +32,56 @@ import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.function.Consumer;
 
+/**
+ * The main class of the Blade command framework.
+ */
 @SuppressWarnings({ "unused", "UnusedReturnValue" })
 @Getter
 public final class Blade {
 
+    /**
+     * Create a new Blade builder for the specified platform.
+     *
+     * @param platform the platform
+     * @param <Text>   the text type used by the platform
+     * @param <Plugin> the plugin type used by the platform
+     * @param <Server> the server type used by the platform
+     * @return the Blade builder
+     */
     @NotNull
     @Contract("_ -> new")
-    public static Builder forPlatform(@NotNull BladePlatform platform) {
-        return new Builder(platform);
+    public static <Text, Plugin, Server> Builder<Text, Plugin, Server> forPlatform(
+        @NotNull BladePlatform<Text, Plugin, Server> platform) {
+        return new Builder<>(platform);
     }
 
-    private final BladePlatform platform;
-    private final BladeConfiguration configuration;
+    private final BladePlatform<?, ?, ?> platform;
+    private final BladeConfiguration<?> configuration;
 
     private final Map<String, PermissionPredicate> permissionPredicates = new HashMap<>();
 
     private final List<ArgProvider<?>> providers = new ArrayList<>();
     private final List<SndProvider<?>> senderProviders = new ArrayList<>();
     private final List<BladeCommand> commands = new ArrayList<>();
-    private final Map<String, List<BladeCommand>> aliasToCommands = new HashMap<>();
-    private final Map<String, Container> containers = new HashMap<>();
+
+    private final Map<String, List<BladeCommand>> labelToCommands = new HashMap<>();
+    private final Map<String, Container> labelToContainer = new HashMap<>();
 
     private final CommandRegistrar registrar = new CommandRegistrar(this);
-    private final CommandResolver resolver = new CommandResolver(this);
-    private final CommandParser parser = new CommandParser(this);
-    private final CommandCompleter completer = new CommandCompleter(this);
     private final PermissionTester permissionTester = new PermissionTester(this);
 
-    private Blade(Builder builder) {
+    private final ArgumentProviderResolver providerResolver = new ArgumentProviderResolver(this);
+    private final CommandNodeResolver nodeResolver = new CommandNodeResolver(this);
+    private final CommandSuggestionProvider suggestionProvider = new CommandSuggestionProvider(this);
+    private final CommandExecutor executor = new CommandExecutor(this);
+
+    private Blade(Builder<?, ?, ?> builder) {
         this.platform = builder.platform;
         this.configuration = builder.configuration;
 
         permissionPredicates.putAll(builder.permissionPredicates);
 
-        Binder binder = new Binder(builder, true);
+        Binder<?, ?, ?> binder = new Binder<>(builder, true);
         binder.bind(UUID.class, new UUIDArgument());
         binder.bind(String.class, new StringArgument());
         binder.bind(boolean.class, new BooleanArgument());
@@ -76,27 +98,27 @@ public final class Blade {
 
         for (ArgBinding<?> binding : builder.bindings) {
             if (binding instanceof ArgBinding.Release) {
-                providers.removeIf(provider -> binding.getType() == provider.getType() && provider.doAnnotationsMatch(binding.getAnnotations()));
+                providers.removeIf(provider -> binding.type() == provider.type() && provider.doAnnotationsMatch(binding.annotations()));
             } else {
-                providers.add(ArgProvider.unsafe(binding.getType(), binding.getProvider(), binding.getAnnotations()));
+                providers.add(ArgProvider.unsafe(binding.type(), binding.provider(), binding.annotations()));
             }
         }
 
         for (SndBinding<?> binding : builder.senderBindings) {
             if (binding instanceof SndBinding.Release) {
-                senderProviders.removeIf(provider -> binding.getType() == provider.getType());
+                senderProviders.removeIf(provider -> binding.type() == provider.type());
             } else {
-                senderProviders.add(SndProvider.unsafe(binding.getType(), binding.getProvider()));
+                senderProviders.add(SndProvider.unsafe(binding.type(), binding.provider()));
             }
         }
 
-        configuration.getTabCompleter().init(this);
+        configuration.tabCompleter().init(this);
         platform.ingestBlade(this);
     }
 
     @NotNull
     public BladeLogger logger() {
-        return configuration.getLogger();
+        return configuration.logger();
     }
 
     @NotNull
@@ -127,23 +149,36 @@ public final class Blade {
         return this;
     }
 
-    public static final class Builder {
-        private final BladePlatform platform;
-        private final BladeConfiguration configuration;
+    @ApiStatus.Internal
+    @NotNull
+    public <T extends BladePlatform<?, ?, ?>> T platformAs(@NotNull Class<T> platformClass) {
+        return platformClass.cast(platform);
+    }
+
+    @SuppressWarnings("unchecked")
+    @ApiStatus.Internal
+    @NotNull
+    public <T> BladeConfiguration<T> configuration() {
+        return (BladeConfiguration<T>) configuration;
+    }
+
+    public static final class Builder<Text, Plugin, Server> {
+        private final BladePlatform<Text, Plugin, Server> platform;
+        private final BladeConfiguration<Text> configuration;
 
         private final Map<String, PermissionPredicate> permissionPredicates = new HashMap<>();
         private final List<ArgBinding<?>> bindings = new ArrayList<>();
         private final List<SndBinding<?>> senderBindings = new ArrayList<>();
 
-        private Builder(BladePlatform platform) {
+        private Builder(BladePlatform<Text, Plugin, Server> platform) {
             this.platform = platform;
-            this.configuration = new BladeConfiguration();
-            platform.configureBlade(this, this.configuration);
+            this.configuration = new BladeConfiguration<>();
+            platform.configure(this, this.configuration);
         }
 
         @NotNull
         @Contract("_ -> this")
-        public Builder config(@NotNull Consumer<BladeConfiguration> consumer) {
+        public Builder<Text, Plugin, Server> config(@NotNull Consumer<BladeConfiguration<Text>> consumer) {
             consumer.accept(configuration);
             configuration.validate();
             return this;
@@ -151,28 +186,18 @@ public final class Blade {
 
         @NotNull
         @Contract("_ -> this")
-        public Builder bind(@NotNull Consumer<Binder> consumer) {
-            Binder binder = new Binder(this, false);
-            consumer.accept(binder);
-            return this;
-        }
-
-        /**
-         * @deprecated Use {@link #bind(Consumer)} instead.
-         */
-        @Deprecated
-        @NotNull
-        @Contract("_ -> this")
-        public Builder bindSender(@NotNull Consumer<SenderBinder> consumer) {
-            SenderBinder binder = new SenderBinder(this, false);
+        public Builder<Text, Plugin, Server> bind(
+            @NotNull Consumer<Binder<Text, Plugin, Server>> consumer) {
+            Binder<Text, Plugin, Server> binder = new Binder<>(this, false);
             consumer.accept(binder);
             return this;
         }
 
         @NotNull
         @Contract("_ -> this")
-        public Builder permission(@NotNull Consumer<PredicateAdder> consumer) {
-            PredicateAdder adder = new PredicateAdder(this);
+        public Builder<Text, Plugin, Server> permission(
+            @NotNull Consumer<PredicateAdder<Text, Plugin, Server>> consumer) {
+            PredicateAdder<Text, Plugin, Server> adder = new PredicateAdder<>(this);
             consumer.accept(adder);
             return this;
         }
@@ -184,8 +209,8 @@ public final class Blade {
         }
 
         @RequiredArgsConstructor
-        public static final class Binder {
-            private final Builder builder;
+        public static final class Binder<Text, Plugin, Server> {
+            private final Builder<Text, Plugin, Server> builder;
             private final boolean insertToBeginning;
 
             /**
@@ -343,60 +368,11 @@ public final class Blade {
         }
 
         @RequiredArgsConstructor
-        public static final class SenderBinder {
-            private final Builder builder;
-            private final boolean insertToBeginning;
+        public static final class PredicateAdder<Text, Plugin, Server> {
+            private final Builder<Text, Plugin, Server> builder;
 
-            /**
-             * @deprecated Use {@link Binder#bindSender(Class, SenderProvider)} instead.
-             */
-            @Deprecated
-            public <T> void bind(@NotNull Class<T> type,
-                                 @NotNull SenderProvider<T> provider) {
-                SndBinding<T> binding = new SndBinding<>(type, provider);
-
-                if (insertToBeginning) {
-                    builder.senderBindings.add(0, binding);
-                } else {
-                    builder.senderBindings.add(binding);
-                }
-            }
-
-            /**
-             * @deprecated Use {@link Binder#unsafeBindSender(Class, SenderProvider)} instead.
-             */
-            @Deprecated
-            public <T> void unsafeBind(@NotNull Class<T> type,
-                                       @NotNull SenderProvider<?> provider) {
-                SndBinding<?> binding = SndBinding.unsafe(type, provider);
-
-                if (insertToBeginning) {
-                    builder.senderBindings.add(0, binding);
-                } else {
-                    builder.senderBindings.add(binding);
-                }
-            }
-
-            /**
-             * @deprecated Use {@link Binder#releaseSender(Class)} instead.
-             */
-            @Deprecated
-            public <T> void release(@NotNull Class<T> type) {
-                SndBinding<?> binding = SndBinding.release(type);
-
-                if (insertToBeginning) {
-                    builder.senderBindings.add(0, binding);
-                } else {
-                    builder.senderBindings.add(binding);
-                }
-            }
-        }
-
-        @RequiredArgsConstructor
-        public static final class PredicateAdder {
-            private final Builder builder;
-
-            public void predicate(@NotNull String permission, @NotNull PermissionPredicate predicate) {
+            public void predicate(@NotNull String permission,
+                                  @NotNull PermissionPredicate predicate) {
                 builder.permissionPredicates.put(permission, predicate);
             }
         }

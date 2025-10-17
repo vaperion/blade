@@ -6,7 +6,17 @@ import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("unused")
 public interface Container {
-    @NotNull Blade getBlade();
+    /**
+     * Gets the Blade instance associated with this container.
+     *
+     * @return the Blade instance
+     */
+    @NotNull Blade blade();
 
-    @NotNull BladeCommand getBaseCommand();
+    /**
+     * Gets the base command associated with this container.
+     *
+     * @return the base command
+     */
+    @NotNull BladeCommand baseCommand();
 }

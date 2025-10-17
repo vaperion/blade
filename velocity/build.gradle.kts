@@ -1,5 +1,5 @@
 dependencies {
-    implementation(project(":core"))
+    api(project(":core"))
 
     compileOnly("com.velocitypowered:velocity-api:${libs.versions.velocity.get()}")
 }
