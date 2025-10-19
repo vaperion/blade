@@ -42,14 +42,7 @@ public class BladeFabricPlatform implements BladePlatform<Text, ModContainer, Mi
         MinecraftServer server = BladeFabricGlobal.SERVER;
 
         if (server == null) {
-            throw new IllegalStateException("""
-                MinecraftServer instance is not available yet.
-                
-                Please verify the following:
-                - You installed blade as a separate mod and did not shade it into your mod jar.
-                - You did not use `include` or similar options to bundle blade into your mod jar.
-                - You're not initializing blade before Fabric's server lifecycle events.
-                """);
+            throw new IllegalStateException("MinecraftServer instance is not available yet.");
         }
 
         return server;

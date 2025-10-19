@@ -35,6 +35,10 @@ and [YourKit YouMonitor](https://www.yourkit.com/youmonitor/).
 > [!WARNING]
 > For Fabric, make sure to use `include(modImplementation("..."))` to add Blade as a jar-in-jar dependency.
 
+> [!TIP]
+> Blade uses [Lucko's Fabric Permissions API](https://github.com/lucko/fabric-permissions-api) for permission checks on
+> Fabric. Plugins such as LuckPerms provide support for this API.
+
 ## Usage
 
 ### Maven
