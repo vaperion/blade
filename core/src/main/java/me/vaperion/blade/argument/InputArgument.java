@@ -83,6 +83,24 @@ public final class InputArgument {
     }
 
     /**
+     * Checks if the argument is optional and accepts null values.
+     *
+     * @return true if the argument is optional and accepts null values, false otherwise
+     */
+    @SuppressWarnings("RedundantIfStatement")
+    public boolean isOptionalAcceptingNull() {
+        Opt opt = optional();
+        if (opt == null) return false;
+
+        if (opt.value() == Opt.Type.EMPTY_OR_CUSTOM)
+            return opt.custom().isEmpty();
+        else if (opt.value() == Opt.Type.EMPTY || opt.value() == Opt.Type.SENDER)
+            return true;
+
+        return false;
+    }
+
+    /**
      * Gets the {@link Range} annotation of the argument, if present.
      *
      * @return the Range annotation, or null if not present

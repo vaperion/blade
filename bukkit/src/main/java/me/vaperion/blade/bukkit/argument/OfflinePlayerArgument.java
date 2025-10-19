@@ -37,6 +37,11 @@ public class OfflinePlayerArgument implements ArgumentProvider<OfflinePlayer> {
             throw new BladeUsageMessage();
         }
 
+        if (arg.value() == null && arg.isOptionalAcceptingNull()) {
+            // Since #handlesNullInputArguments returns true we need to handle this case
+            return null;
+        }
+
         return getOfflinePlayer(arg.requireValue());
     }
 

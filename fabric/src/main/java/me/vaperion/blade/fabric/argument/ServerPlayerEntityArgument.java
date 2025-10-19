@@ -40,6 +40,11 @@ public class ServerPlayerEntityArgument implements ArgumentProvider<ServerPlayer
             throw new BladeUsageMessage();
         }
 
+        if (arg.value() == null && arg.isOptionalAcceptingNull()) {
+            // Since #handlesNullInputArguments returns true we need to handle this case
+            return null;
+        }
+
         ServerPlayerEntity onlinePlayer = getPlayer(server, arg.requireValue());
 
         if (onlinePlayer == null) {

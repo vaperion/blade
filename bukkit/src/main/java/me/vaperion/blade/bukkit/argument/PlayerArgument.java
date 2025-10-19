@@ -36,6 +36,11 @@ public class PlayerArgument implements ArgumentProvider<Player> {
             throw new BladeUsageMessage();
         }
 
+        if (arg.value() == null && arg.isOptionalAcceptingNull()) {
+            // Since #handlesNullInputArguments returns true we need to handle this case
+            return null;
+        }
+
         Player onlinePlayer = getPlayer(arg.requireValue());
 
         if (onlinePlayer == null) {
