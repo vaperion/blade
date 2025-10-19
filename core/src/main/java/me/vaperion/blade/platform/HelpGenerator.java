@@ -9,6 +9,8 @@ import java.util.List;
 
 @FunctionalInterface
 public interface HelpGenerator<Text> {
+    int RESULTS_PER_PAGE = 8;
+
     @NotNull
     List<Text> generate(@NotNull Context context, @NotNull List<BladeCommand> commands);
 

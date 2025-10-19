@@ -11,10 +11,10 @@ import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.Container;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.context.Context;
+import me.vaperion.blade.exception.BladeParseError;
 import me.vaperion.blade.exception.internal.BladeFatalError;
 import me.vaperion.blade.exception.internal.BladeInternalError;
 import me.vaperion.blade.exception.internal.BladeInvocationError;
-import me.vaperion.blade.exception.BladeParseError;
 import me.vaperion.blade.impl.node.ResolvedCommandNode;
 import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.tokenizer.TokenizerError;
@@ -31,7 +31,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static me.vaperion.blade.util.BladeHelper.*;
 import static net.kyori.adventure.text.Component.text;
@@ -76,7 +75,10 @@ public class VelocityContainer implements RawCommand, Container {
     @Override
     public void execute(Invocation invocation) {
         CommandSource sender = invocation.source();
-        String[] args = invocation.arguments().isEmpty() ? new String[0] : invocation.arguments().split(" ");
+
+        String[] args = invocation.arguments().isEmpty()
+            ? new String[0]
+            : invocation.arguments().split(" ");
         String label = invocation.alias();
 
         String commandLine = mergeLabelWithArgs(label, args);
@@ -99,7 +101,7 @@ public class VelocityContainer implements RawCommand, Container {
         Context context = new Context(
             blade,
             new VelocitySender(sender),
-            node.matchedLabelOr(commandLine),
+            node.matchedLabelOr(label),
             args
         );
 
@@ -320,11 +322,7 @@ public class VelocityContainer implements RawCommand, Container {
             return;
         }
 
-        List<Component> lines = blade.<Component>configuration().helpGenerator().generate(
-            context, allCommands.stream()
-                .filter(c -> c.anyLabelStartsWith(context.label()))
-                .collect(Collectors.toList())
-        );
+        List<Component> lines = blade.<Component>configuration().helpGenerator().generate(context, allCommands);
 
         lines.forEach(sender::sendMessage);
     }

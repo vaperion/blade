@@ -12,18 +12,41 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static me.vaperion.blade.util.BladeHelper.mergeLabelWithArgs;
+
 public class BukkitHelpGenerator implements HelpGenerator<String> {
 
     @NotNull
     @Override
     public List<String> generate(@NotNull Context context, @NotNull List<BladeCommand> commands) {
+        String[] args = context.arguments();
+
+        int page = 1;
+
+        if (args.length > 0) {
+            try {
+                page = Integer.parseInt(args[args.length - 1]);
+
+                // Drop the last argument
+                String[] newArgs = new String[args.length - 1];
+                System.arraycopy(args, 0, newArgs, 0, args.length - 1);
+                args = newArgs;
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        // Remove hidden commands & filter based on the input
+        String filterInput = mergeLabelWithArgs(context.label(), args);
+
         commands = commands.stream()
             .distinct()
+            .filter(c -> c.anyLabelStartsWith(filterInput))
             .filter(c -> !c.hidden())
             .sorted(context.blade().configuration().helpSorter())
             .collect(Collectors.toList());
 
         int originalCount = commands.size();
+
         commands = commands.stream()
             .filter(c -> c.hasPermission(context))
             .collect(Collectors.toList());
@@ -32,7 +55,7 @@ public class BukkitHelpGenerator implements HelpGenerator<String> {
             return Collections.singletonList(ChatColor.RED + context.blade().configuration().defaultPermissionMessage());
         }
 
-        return new PaginatedOutput<BladeCommand, String>(10) {
+        return new PaginatedOutput<BladeCommand, String>(RESULTS_PER_PAGE) {
             @Override
             public @NotNull String error(@NotNull Error error, Object... args) {
                 switch (error) {
@@ -63,15 +86,6 @@ public class BukkitHelpGenerator implements HelpGenerator<String> {
                 return ChatColor.AQUA + " - " + ChatColor.YELLOW + ChatColor.stripColor(help) +
                     (result.description().isEmpty() ? "" : (" - " + ChatColor.GRAY + result.description()));
             }
-        }.generatePage(commands, parsePage(context.argument(0)));
-    }
-
-    private int parsePage(String argument) {
-        if (argument == null) return 1;
-        try {
-            return Integer.parseInt(argument);
-        } catch (NumberFormatException e) {
-            return 1;
-        }
+        }.generatePage(commands, page);
     }
 }

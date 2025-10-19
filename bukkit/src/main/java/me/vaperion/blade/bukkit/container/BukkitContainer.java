@@ -9,10 +9,10 @@ import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.Container;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.context.Context;
+import me.vaperion.blade.exception.BladeParseError;
 import me.vaperion.blade.exception.internal.BladeFatalError;
 import me.vaperion.blade.exception.internal.BladeInternalError;
 import me.vaperion.blade.exception.internal.BladeInvocationError;
-import me.vaperion.blade.exception.BladeParseError;
 import me.vaperion.blade.impl.node.ResolvedCommandNode;
 import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.log.BladeLogger;
@@ -30,7 +30,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static me.vaperion.blade.util.BladeHelper.*;
 
@@ -145,7 +144,9 @@ public final class BukkitContainer extends Command implements Container {
     public boolean execute(@NotNull CommandSender sender,
                            @NotNull String label,
                            @NotNull String[] args) {
-        String commandLine = mergeLabelWithArgs(label, args);
+        String commandLine = removeCommandQualifier(
+            mergeLabelWithArgs(label, args)
+        );
 
         ResolvedCommandNode node = blade.nodeResolver().resolve(
             commandLine
@@ -165,7 +166,7 @@ public final class BukkitContainer extends Command implements Container {
         Context context = new Context(
             blade,
             new BukkitSender(sender),
-            node.matchedLabelOr(commandLine),
+            node.matchedLabelOr(label),
             args
         );
 
@@ -188,7 +189,7 @@ public final class BukkitContainer extends Command implements Container {
                 try {
                     CommandInput input = command.tokenize(
                         context.sender(),
-                        "/" + removeCommandQualifier(commandLine)
+                        "/" + commandLine
                     );
 
                     if (!input.mergeTokensToFormWholeLabel(node.matchedLabel())) {
@@ -387,11 +388,7 @@ public final class BukkitContainer extends Command implements Container {
             return;
         }
 
-        List<String> lines = blade.<String>configuration().helpGenerator().generate(
-            context, allCommands.stream()
-                .filter(c -> c.anyLabelStartsWith(context.label()))
-                .collect(Collectors.toList())
-        );
+        List<String> lines = blade.<String>configuration().helpGenerator().generate(context, allCommands);
 
         lines.forEach(sender::sendMessage);
     }

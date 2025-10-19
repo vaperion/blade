@@ -13,24 +13,43 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static me.vaperion.blade.util.BladeHelper.mergeLabelWithArgs;
 import static net.kyori.adventure.text.Component.text;
 
 public class VelocityHelpGenerator implements HelpGenerator<Component> {
 
-    private static final Pattern COLOR_PATTERN = Pattern.compile("&([0-9a-fk-or])");
-
     @Override
     public @NotNull List<Component> generate(@NotNull Context context, @NotNull List<BladeCommand> commands) {
+        String[] args = context.arguments();
+
+        int page = 1;
+
+        if (args.length > 0) {
+            try {
+                page = Integer.parseInt(args[args.length - 1]);
+
+                // Drop the last argument
+                String[] newArgs = new String[args.length - 1];
+                System.arraycopy(args, 0, newArgs, 0, args.length - 1);
+                args = newArgs;
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        // Remove hidden commands & filter based on the input
+        String filterInput = mergeLabelWithArgs(context.label(), args);
+
         commands = commands.stream()
             .distinct()
+            .filter(c -> c.anyLabelStartsWith(filterInput))
             .filter(c -> !c.hidden())
             .sorted(context.blade().configuration().helpSorter())
             .collect(Collectors.toList());
 
         int originalCount = commands.size();
+
         commands = commands.stream()
             .filter(c -> c.hasPermission(context))
             .collect(Collectors.toList());
@@ -42,7 +61,7 @@ public class VelocityHelpGenerator implements HelpGenerator<Component> {
             );
         }
 
-        return new PaginatedOutput<BladeCommand, Component>(10) {
+        return new PaginatedOutput<BladeCommand, Component>(RESULTS_PER_PAGE) {
             @Override
             public @NotNull Component error(@NotNull Error error, Object... args) {
                 switch (error) {
@@ -112,19 +131,7 @@ public class VelocityHelpGenerator implements HelpGenerator<Component> {
 
                 return out.build();
             }
-        }.generatePage(commands, parsePage(context.argument(0)));
+        }.generatePage(commands, page);
     }
 
-    private String stripColor(String string) {
-        return COLOR_PATTERN.matcher(string).replaceAll("");
-    }
-
-    private int parsePage(String argument) {
-        if (argument == null) return 1;
-        try {
-            return Integer.parseInt(argument);
-        } catch (NumberFormatException e) {
-            return 1;
-        }
-    }
 }

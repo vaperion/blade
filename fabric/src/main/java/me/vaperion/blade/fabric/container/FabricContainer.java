@@ -8,10 +8,10 @@ import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.Container;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.context.Context;
+import me.vaperion.blade.exception.BladeParseError;
 import me.vaperion.blade.exception.internal.BladeFatalError;
 import me.vaperion.blade.exception.internal.BladeInternalError;
 import me.vaperion.blade.exception.internal.BladeInvocationError;
-import me.vaperion.blade.exception.BladeParseError;
 import me.vaperion.blade.fabric.command.FabricInternalUsage;
 import me.vaperion.blade.fabric.context.FabricSender;
 import me.vaperion.blade.impl.node.ResolvedCommandNode;
@@ -55,8 +55,10 @@ public final class FabricContainer implements Container {
     public boolean execute(@NotNull CommandContext<ServerCommandSource> ctx) {
         ServerCommandSource sender = ctx.getSource();
 
+        String commandLine = removeCommandQualifier(ctx.getInput());
+
         ResolvedCommandNode node = blade.nodeResolver().resolve(
-            ctx.getInput()
+            commandLine
         );
 
         if (node == null) {
@@ -65,20 +67,24 @@ public final class FabricContainer implements Container {
             blade.logger().warn(
                 "[Blade] %s tried to execute unknown command: `%s`",
                 sender.getName(),
-                ctx.getInput()
+                commandLine
             );
             return false;
         }
 
+        String label = node.matchedLabelOr(
+            commandLine.split(" ")[0]
+        );
+
         String[] args = removePrefix(
-            removeCommandQualifier(ctx.getInput()),
-            node.matchedLabelOr("")
+            commandLine,
+            label
         ).split(" ");
 
         Context context = new Context(
             blade,
             new FabricSender(sender),
-            node.matchedLabelOr(ctx.getInput()),
+            label,
             args
         );
 
@@ -103,7 +109,7 @@ public final class FabricContainer implements Container {
                 try {
                     CommandInput input = command.tokenize(
                         context.sender(),
-                        "/" + removeCommandQualifier(ctx.getInput())
+                        "/" + commandLine
                     );
 
                     if (!input.mergeTokensToFormWholeLabel(node.matchedLabel())) {
@@ -314,11 +320,7 @@ public final class FabricContainer implements Container {
             return;
         }
 
-        var lines = blade.<Text>configuration().helpGenerator().generate(
-            context, allCommands.stream()
-                .filter(c -> c.anyLabelStartsWith(context.label()))
-                .toList()
-        );
+        var lines = blade.<Text>configuration().helpGenerator().generate(context, allCommands);
 
         lines.forEach(sender::sendMessage);
     }

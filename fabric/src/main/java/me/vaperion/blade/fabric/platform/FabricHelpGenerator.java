@@ -13,12 +13,34 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static me.vaperion.blade.util.BladeHelper.mergeLabelWithArgs;
+
 public class FabricHelpGenerator implements HelpGenerator<Text> {
 
     @Override
     public @NotNull List<Text> generate(@NotNull Context context, @NotNull List<BladeCommand> commands) {
+        String[] args = context.arguments();
+
+        int page = 1;
+
+        if (args.length > 0) {
+            try {
+                page = Integer.parseInt(args[args.length - 1]);
+
+                // Drop the last argument
+                String[] newArgs = new String[args.length - 1];
+                System.arraycopy(args, 0, newArgs, 0, args.length - 1);
+                args = newArgs;
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        // Remove hidden commands & filter based on the input
+        String filterInput = mergeLabelWithArgs(context.label(), args);
+
         commands = commands.stream()
             .distinct()
+            .filter(c -> c.anyLabelStartsWith(filterInput))
             .filter(c -> !c.hidden())
             .sorted(context.blade().configuration().helpSorter())
             .collect(Collectors.toList());
@@ -36,7 +58,7 @@ public class FabricHelpGenerator implements HelpGenerator<Text> {
             );
         }
 
-        return new PaginatedOutput<BladeCommand, Text>(10) {
+        return new PaginatedOutput<BladeCommand, Text>(RESULTS_PER_PAGE) {
             @Override
             public @NotNull Text error(@NotNull Error error, Object... args) {
                 return switch (error) {
@@ -106,15 +128,6 @@ public class FabricHelpGenerator implements HelpGenerator<Text> {
 
                 return out;
             }
-        }.generatePage(commands, parsePage(context.argument(0)));
-    }
-
-    private int parsePage(String argument) {
-        if (argument == null) return 1;
-        try {
-            return Integer.parseInt(argument);
-        } catch (NumberFormatException e) {
-            return 1;
-        }
+        }.generatePage(commands, page);
     }
 }
