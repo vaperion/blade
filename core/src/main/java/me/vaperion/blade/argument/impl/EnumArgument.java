@@ -1,5 +1,8 @@
 package me.vaperion.blade.argument.impl;
 
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
+import me.vaperion.blade.annotation.api.HiddenEnumValue;
 import me.vaperion.blade.argument.ArgumentProvider;
 import me.vaperion.blade.argument.InputArgument;
 import me.vaperion.blade.context.Context;
@@ -8,50 +11,54 @@ import me.vaperion.blade.util.command.SuggestionsBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
-@SuppressWarnings({ "rawtypes", "unchecked" })
+@SuppressWarnings({ "rawtypes" })
 public class EnumArgument implements ArgumentProvider<Enum> {
 
-    private static Class<? extends Enum> enumClass;
-    private static Enum[] enumConstants;
+    private EnumContainer container;
 
     private void load(@NotNull Class<?> type) {
-        if (enumClass != null)
-            return;
-
-        enumClass = (Class<? extends Enum>) type;
-        enumConstants = enumClass.getEnumConstants();
+        if (container != null) return;
+        container = new EnumContainer(type);
     }
 
     @Override
     public @Nullable Enum provide(@NotNull Context ctx, @NotNull InputArgument arg) throws BladeParseError {
         load(arg.parameter().type());
 
-        List<Enum> matches = match(arg.requireValue());
+        List<WrappedEnum> matches = match(arg.requireValue());
 
         if (matches.isEmpty()) {
+            String joinedNames = container.constants.stream()
+                .filter(wrapped -> !wrapped.hidden)
+                .map(wrapped -> wrapped.value.name())
+                .collect(Collectors.joining(", "));
+
             throw BladeParseError.recoverable(String.format(
-                "'%s' is not a valid option. Valid options: %s",
+                "'%s' is not a valid option. Use: %s",
                 arg.value(),
-                String.join(", ", Arrays.stream(enumClass.getEnumConstants())
-                    .map(Enum::name)
-                    .toArray(String[]::new)
-                )
+                joinedNames
             ));
         }
 
         if (matches.size() == 1) {
-            return matches.get(0);
+            return matches.get(0).value;
         }
+
+        String joinedNames = matches.stream()
+            .filter(wrapped -> !wrapped.hidden)
+            .map(wrapped -> wrapped.value.name())
+            .collect(Collectors.joining(", "));
 
         throw BladeParseError.recoverable(String.format(
             "'%s' is ambiguous. Did you mean: %s?",
             arg.value(),
-            String.join(", ", matches.stream()
-                .map(Enum::name)
-                .toArray(String[]::new)
-            )
+            joinedNames
         ));
     }
 
@@ -59,37 +66,96 @@ public class EnumArgument implements ArgumentProvider<Enum> {
     public void suggest(@NotNull Context ctx,
                         @NotNull InputArgument arg,
                         @NotNull SuggestionsBuilder suggestions) throws BladeParseError {
-        enumClass = (Class<? extends Enum>) arg.parameter().type();
+        load(arg.parameter().type());
 
         String input = arg.requireValue().toLowerCase(Locale.ROOT);
 
-        for (Enum value : enumClass.getEnumConstants()) {
-            String name = value.name().toLowerCase(Locale.ROOT);
+        for (WrappedEnum wrapped : container.constants) {
+            if (wrapped.hidden) continue;
 
-            if (name.startsWith(input))
-                suggestions.suggest(name);
+            String lowerName = wrapped.value.name().toLowerCase(Locale.ROOT);
+
+            if (lowerName.startsWith(input))
+                suggestions.suggest(wrapped.value.name());
         }
     }
 
     @NotNull
-    private List<Enum> match(@NotNull String input) {
+    private List<WrappedEnum> match(@NotNull String input) {
+        input = input.toLowerCase(Locale.ROOT);
+
         try {
             int intValue = Integer.parseInt(input);
 
-            return Collections.singletonList(
-                enumConstants[intValue]
-            );
-        } catch (Throwable ignored) {
+            if (intValue < 0 || intValue >= container.constants.size()) {
+                throw BladeParseError.recoverable(String.format(
+                    "%d is not a valid index. Valid range: 0-%d",
+                    intValue,
+                    container.constants.size() - 1
+                ));
+            }
+
+            WrappedEnum wrapped = container.constants.get(intValue);
+
+            if (wrapped.blocked) {
+                throw BladeParseError.recoverable(String.format(
+                    "'%s' is not allowed.",
+                    wrapped.value.name()
+                ));
+            }
+
+            return Collections.singletonList(wrapped);
+        } catch (NumberFormatException ignored) {
         }
 
-        List<Enum> matches = new ArrayList<>();
+        List<WrappedEnum> matches = new ArrayList<>();
 
-        for (Enum value : enumConstants) {
-            if (value.name().toLowerCase(Locale.ROOT).startsWith(input.toLowerCase(Locale.ROOT))) {
-                matches.add(value);
+        for (WrappedEnum wrapped : container.constants) {
+            if (wrapped.blocked) continue;
+
+            String lowerName = wrapped.value.name().toLowerCase(Locale.ROOT);
+
+            if (lowerName.startsWith(input)) {
+                matches.add(wrapped);
             }
         }
 
         return matches;
+    }
+
+    @ToString
+    static class EnumContainer {
+        private final Class<?> clazz;
+        private final List<WrappedEnum> constants;
+
+        EnumContainer(@NotNull Class<?> clazz) {
+            this.clazz = clazz;
+
+            Enum[] values = (Enum[]) clazz.getEnumConstants();
+            if (values == null)
+                throw new IllegalArgumentException("Class " + clazz.getName() + " is not an enum type");
+
+            this.constants = new ArrayList<>();
+
+            for (Enum value : values) {
+                try {
+                    HiddenEnumValue annotation = clazz.getField(value.name()).getAnnotation(HiddenEnumValue.class);
+
+                    boolean hidden = annotation != null;
+                    boolean blocked = hidden && annotation.block();
+
+                    this.constants.add(new WrappedEnum(value, hidden, blocked));
+                } catch (NoSuchFieldException e) {
+                    throw new RuntimeException("Unexpected error accessing enum field", e);
+                }
+            }
+        }
+    }
+
+    @RequiredArgsConstructor
+    @ToString
+    static class WrappedEnum {
+        private final Enum value;
+        private final boolean hidden, blocked;
     }
 }
