@@ -11,27 +11,24 @@ import me.vaperion.blade.util.command.SuggestionsBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @SuppressWarnings({ "rawtypes" })
 public class EnumArgument implements ArgumentProvider<Enum> {
 
-    private EnumContainer container;
+    private final Map<Class<?>, EnumContainer> container = new IdentityHashMap<>();
 
-    private void load(@NotNull Class<?> type) {
-        if (container != null) return;
-        container = new EnumContainer(type);
+    @NotNull
+    private EnumContainer container(@NotNull Class<?> type) {
+        return container.computeIfAbsent(type, EnumContainer::new);
     }
 
     @Override
     public @Nullable Enum provide(@NotNull Context ctx, @NotNull InputArgument arg) throws BladeParseError {
-        load(arg.parameter().type());
+        EnumContainer container = container(arg.parameter().type());
 
-        List<WrappedEnum> matches = match(arg.requireValue());
+        List<WrappedEnum> matches = match(container, arg.requireValue());
 
         if (matches.isEmpty()) {
             String joinedNames = container.constants.stream()
@@ -66,7 +63,7 @@ public class EnumArgument implements ArgumentProvider<Enum> {
     public void suggest(@NotNull Context ctx,
                         @NotNull InputArgument arg,
                         @NotNull SuggestionsBuilder suggestions) throws BladeParseError {
-        load(arg.parameter().type());
+        EnumContainer container = container(arg.parameter().type());
 
         String input = arg.requireValue().toLowerCase(Locale.ROOT);
 
@@ -81,7 +78,8 @@ public class EnumArgument implements ArgumentProvider<Enum> {
     }
 
     @NotNull
-    private List<WrappedEnum> match(@NotNull String input) {
+    private List<WrappedEnum> match(@NotNull EnumContainer container,
+                                    @NotNull String input) {
         input = input.toLowerCase(Locale.ROOT);
 
         try {

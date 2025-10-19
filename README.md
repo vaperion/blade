@@ -110,6 +110,10 @@ public class ExampleCommand {
 
 ### Creating an example argument type
 
+> [!WARNING]
+> Argument provider instances must be stateless, as a single instance will be used for all commands.
+> If you do have to store some state, make sure to account for that.
+
 ```java
 public class Data {
     public String message;
