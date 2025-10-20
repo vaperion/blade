@@ -33,7 +33,8 @@ and [YourKit YouMonitor](https://www.yourkit.com/youmonitor/).
 - Velocity: use the `velocity` artifact
 
 > [!WARNING]
-> For Fabric, make sure to use `include(modImplementation("..."))` to add Blade as a jar-in-jar dependency.
+> For Fabric, make sure to use `include(modImplementation("..."))` to add Blade as a jar-in-jar dependency. You'll have
+> to include the `fabric`, `brigadier`, and `core` modules as Fabric Loom doesn't resolve transitive dependencies.
 
 > [!TIP]
 > Blade uses [Lucko's Fabric Permissions API](https://github.com/lucko/fabric-permissions-api) for permission checks on
