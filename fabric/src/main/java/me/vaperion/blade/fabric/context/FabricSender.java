@@ -64,7 +64,7 @@ public final class FabricSender implements Sender<ServerCommandSource> {
             return (T) entity;
         else if (clazz.equals(Entity.class) && entity != null)
             return (T) entity;
-        else if (clazz.equals(CommandSource.class))
+        else if (clazz.equals(ServerCommandSource.class) || clazz.equals(CommandSource.class))
             return (T) commandSource;
 
         return null;
