@@ -12,6 +12,7 @@ import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -21,6 +22,18 @@ public final class BladeFabricGlobal implements DedicatedServerModInitializer {
 
     public static MinecraftServer SERVER;
     public static final List<Blade> ACTIVE_INSTANCES = new CopyOnWriteArrayList<>();
+
+    @ApiStatus.Internal
+    public static void triggerBrigadierSync() {
+        if (SERVER == null)
+            return;
+
+        var manager = SERVER.getPlayerManager();
+
+        for (var player : manager.getPlayerList()) {
+            manager.sendCommandTree(player);
+        }
+    }
 
     @Override
     public void onInitializeServer() {

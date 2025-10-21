@@ -27,9 +27,7 @@ dependencies {
         modImplementation(fabricApi.module(it, libs.versions.fabric.api.get()))
     }
 
-    modImplementation(
-        include("me.lucko:fabric-permissions-api:${libs.versions.lucko.permissions.get()}")!!
-    )
+    modCompileOnly("me.lucko:fabric-permissions-api:${libs.versions.lucko.permissions.get()}")
 }
 
 loom {

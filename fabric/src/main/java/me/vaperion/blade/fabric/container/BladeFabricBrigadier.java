@@ -23,7 +23,7 @@ public final class BladeFabricBrigadier {
         this.blade = blade;
         this.builder = new BladeBrigadierBuilder<>(blade,
             Function.identity(),
-            FabricSender::new);
+            s -> new FabricSender(blade, s));
     }
 
     @NotNull

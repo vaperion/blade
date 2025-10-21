@@ -1,9 +1,10 @@
 package me.vaperion.blade.fabric.context;
 
 import lombok.RequiredArgsConstructor;
-import me.lucko.fabric.api.permissions.v0.Permissions;
+import me.vaperion.blade.Blade;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Sender;
+import me.vaperion.blade.fabric.BladeFabricPlatform;
 import net.minecraft.command.CommandSource;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.command.ServerCommandSource;
@@ -14,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 @RequiredArgsConstructor
 public final class FabricSender implements Sender<ServerCommandSource> {
+    private final Blade blade;
     private final ServerCommandSource commandSource;
 
     @NotNull
@@ -45,12 +47,14 @@ public final class FabricSender implements Sender<ServerCommandSource> {
     public boolean hasPermission(@NotNull String permissionNode) {
         boolean isConsole = commandSource.output instanceof MinecraftDedicatedServer;
 
-        if ("op".equals(permissionNode))
+        if ("op" .equals(permissionNode))
             return isConsole || commandSource.hasPermissionLevel(4);
-        if ("console".equals(permissionNode))
+        if ("console" .equals(permissionNode))
             return isConsole;
 
-        return Permissions.check(commandSource, permissionNode);
+        return blade.platformAs(BladeFabricPlatform.class)
+            .permissionsProvider()
+            .hasPermission(commandSource, permissionNode);
     }
 
     @SuppressWarnings("unchecked")

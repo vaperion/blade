@@ -83,7 +83,7 @@ public final class FabricContainer implements Container {
 
         Context context = new Context(
             blade,
-            new FabricSender(sender),
+            new FabricSender(blade, sender),
             label,
             args
         );
@@ -236,7 +236,7 @@ public final class FabricContainer implements Container {
 
                 Context context = new Context(
                     blade,
-                    new FabricSender(sender),
+                    new FabricSender(blade, sender),
                     node.matchedLabel(),
                     args
                 );
@@ -264,7 +264,7 @@ public final class FabricContainer implements Container {
 
             Context context = new Context(
                 blade,
-                new FabricSender(sender),
+                new FabricSender(blade, sender),
                 "",
                 args
             );

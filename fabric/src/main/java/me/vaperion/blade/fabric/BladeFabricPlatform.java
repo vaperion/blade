@@ -2,12 +2,16 @@ package me.vaperion.blade.fabric;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.Blade.Builder.Binder;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.fabric.argument.ServerPlayerEntityArgument;
 import me.vaperion.blade.fabric.container.BladeFabricBrigadier;
 import me.vaperion.blade.fabric.container.FabricContainer;
+import me.vaperion.blade.fabric.permissions.PermissionsProvider;
+import me.vaperion.blade.fabric.permissions.impl.LuckoPermissionsProvider;
+import me.vaperion.blade.fabric.permissions.impl.VanillaPermissionsProvider;
 import me.vaperion.blade.fabric.platform.FabricHelpGenerator;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
@@ -28,12 +32,17 @@ public class BladeFabricPlatform implements BladePlatform<Text, ModContainer, Mi
     @Getter
     private BladeFabricBrigadier brigadier;
 
+    @Getter
+    @Setter
+    private PermissionsProvider permissionsProvider;
+
     @Override
     public void ingestBlade(@NotNull Blade blade) {
         this.blade = blade;
 
         brigadier = new BladeFabricBrigadier(blade);
 
+        loadPermissionsProvider();
         BladeFabricGlobal.ACTIVE_INSTANCES.add(blade);
     }
 
@@ -77,5 +86,32 @@ public class BladeFabricPlatform implements BladePlatform<Text, ModContainer, Mi
             String name = type.getSimpleName().toLowerCase(Locale.ROOT);
             return plural ? name + "s" : name;
         }
+    }
+
+    @Override
+    public void triggerBrigadierSync() {
+        BladeFabricGlobal.triggerBrigadierSync();
+    }
+
+    private void loadPermissionsProvider() {
+        if (permissionsProvider != null) {
+            return;
+        }
+
+        try {
+            Class.forName("me.lucko.fabric.api.permissions.v0.Permissions",
+                false,
+                getClass().getClassLoader());
+
+            permissionsProvider = new LuckoPermissionsProvider();
+            blade.logger().info("Hooked into Lucko's Fabric Permissions API for permission handling.");
+        } catch (ClassNotFoundException ignored) {
+            // mod not present
+            blade.logger().info("Lucko's Fabric Permissions API not found, falling back to vanilla permission handling.");
+        } catch (Throwable t) {
+            blade.logger().error(t, "Failed to hook into Lucko's Fabric Permissions API!");
+        }
+
+        permissionsProvider = new VanillaPermissionsProvider();
     }
 }
