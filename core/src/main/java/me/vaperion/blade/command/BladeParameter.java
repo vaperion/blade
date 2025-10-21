@@ -2,13 +2,13 @@ package me.vaperion.blade.command;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import me.vaperion.blade.Blade;
 import me.vaperion.blade.annotation.parameter.Greedy;
 import me.vaperion.blade.annotation.parameter.Opt;
 import me.vaperion.blade.annotation.parameter.Provider;
 import me.vaperion.blade.annotation.parameter.Range;
 import me.vaperion.blade.argument.ArgumentProvider;
 import me.vaperion.blade.exception.internal.BladeFatalError;
-import me.vaperion.blade.log.BladeLogger;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +27,8 @@ public class BladeParameter {
 
     private static final Map<Class<? extends ArgumentProvider<?>>, ArgumentProvider<?>>
         PROVIDER_CACHE = new ConcurrentHashMap<>();
+
+    private final Blade blade;
 
     protected final String name;
     protected final Class<?> type;
@@ -183,7 +185,7 @@ public class BladeParameter {
                     }
                 });
         } catch (Throwable t) {
-            BladeLogger.DEFAULT.error(
+            blade.logger().error(
                 t.getCause() != null ? t.getCause() : t,
                 "An error occurred while attempting to instantiate the argument provider `%s`.",
                 type.getCanonicalName()

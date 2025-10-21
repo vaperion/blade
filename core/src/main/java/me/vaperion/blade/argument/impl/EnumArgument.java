@@ -11,6 +11,7 @@ import me.vaperion.blade.util.command.SuggestionsBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.AnnotatedElement;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -75,6 +76,11 @@ public class EnumArgument implements ArgumentProvider<Enum> {
             if (lowerName.startsWith(input))
                 suggestions.suggest(wrapped.value.name());
         }
+    }
+
+    @Override
+    public @Nullable String defaultArgName(@NotNull AnnotatedElement element) {
+        return "enum";
     }
 
     @NotNull

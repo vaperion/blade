@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.AnnotatedElement;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -58,6 +59,11 @@ public class OfflinePlayerArgument implements ArgumentProvider<OfflinePlayer> {
                 (sender == null || sender.canSee(player)))
                 suggestions.suggest(player.getName());
         }
+    }
+
+    @Override
+    public @Nullable String defaultArgName(@NotNull AnnotatedElement element) {
+        return "offline player";
     }
 
     private boolean isUUID(@NotNull String input) {

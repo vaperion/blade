@@ -7,6 +7,7 @@ import me.vaperion.blade.exception.BladeParseError;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.AnnotatedElement;
 import java.util.UUID;
 
 public class UUIDArgument implements ArgumentProvider<UUID> {
@@ -20,5 +21,10 @@ public class UUIDArgument implements ArgumentProvider<UUID> {
                 arg.value()
             ));
         }
+    }
+
+    @Override
+    public @Nullable String defaultArgName(@NotNull AnnotatedElement element) {
+        return "uuid";
     }
 }

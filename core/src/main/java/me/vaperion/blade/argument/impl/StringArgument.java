@@ -7,6 +7,8 @@ import me.vaperion.blade.exception.BladeParseError;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.AnnotatedElement;
+
 public class StringArgument implements ArgumentProvider<String> {
     @Override
     public @Nullable String provide(@NotNull Context ctx, @NotNull InputArgument arg) throws BladeParseError {
@@ -15,5 +17,10 @@ public class StringArgument implements ArgumentProvider<String> {
         }
 
         return arg.requireValue();
+    }
+
+    @Override
+    public @Nullable String defaultArgName(@NotNull AnnotatedElement element) {
+        return "string";
     }
 }

@@ -8,6 +8,7 @@ import me.vaperion.blade.exception.BladeParseError;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.AnnotatedElement;
 import java.text.DecimalFormat;
 
 public class LongArgument implements ArgumentProvider<Long> {
@@ -47,5 +48,10 @@ public class LongArgument implements ArgumentProvider<Long> {
         }
 
         return input;
+    }
+
+    @Override
+    public @Nullable String defaultArgName(@NotNull AnnotatedElement element) {
+        return "number";
     }
 }

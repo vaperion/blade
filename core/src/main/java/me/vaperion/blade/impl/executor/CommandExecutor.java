@@ -337,9 +337,11 @@ public final class CommandExecutor {
     private Object adaptSender(@NotNull BladeCommand cmd,
                                @NotNull Context context) {
         Object sender = null;
+        String friendlyName = null;
 
         for (SndProvider<?> provider : cmd.senderProviders()) {
             Object result = provider.provider().provide(context, context.sender());
+            friendlyName = provider.provider().friendlyName(true);
 
             if (result != null) {
                 // Successfully adapted
@@ -355,13 +357,16 @@ public final class CommandExecutor {
             sender = context.sender().underlyingSender();
         }
 
+        if (friendlyName == null)
+            friendlyName = blade.platform().convertSenderTypeToName(
+                cmd.senderType(),
+                true
+            );
+
         if (sender == null) {
             throw BladeParseError.fatal(String.format(
                 "This command can only be executed by %s.",
-                blade.platform().convertSenderTypeToName(
-                    cmd.senderType(),
-                    true
-                )
+                friendlyName
             ));
         }
 

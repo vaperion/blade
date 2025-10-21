@@ -13,6 +13,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.AnnotatedElement;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -72,6 +73,11 @@ public class ServerPlayerEntityArgument implements ArgumentProvider<ServerPlayer
                 (sender == null || sender.canSee(player)))
                 suggestions.suggest(player.getNameForScoreboard());
         }
+    }
+
+    @Override
+    public @Nullable String defaultArgName(@NotNull AnnotatedElement element) {
+        return "player";
     }
 
     private boolean isUUID(@NotNull String input) {

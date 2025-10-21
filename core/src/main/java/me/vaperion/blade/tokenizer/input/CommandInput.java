@@ -308,8 +308,8 @@ public final class CommandInput {
             return true;
         }
 
-        // Short flag(s). BSD-style is supported (e.g. -abc value).
-        // Values will be read in order of flags.
+        // Short flag(s). Combined syntax is supported (e.g. -abc for -a -b -c).
+        // Values will be read in order of flags. (e.g. -ab value1 value2 or -a value1 -b value2).
         List<Character> flagsNeedingValues = new ArrayList<>();
         FlagToken.Builder builder = FlagToken.builder();
 

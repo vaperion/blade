@@ -114,32 +114,39 @@ public final class BladeCommand {
 
             Class<?> type = ClassUtil.getGenericOrRawType(parameter);
 
+            ArgumentProvider<?> provider = blade.providerResolver()
+                .resolveRecursively(type,
+                    Arrays.asList(parameter.getAnnotations()));
+
             String parameterName = parameter.isAnnotationPresent(Name.class)
-                ? mustGetAnnotation(parameter, Name.class).value() : parameter.getName();
+                ? mustGetAnnotation(parameter, Name.class).value()
+                : provider != null && provider.defaultArgName(parameter) != null
+                ? Objects.requireNonNull(provider.defaultArgName(parameter))
+                : parameter.getName();
+
             String[] parameterData = parameter.isAnnotationPresent(Data.class)
-                ? mustGetAnnotation(parameter, Data.class).value() : null;
+                ? mustGetAnnotation(parameter, Data.class).value()
+                : null;
 
             BladeParameter bladeParameter;
 
             if (parameter.isAnnotationPresent(Flag.class)) {
                 Flag flag = mustGetAnnotation(parameter, Flag.class);
 
-                bladeParameter = new DefinedFlag(parameterName,
+                bladeParameter = new DefinedFlag(blade,
+                    parameterName,
                     type,
                     parameter,
                     flag);
             } else {
-                bladeParameter = new DefinedArgument(parameterName,
+                bladeParameter = new DefinedArgument(blade,
+                    parameterName,
                     type,
                     parameterData == null
                         ? Collections.emptyList()
                         : Arrays.asList(parameterData),
                     parameter);
             }
-
-            ArgumentProvider<?> provider = blade.providerResolver()
-                .resolveRecursively(type,
-                    Arrays.asList(parameter.getAnnotations()));
 
             rawProviderList.add(provider);
             parameters.add(bladeParameter);

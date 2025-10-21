@@ -21,6 +21,7 @@ import me.vaperion.blade.platform.BladePlatform;
 import me.vaperion.blade.sender.SenderProvider;
 import me.vaperion.blade.sender.internal.SndBinding;
 import me.vaperion.blade.sender.internal.SndProvider;
+import me.vaperion.blade.util.BuildParameters;
 import me.vaperion.blade.util.ClassUtil;
 import me.vaperion.blade.util.command.PermissionPredicate;
 import org.jetbrains.annotations.ApiStatus;
@@ -114,6 +115,12 @@ public final class Blade {
 
         configuration.tabCompleter().init(this);
         platform.ingestBlade(this);
+
+        logger().info("Blade v%s initialized in %dms (bound to plugin %s)",
+            BuildParameters.VERSION,
+            System.currentTimeMillis() - builder.startTime,
+            platform.plugin()
+        );
     }
 
     @NotNull
@@ -163,6 +170,8 @@ public final class Blade {
     }
 
     public static final class Builder<Text, Plugin, Server> {
+        private final long startTime = System.currentTimeMillis();
+
         private final BladePlatform<Text, Plugin, Server> platform;
         private final BladeConfiguration<Text> configuration;
 

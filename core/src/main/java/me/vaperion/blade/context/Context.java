@@ -68,6 +68,7 @@ public final class Context {
     public <T> T parseArgument(int index, @NotNull Class<T> classOfT,
                                @NotNull ArgumentProvider<T> provider, @NotNull String defaultValue) {
         InputArgument arg = new InputArgument(new BladeParameter(
+            blade,
             /*name*/ "argument " + (index + 1),
             /*type*/ classOfT,
             /*data*/ Collections.emptyList(),

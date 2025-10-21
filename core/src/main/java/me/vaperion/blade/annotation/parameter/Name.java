@@ -1,5 +1,6 @@
 package me.vaperion.blade.annotation.parameter;
 
+import me.vaperion.blade.argument.ArgumentProvider;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.ElementType;
@@ -16,6 +17,9 @@ import java.lang.annotation.Target;
  * Usually these names are not very user-friendly (arg0, arg1, etc.),
  * but the compiler can be instructed to preserve parameter names using the
  * `-parameters` flag.
+ * <p>
+ * If the {@link ArgumentProvider} for the parameter provides a default name,
+ * that name will be used instead of the bytecode name.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)

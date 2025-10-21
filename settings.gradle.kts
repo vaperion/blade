@@ -1,5 +1,6 @@
 pluginManagement {
     repositories {
+        gradlePluginPortal()
         mavenCentral()
         maven { url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") }
         maven { url = uri("https://repo.papermc.io/repository/maven-public/") }
@@ -22,10 +23,12 @@ dependencyResolutionManagement {
             version("lombok", "8.13.1")
             version("loom", "1.11-SNAPSHOT")
             version("publishing", "0.34.0")
+            version("blossom", "2.2.0")
 
             plugin("lombok", "io.freefair.lombok").versionRef("lombok")
             plugin("loom", "fabric-loom").versionRef("loom")
             plugin("publishing", "com.vanniktech.maven.publish").versionRef("publishing")
+            plugin("blossom", "net.kyori.blossom").versionRef("blossom")
 
             version("annotations", "26.0.2")
             version("paper", "1.20.4-R0.1-SNAPSHOT")

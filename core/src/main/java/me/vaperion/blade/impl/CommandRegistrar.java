@@ -29,14 +29,21 @@ public class CommandRegistrar {
     public void registerClass(@Nullable Object instance,
                               @NotNull Class<?> clazz) {
         try {
+            int n = 0;
+
             for (Method method : clazz.getMethods()) {
                 if (!method.isAnnotationPresent(Command.class)) continue;
                 if ((instance == null) != Modifier.isStatic(method.getModifiers())) continue;
 
                 registerMethod(instance, method);
+                n++;
             }
 
-            blade.platform().triggerBrigadierSync();
+            if (n > 0) {
+                blade.platform().triggerBrigadierSync();
+                blade.logger().info("Registered %d command%s in class %s",
+                    n, n == 1 ? "" : "s", clazz.getCanonicalName());
+            }
         } catch (Throwable t) {
             blade.logger().error(t, "An error occurred while registering %s commands in class %s",
                 instance == null ? "static" : "instance", clazz.getCanonicalName());
@@ -47,14 +54,21 @@ public class CommandRegistrar {
     public void unregisterClass(@Nullable Object instance,
                                 @NotNull Class<?> clazz) {
         try {
+            int n = 0;
+
             for (Method method : clazz.getMethods()) {
                 if (!method.isAnnotationPresent(Command.class)) continue;
                 if ((instance == null) != Modifier.isStatic(method.getModifiers())) continue;
 
                 unregisterMethod(instance, method);
+                n++;
             }
 
-            blade.platform().triggerBrigadierSync();
+            if (n > 0) {
+                blade.platform().triggerBrigadierSync();
+                blade.logger().info("Unregistered %d command%s in class %s",
+                    n, n == 1 ? "" : "s", clazz.getCanonicalName());
+            }
         } catch (Throwable t) {
             blade.logger().error(t, "An error occurred while unregistering %s commands in class %s",
                 instance == null ? "static" : "instance", clazz.getCanonicalName());

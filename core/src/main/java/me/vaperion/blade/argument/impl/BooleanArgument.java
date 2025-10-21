@@ -8,6 +8,7 @@ import me.vaperion.blade.util.command.SuggestionsBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.AnnotatedElement;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -59,10 +60,15 @@ public class BooleanArgument implements ArgumentProvider<Boolean> {
 
         String input = arg.requireValue().toLowerCase(Locale.ROOT);
 
-        if ("true".startsWith(input))
+        if ("true" .startsWith(input))
             suggestions.suggest("true");
 
-        if ("false".startsWith(input))
+        if ("false" .startsWith(input))
             suggestions.suggest("false");
+    }
+
+    @Override
+    public @Nullable String defaultArgName(@NotNull AnnotatedElement element) {
+        return "boolean";
     }
 }
