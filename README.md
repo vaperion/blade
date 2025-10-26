@@ -93,6 +93,11 @@ public class ExampleCommand {
         // Number arguments with a range:
         @Name("amount") @Range(min = 1, max = 64) int amount,
 
+        // You can also use custom providers for just one argument:
+        @Provider(MyPlayerProvider.class) Player customPlayer,
+        // And you can specify the scope (`BOTH`, `PARSER`, `SUGGESTIONS`), defaults to `BOTH`:
+        @Provider(value = MyPlayerProvider.class, scope = Provider.Scope.SUGGESTIONS) Player customPlayer2,
+        
         // Command flags:
         @Flag(value = 's', description = "Optional description") boolean flagSilent,
         // You can also have complex types as flags:
