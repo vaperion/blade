@@ -69,23 +69,6 @@ public final class CommandNodeResolver {
         List<BladeCommand> commands = blade.labelToCommands()
             .getOrDefault(parts[0], Collections.emptyList());
 
-        if (commands.size() <= 1) {
-            // Only one command with this label or no command at all
-
-            if (commands.isEmpty())
-                return null;
-
-            BladeCommand candidate = commands.get(0);
-
-            for (String label : candidate.labels()) {
-                if (label.equalsIgnoreCase(input)) {
-                    return ResolvedCommandNode.root(label, candidate);
-                }
-            }
-
-            return null;
-        }
-
         // Iterate through all possible commands with this label
 
         do {
