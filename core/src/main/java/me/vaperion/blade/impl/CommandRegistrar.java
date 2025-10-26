@@ -41,8 +41,10 @@ public class CommandRegistrar {
 
             if (n > 0) {
                 blade.platform().triggerBrigadierSync();
-                blade.logger().info("Registered %d command%s in class %s",
-                    n, n == 1 ? "" : "s", clazz.getCanonicalName());
+
+                if (blade.configuration().verbose())
+                    blade.logger().info("Registered %d command%s in class %s",
+                        n, n == 1 ? "" : "s", clazz.getCanonicalName());
             }
         } catch (Throwable t) {
             blade.logger().error(t, "An error occurred while registering %s commands in class %s",
@@ -66,8 +68,10 @@ public class CommandRegistrar {
 
             if (n > 0) {
                 blade.platform().triggerBrigadierSync();
-                blade.logger().info("Unregistered %d command%s in class %s",
-                    n, n == 1 ? "" : "s", clazz.getCanonicalName());
+
+                if (blade.configuration().verbose())
+                    blade.logger().info("Unregistered %d command%s in class %s",
+                        n, n == 1 ? "" : "s", clazz.getCanonicalName());
             }
         } catch (Throwable t) {
             blade.logger().error(t, "An error occurred while unregistering %s commands in class %s",

@@ -64,11 +64,12 @@ public final class FabricContainer implements Container {
         if (node == null) {
             sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
 
-            blade.logger().warn(
-                "[Blade] %s tried to execute unknown command: `%s`",
-                sender.getName(),
-                commandLine
-            );
+            if (blade.configuration().verbose())
+                blade.logger().info(
+                    "%s tried to execute unknown command: `%s`. This is most likely a bug in Blade, not your plugin. Please report it.",
+                    sender.getName(),
+                    commandLine
+                );
             return false;
         }
 
@@ -182,7 +183,7 @@ public final class FabricContainer implements Container {
 
                 if (elapsed >= blade.configuration().executionTimeWarningThreshold()) {
                     blade.logger().warn(
-                        "[Blade] Command `%s` (%s#%s) took %d milliseconds to execute!",
+                        "Command `%s` (%s#%s) took %d milliseconds to execute!",
                         command.mainLabel(),
                         command.method().getDeclaringClass().getName(),
                         command.method().getName(),

@@ -90,11 +90,12 @@ public class VelocityContainer implements RawCommand, Container {
         if (node == null) {
             sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
 
-            blade.logger().warn(
-                "[Blade] %s tried to execute unknown command: `%s`",
-                sender.toString(),
-                commandLine
-            );
+            if (blade.configuration().verbose())
+                blade.logger().info(
+                    "%s tried to execute unknown command: `%s`. This is most likely a bug in Blade, not your plugin. Please report it.",
+                    sender.toString(),
+                    commandLine
+                );
             return;
         }
 
@@ -196,7 +197,7 @@ public class VelocityContainer implements RawCommand, Container {
 
                 if (elapsed >= blade.configuration().executionTimeWarningThreshold()) {
                     blade.logger().warn(
-                        "[Blade] Command `%s` (%s#%s) took %d milliseconds to execute!",
+                        "Command `%s` (%s#%s) took %d milliseconds to execute!",
                         command.mainLabel(),
                         command.method().getDeclaringClass().getName(),
                         command.method().getName(),

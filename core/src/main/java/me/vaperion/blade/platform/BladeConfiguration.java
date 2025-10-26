@@ -29,6 +29,13 @@ public final class BladeConfiguration<Text> {
     );
 
     /**
+     * Whether Blade should log verbose output.
+     * <p>
+     * This includes detailed information like command registration.
+     */
+    private boolean verbose;
+
+    /**
      * Whether Blade should override vanilla commands when registering commands with the same name.
      * <p>
      * For example, if you register a command named {@code whitelist}, the vanilla {@code /whitelist} command
