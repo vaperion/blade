@@ -354,7 +354,13 @@ public final class CommandExecutor {
         if (sender == null && context.sender().isExpectedType(cmd)) {
             // Sender is already of the expected type
 
-            sender = context.sender().underlyingSender();
+            sender = context.sender().parseAs(cmd.senderType());
+
+            if (sender == null) {
+                // This shouldn't happen, but we'll fall back to the raw underlying sender just in case
+
+                sender = context.sender().underlyingSender();
+            }
         }
 
         if (friendlyName == null)

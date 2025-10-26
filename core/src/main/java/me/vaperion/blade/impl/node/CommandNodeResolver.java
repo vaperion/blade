@@ -78,7 +78,7 @@ public final class CommandNodeResolver {
             BladeCommand candidate = commands.get(0);
 
             for (String label : candidate.labels()) {
-                if (label.equalsIgnoreCase(parts[0])) {
+                if (label.equalsIgnoreCase(input)) {
                     return ResolvedCommandNode.root(label, candidate);
                 }
             }
