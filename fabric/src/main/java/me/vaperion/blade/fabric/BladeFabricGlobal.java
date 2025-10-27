@@ -20,6 +20,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class BladeFabricGlobal implements DedicatedServerModInitializer {
 
+    private static BladeFabricGlobal GLOBAL;
     public static MinecraftServer SERVER;
     public static final List<Blade> ACTIVE_INSTANCES = new CopyOnWriteArrayList<>();
 
@@ -27,6 +28,25 @@ public final class BladeFabricGlobal implements DedicatedServerModInitializer {
     public static void triggerBrigadierSync() {
         if (SERVER == null)
             return;
+
+        if (ACTIVE_INSTANCES.isEmpty())
+            return;
+
+        try {
+            var commands = SERVER.getCommandManager();
+            var registries = SERVER.getRegistryManager();
+
+            GLOBAL.registerAllCommands(
+                commands.getDispatcher(),
+                CommandManager.createRegistryAccess(registries),
+                CommandManager.RegistrationEnvironment.DEDICATED
+            );
+        } catch (Throwable t) {
+            // Just choose the first instance to log the error
+
+            ACTIVE_INSTANCES.getFirst().logger()
+                .error(t, "Failed to register commands during brigadier sync!");
+        }
 
         var manager = SERVER.getPlayerManager();
 
@@ -37,14 +57,20 @@ public final class BladeFabricGlobal implements DedicatedServerModInitializer {
 
     @Override
     public void onInitializeServer() {
+        GLOBAL = this;
+
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             SERVER = server;
         });
 
-        CommandRegistrationCallback.EVENT.register((dispatcher, registry, env) -> {
-            ACTIVE_INSTANCES.forEach(blade -> {
-                registerCommands(blade, dispatcher, registry, env);
-            });
+        CommandRegistrationCallback.EVENT.register(this::registerAllCommands);
+    }
+
+    private void registerAllCommands(@NotNull CommandDispatcher<ServerCommandSource> dispatcher,
+                                     @NotNull CommandRegistryAccess registry,
+                                     @NotNull CommandManager.RegistrationEnvironment env) {
+        ACTIVE_INSTANCES.forEach(blade -> {
+            registerCommands(blade, dispatcher, registry, env);
         });
     }
 
