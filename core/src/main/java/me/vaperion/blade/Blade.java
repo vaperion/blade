@@ -378,9 +378,9 @@ public final class Blade {
         public static final class PredicateAdder<Text, Plugin, Server> {
             private final Builder<Text, Plugin, Server> builder;
 
-            public void predicate(@NotNull String permission,
+            public void predicate(@NotNull String id,
                                   @NotNull PermissionPredicate predicate) {
-                builder.permissionPredicates.put(permission, predicate);
+                builder.permissionPredicates.put(id.toLowerCase(Locale.ROOT), predicate);
             }
         }
     }

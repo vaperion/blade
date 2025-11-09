@@ -14,6 +14,11 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface Permission {
     /**
+     * The prefix that indicates a permission predicate.
+     */
+    char PREDICATE_PREFIX = '@';
+
+    /**
      * The required permission.
      * <p>
      * If the permission is not set, the command will be executed without any permission check.
