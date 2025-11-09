@@ -1,6 +1,6 @@
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
@@ -9,6 +9,5 @@ dependencies {
     api(project(":brigadier"))
     api(project(":bukkit"))
 
-    compileOnly("io.papermc.paper:paper-api:${libs.versions.paper.get()}")
-    compileOnly("io.papermc.paper:paper-mojangapi:${libs.versions.paper.get()}")
+    compileOnly("io.papermc.paper:paper-api:${libs.versions.paper.new.get()}")
 }

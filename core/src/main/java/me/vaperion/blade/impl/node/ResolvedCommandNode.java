@@ -14,8 +14,8 @@ import java.util.List;
 public class ResolvedCommandNode {
 
     @NotNull
-    public static ResolvedCommandNode root(@NotNull String label,
-                                           @NotNull BladeCommand command) {
+    public static ResolvedCommandNode match(@NotNull String label,
+                                            @NotNull BladeCommand command) {
         return new ResolvedCommandNode(false, label,
             command, Collections.emptyList());
     }

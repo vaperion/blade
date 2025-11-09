@@ -27,18 +27,34 @@ and [YourKit YouMonitor](https://www.yourkit.com/youmonitor/).
 
 ## Supported Platforms
 
-- Fabric: use the `fabric` artifact
-- Paper 1.13+: use the `paper` artifact
-- Bukkit (and Paper <1.13): use the `bukkit` artifact
-- Velocity: use the `velocity` artifact
+### Bukkit
+
+Use the `bukkit` artifact. Supports Java 8+.
+
+### Paper
+
+- Minecraft 1.13+ (Java 21+): use the `paper` artifact
+- Minecraft 1.13+ (Java 17-21): use the `paper-legacy` artifact
+- Minecraft <1.13 or Java <17: use the `bukkit` artifact
+
+Unfortunately we had to split the Paper artifact into two due to newer Paper API versions requiring Java 21 (Minecraft
+1.20.6 and above). We have to depend on those newer APIs to provide proper Brigadier support.
+
+### Fabric
+
+Use the `fabric` artifact.
 
 > [!WARNING]
-> For Fabric, make sure to use `include(modImplementation("..."))` to add Blade as a jar-in-jar dependency. You'll have
+> Make sure to use `include(modImplementation("..."))` to add Blade as a jar-in-jar dependency. You'll have
 > to include the `fabric`, `brigadier`, and `core` modules as Fabric Loom doesn't resolve transitive dependencies.
 
 > [!TIP]
 > Blade uses [Lucko's Fabric Permissions API](https://github.com/lucko/fabric-permissions-api) for permission checks on
 > Fabric. Plugins such as LuckPerms provide support for this API.
+
+### Velocity
+
+Use the `velocity` artifact.
 
 ## Usage
 
@@ -97,7 +113,7 @@ public class ExampleCommand {
         @Provider(MyPlayerProvider.class) Player customPlayer,
         // And you can specify the scope (`BOTH`, `PARSER`, `SUGGESTIONS`), defaults to `BOTH`:
         @Provider(value = MyPlayerProvider.class, scope = Provider.Scope.SUGGESTIONS) Player customPlayer2,
-        
+
         // Command flags:
         @Flag(value = 's', description = "Optional description") boolean flagSilent,
         // You can also have complex types as flags:

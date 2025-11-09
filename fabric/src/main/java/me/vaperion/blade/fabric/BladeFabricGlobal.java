@@ -20,9 +20,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class BladeFabricGlobal implements DedicatedServerModInitializer {
 
+    public static final List<Blade> ACTIVE_INSTANCES = new CopyOnWriteArrayList<>();
+
     private static BladeFabricGlobal GLOBAL;
     public static MinecraftServer SERVER;
-    public static final List<Blade> ACTIVE_INSTANCES = new CopyOnWriteArrayList<>();
 
     @ApiStatus.Internal
     public static void triggerBrigadierSync() {
@@ -90,11 +91,11 @@ public final class BladeFabricGlobal implements DedicatedServerModInitializer {
             if (node.command() == null && node.subcommands().isEmpty())
                 return;
 
-            LiteralCommandNode<ServerCommandSource> literal = brigadier.getBuilder().buildLiteral(
+            LiteralCommandNode<ServerCommandSource> literal = brigadier.builder().buildLiteral(
                 node,
                 label,
-                brigadier.delegatingSuggestionProvider(node),
-                brigadier.delegatingExecutor(node)
+                brigadier.delegate().suggestionProvider(node),
+                brigadier.delegate().executor(node)
             );
 
             dispatcher.getRoot().addChild(literal);

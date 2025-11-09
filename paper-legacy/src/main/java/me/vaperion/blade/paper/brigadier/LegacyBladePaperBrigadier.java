@@ -13,13 +13,13 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.jetbrains.annotations.NotNull;
 
-@SuppressWarnings("UnstableApiUsage")
-public final class BladeBrigadierSupport implements Listener {
+@SuppressWarnings({ "UnstableApiUsage" })
+public final class LegacyBladePaperBrigadier implements Listener {
 
     private final Blade blade;
     private final BladeBrigadierBuilder<BukkitBrigadierCommandSource, CommandSender> builder;
 
-    public BladeBrigadierSupport(@NotNull Blade blade) throws ClassNotFoundException {
+    public LegacyBladePaperBrigadier(@NotNull Blade blade) throws ClassNotFoundException {
         Class.forName("com.destroystokyo.paper.event.brigadier.CommandRegisteredEvent");
 
         this.blade = blade;

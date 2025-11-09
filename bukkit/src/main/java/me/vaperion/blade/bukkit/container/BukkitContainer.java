@@ -148,6 +148,11 @@ public final class BukkitContainer extends Command implements Container {
             mergeLabelWithArgs(label, args)
         );
 
+        return execute(sender, commandLine);
+    }
+
+    public boolean execute(@NotNull CommandSender sender,
+                           @NotNull String commandLine) {
         ResolvedCommandNode node = blade.nodeResolver().resolve(
             commandLine
         );
@@ -164,10 +169,19 @@ public final class BukkitContainer extends Command implements Container {
             return false;
         }
 
+        String label = node.matchedLabelOr(
+            commandLine.split(" ")[0]
+        );
+
+        String[] args = removePrefix(
+            commandLine,
+            label
+        ).split(" ");
+
         Context context = new Context(
             blade,
             new BukkitSender(sender),
-            node.matchedLabelOr(label),
+            label,
             args
         );
 
@@ -274,11 +288,19 @@ public final class BukkitContainer extends Command implements Container {
 
     @NotNull
     @Override
-    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String label, @NotNull String[] args) throws IllegalArgumentException {
+    public List<String> tabComplete(@NotNull CommandSender sender,
+                                    @NotNull String label,
+                                    @NotNull String[] args) throws IllegalArgumentException {
+        String commandLine = mergeLabelWithArgs(label, args);
+
+        return tabComplete(sender, commandLine);
+    }
+
+    @NotNull
+    public List<String> tabComplete(@NotNull CommandSender sender,
+                                    @NotNull String commandLine) throws IllegalArgumentException {
         if (!blade.configuration().tabCompleter().isDefault())
             return Collections.emptyList();
-
-        String commandLine = mergeLabelWithArgs(label, args);
 
         ResolvedCommandNode node = blade.nodeResolver().resolve(
             commandLine
@@ -294,6 +316,11 @@ public final class BukkitContainer extends Command implements Container {
 
             if (!node.isStub()) {
                 // Found exact command, we can suggest arguments here.
+
+                String[] args = removePrefix(
+                    removeCommandQualifier(commandLine),
+                    node.matchedLabelOr("")
+                ).split(" ");
 
                 if (!platformTypes.contains(SuggestionType.ARGUMENTS)) {
                     // Platform doesn't support argument suggestions.
@@ -331,6 +358,8 @@ public final class BukkitContainer extends Command implements Container {
                 return Collections.emptyList();
             }
 
+            String[] args = removeCommandQualifier(commandLine).split(" ");
+
             Context context = new Context(
                 blade,
                 new BukkitSender(sender),
@@ -356,7 +385,7 @@ public final class BukkitContainer extends Command implements Container {
             sender.sendMessage(ChatColor.RED + ERROR_MESSAGE);
 
             blade.logger().error(e, "An error occurred while %s was tab completing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
-                sender.getName(), label);
+                sender.getName(), commandLine);
         } catch (BladeFatalError ex) {
             sender.sendMessage(ChatColor.RED + ex.getMessage());
         } catch (TokenizerError error) {
@@ -366,11 +395,11 @@ public final class BukkitContainer extends Command implements Container {
                 blade.logger().error(
                     "Failed to parse %s's command input for command `%s`: %s",
                     sender.getName(),
-                    label, TokenizerError.generateFancyMessage(error));
+                    commandLine, TokenizerError.generateFancyMessage(error));
             }
         } catch (Throwable t) {
             blade.logger().error(t, "An error occurred while %s was tab completing the command `%s`.",
-                sender.getName(), label);
+                sender.getName(), commandLine);
         }
 
         return Collections.emptyList();
