@@ -4,7 +4,6 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.fabric.container.BladeFabricBrigadier;
-import me.vaperion.blade.impl.node.ResolvedCommandNode;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -79,17 +78,9 @@ public final class BladeFabricGlobal implements DedicatedServerModInitializer {
                                   @NotNull CommandDispatcher<ServerCommandSource> dispatcher,
                                   @NotNull CommandRegistryAccess registry,
                                   @NotNull CommandManager.RegistrationEnvironment env) {
-        blade.labelToCommands().forEach((label, commands) -> {
+        blade.commandTree().roots().forEach((label, node) -> {
             BladeFabricPlatform platform = blade.platformAs(BladeFabricPlatform.class);
-
             BladeFabricBrigadier brigadier = platform.brigadier();
-            ResolvedCommandNode node = blade.nodeResolver().resolve(label);
-
-            if (node == null)
-                return;
-
-            if (node.command() == null && node.subcommands().isEmpty())
-                return;
 
             LiteralCommandNode<ServerCommandSource> literal = brigadier.builder().buildLiteral(
                 node,

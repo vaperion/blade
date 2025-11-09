@@ -6,7 +6,7 @@ import me.vaperion.blade.Blade;
 import me.vaperion.blade.brigadier.BladeBrigadierBuilder;
 import me.vaperion.blade.bukkit.BladeBukkitPlatform;
 import me.vaperion.blade.bukkit.context.BukkitSender;
-import me.vaperion.blade.impl.node.ResolvedCommandNode;
+import me.vaperion.blade.tree.CommandTreeNode;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
@@ -34,7 +34,7 @@ public final class LegacyBladePaperBrigadier implements Listener {
 
     @EventHandler
     public void onCommandRegistered(CommandRegisteredEvent<BukkitBrigadierCommandSource> event) {
-        ResolvedCommandNode node = blade.nodeResolver().resolve(event.getCommandLabel());
+        CommandTreeNode node = blade.commandTree().root(event.getCommandLabel());
         if (node == null) return;
 
         event.setLiteral(builder.buildLiteral(

@@ -11,30 +11,30 @@ import java.util.List;
 
 @SuppressWarnings("unused")
 @Getter
-public class ResolvedCommandNode {
+public class ResolvedCommand {
 
     @NotNull
-    public static ResolvedCommandNode match(@NotNull String label,
-                                            @NotNull BladeCommand command) {
-        return new ResolvedCommandNode(false, label,
+    public static ResolvedCommand match(@NotNull String label,
+                                        @NotNull BladeCommand command) {
+        return new ResolvedCommand(false, label,
             command, Collections.emptyList());
     }
 
     @NotNull
-    public static ResolvedCommandNode stub(@NotNull List<ResolvedCommandNode> nodes) {
-        return new ResolvedCommandNode(true, null,
+    public static ResolvedCommand stub(@NotNull List<ResolvedCommand> nodes) {
+        return new ResolvedCommand(true, null,
             null, nodes);
     }
 
     private final boolean isStub;
     private final String matchedLabel;
     private final BladeCommand command;
-    private final List<ResolvedCommandNode> subcommands;
+    private final List<ResolvedCommand> subcommands;
 
-    public ResolvedCommandNode(boolean isStub,
-                               @Nullable String matchedLabel,
-                               @Nullable BladeCommand command,
-                               @NotNull List<ResolvedCommandNode> subcommands) {
+    public ResolvedCommand(boolean isStub,
+                           @Nullable String matchedLabel,
+                           @Nullable BladeCommand command,
+                           @NotNull List<ResolvedCommand> subcommands) {
         this.isStub = isStub;
         this.matchedLabel = matchedLabel;
         this.command = command;
@@ -60,7 +60,7 @@ public class ResolvedCommandNode {
     @ApiStatus.Internal
     public void collectCommandsInto(@NotNull List<BladeCommand> into) {
         if (isStub) {
-            for (ResolvedCommandNode node : subcommands) {
+            for (ResolvedCommand node : subcommands) {
                 node.collectCommandsInto(into);
             }
         } else if (command != null) {

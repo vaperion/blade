@@ -7,10 +7,12 @@ import me.vaperion.blade.argument.InputArgument;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.command.parameter.DefinedArgument;
 import me.vaperion.blade.context.Context;
-import me.vaperion.blade.exception.internal.BladeInternalError;
 import me.vaperion.blade.exception.BladeParseError;
+import me.vaperion.blade.exception.internal.BladeInternalError;
 import me.vaperion.blade.tokenizer.input.CommandInput;
 import me.vaperion.blade.tokenizer.input.token.impl.LabelToken;
+import me.vaperion.blade.tree.CommandTree;
+import me.vaperion.blade.tree.CommandTreeNode;
 import me.vaperion.blade.util.command.SuggestionsBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -91,29 +93,49 @@ public final class CommandSuggestionProvider {
                                     @NotNull CommandInput input,
                                     @NotNull String baseCommand,
                                     @NotNull SuggestionsBuilder builder) {
-        int wordIndex = input.arguments().size() +
-            (input.endsInWhitespace() ? 1 : 0);
+        CommandTree tree = blade.commandTree();
+        CommandTreeNode rootNode = tree.root(baseCommand);
 
-        List<BladeCommand> commands = blade.labelToCommands().get(baseCommand);
-        if (commands == null || commands.isEmpty()) return;
+        if (rootNode == null) return;
 
-        for (BladeCommand cmd : commands) {
-            if (cmd.hidden()) continue;
+        String[] inputParts = input.unslashedInput().split(" ");
+        CommandTreeNode currentNode = rootNode;
 
-            if (!cmd.hasPermission(context)) continue;
+        for (int i = 1; i < inputParts.length - (input.endsInWhitespace() ? 0 : 1); i++) {
+            CommandTreeNode child = currentNode.child(inputParts[i]);
+            if (child == null) return; // Invalid path
+            currentNode = child;
+        }
 
-            for (String label : cmd.labels()) {
-                String[] labelParts = label.split(" ");
-                if (labelParts.length <= wordIndex) continue;
+        String partialWord = input.endsInWhitespace() ? "" : inputParts[inputParts.length - 1];
 
-                if (!label.startsWith(input.unslashedInput())) continue;
+        for (CommandTreeNode child : currentNode.children().values()) {
+            if (!hasAccessibleCommand(child, context)) continue;
 
-                String subLabel = labelParts[wordIndex];
-                if (subLabel.isEmpty()) continue;
+            String childLabel = child.label();
 
-                builder.suggest(subLabel);
+            if (childLabel.toLowerCase().startsWith(partialWord.toLowerCase())) {
+                builder.suggest(childLabel);
             }
         }
+    }
+
+    private boolean hasAccessibleCommand(@NotNull CommandTreeNode node,
+                                         @NotNull Context context) {
+        if (node.isLeaf()) {
+            BladeCommand cmd = node.command();
+            if (!cmd.hidden() && cmd.hasPermission(context)) {
+                return true;
+            }
+        }
+
+        for (CommandTreeNode child : node.children().values()) {
+            if (hasAccessibleCommand(child, context)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void suggestCommandArguments(@NotNull Context context,

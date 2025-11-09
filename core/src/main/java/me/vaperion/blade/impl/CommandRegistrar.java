@@ -12,7 +12,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 import static me.vaperion.blade.util.Preconditions.mustGetAnnotation;
@@ -31,7 +30,7 @@ public class CommandRegistrar {
         try {
             int n = 0;
 
-            for (Method method : clazz.getMethods()) {
+            for (Method method : clazz.getDeclaredMethods()) {
                 if (!method.isAnnotationPresent(Command.class)) continue;
                 if ((instance == null) != Modifier.isStatic(method.getModifiers())) continue;
 
@@ -58,7 +57,7 @@ public class CommandRegistrar {
         try {
             int n = 0;
 
-            for (Method method : clazz.getMethods()) {
+            for (Method method : clazz.getDeclaredMethods()) {
                 if (!method.isAnnotationPresent(Command.class)) continue;
                 if ((instance == null) != Modifier.isStatic(method.getModifiers())) continue;
 
@@ -81,30 +80,23 @@ public class CommandRegistrar {
 
     @ApiStatus.Internal
     public void registerMethod(@Nullable Object instance,
-                               @NotNull Method method) throws Exception {
+                               @NotNull Method method) {
         BladeCommand cmd = new BladeCommand(blade, instance, method);
         blade.commands().add(cmd);
 
+        List<String> labelPath = Arrays.asList(cmd.labels()[0].split(" "));
+        blade.commandTree().addCommand(labelPath, cmd);
+
         for (String label : cmd.labels()) {
-            String realLabel = label.split(" ")[0];
-
-            blade.labelToCommands()
-                .computeIfAbsent(realLabel, $ -> new LinkedList<>())
-                .add(cmd);
-
-            if (blade.labelToContainer().containsKey(realLabel)) continue;
-
-            blade.labelToContainer()
-                .put(realLabel, blade.platform().containerCreator()
-                    .create(blade, cmd, realLabel));
+            labelPath = Arrays.asList(label.split(" "));
+            blade.commandTree().addCommand(labelPath, cmd);
         }
     }
 
     @ApiStatus.Internal
     public void unregisterMethod(@Nullable Object instance,
                                  @NotNull Method method) {
-        Command command =
-            mustGetAnnotation(method, Command.class);
+        Command command = mustGetAnnotation(method, Command.class);
 
         String[] labels = command.value();
         labels = Arrays.stream(labels).map(String::toLowerCase).toArray(String[]::new);
@@ -117,14 +109,8 @@ public class CommandRegistrar {
         blade.commands().remove(cmd);
 
         for (String label : labels) {
-            String realLabel = label.split(" ")[0];
-
-            List<BladeCommand> commandList = blade.labelToCommands()
-                .getOrDefault(realLabel, EMPTY_COMMAND_LIST);
-
-            commandList.remove(cmd);
-            if (commandList.isEmpty())
-                blade.labelToCommands().remove(realLabel);
+            List<String> labelPath = Arrays.asList(label.split(" "));
+            blade.commandTree().removeCommand(labelPath, cmd);
         }
     }
 

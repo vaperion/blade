@@ -11,7 +11,6 @@ import me.vaperion.blade.brigadier.BladeBrigadierBuilder;
 import me.vaperion.blade.brigadier.BladeBrigadierDelegate;
 import me.vaperion.blade.bukkit.container.BukkitContainer;
 import me.vaperion.blade.bukkit.context.BukkitSender;
-import me.vaperion.blade.impl.node.ResolvedCommandNode;
 import me.vaperion.blade.paper.BladePaperPlatform;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Listener;
@@ -73,15 +72,7 @@ public final class BladePaperBrigadier implements Listener {
     }
 
     private void registerCommands(@NotNull Commands registrar) {
-        blade.labelToCommands().forEach((label, commands) -> {
-            ResolvedCommandNode node = blade.nodeResolver().resolve(label);
-
-            if (node == null)
-                return;
-
-            if (node.command() == null && node.subcommands().isEmpty())
-                return;
-
+        blade.commandTree().roots().forEach((label, node) -> {
             LiteralCommandNode<CommandSourceStack> literal = builder.buildLiteral(
                 node,
                 label,

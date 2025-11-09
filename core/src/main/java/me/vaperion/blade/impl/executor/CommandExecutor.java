@@ -16,7 +16,7 @@ import me.vaperion.blade.exception.BladeUsageMessage;
 import me.vaperion.blade.exception.internal.BladeFatalError;
 import me.vaperion.blade.exception.internal.BladeInternalError;
 import me.vaperion.blade.exception.internal.BladeInvocationError;
-import me.vaperion.blade.impl.node.ResolvedCommandNode;
+import me.vaperion.blade.impl.node.ResolvedCommand;
 import me.vaperion.blade.sender.internal.SndProvider;
 import me.vaperion.blade.tokenizer.input.CommandInput;
 import me.vaperion.blade.tokenizer.input.token.flag.FlagValue;
@@ -39,7 +39,7 @@ public final class CommandExecutor {
     @Nullable
     public ErrorMessage execute(@NotNull Context context,
                                 @NotNull CommandInput input,
-                                @NotNull ResolvedCommandNode node) {
+                                @NotNull ResolvedCommand node) {
         try {
             prepareAndInvoke(context, input, node);
 
@@ -80,7 +80,7 @@ public final class CommandExecutor {
 
     private void prepareAndInvoke(@NotNull Context context,
                                   @NotNull CommandInput input,
-                                  @NotNull ResolvedCommandNode node) {
+                                  @NotNull ResolvedCommand node) {
         BladeCommand cmd = node.command();
 
         if (cmd == null) {
@@ -180,6 +180,9 @@ public final class CommandExecutor {
                             : InputArgument.Status.NOT_PRESENT
                     );
 
+                    inputArg.data().addAll(parameter.data());
+                    inputArg.addAnnotations(parameter.annotations());
+
                     if (value.string == null && !provider.handlesNullInputArguments()) {
                         methodArg = null;
                     } else {
@@ -255,6 +258,9 @@ public final class CommandExecutor {
                             ? InputArgument.Status.PRESENT
                             : InputArgument.Status.NOT_PRESENT
                     );
+
+                    inputArg.data().addAll(parameter.data());
+                    inputArg.addAnnotations(parameter.annotations());
 
                     if (value.string == null && !provider.handlesNullInputArguments()) {
                         methodArg = null;

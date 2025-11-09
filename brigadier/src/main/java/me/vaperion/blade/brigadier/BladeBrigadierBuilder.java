@@ -15,7 +15,7 @@ import me.vaperion.blade.command.BladeParameter;
 import me.vaperion.blade.command.parameter.DefinedArgument;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.context.Sender;
-import me.vaperion.blade.impl.node.ResolvedCommandNode;
+import me.vaperion.blade.tree.CommandTreeNode;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
@@ -31,76 +31,57 @@ public final class BladeBrigadierBuilder<T, S> {
 
     @NotNull
     public LiteralCommandNode<T> buildLiteral(
-        @NotNull ResolvedCommandNode node,
+        @NotNull CommandTreeNode node,
         @NotNull String label,
         @NotNull SuggestionProvider<T> suggestionProvider,
-        @NotNull Command<T> brigadierCommand) {
+        @NotNull Command<T> executor) {
         LiteralArgumentBuilder<T> builder = LiteralArgumentBuilder.<T>literal(label)
             .requires(createPermissionPredicate(node))
-            .executes(brigadierCommand);
+            .executes(executor);
 
         LiteralCommandNode<T> root = builder.build();
 
-        registerParams(node, root, suggestionProvider, brigadierCommand);
+        if (node.isLeaf()) {
+            registerParams(node, root, suggestionProvider, executor);
+        }
 
-        for (ResolvedCommandNode subcommand : node.subcommands()) {
-            if (subcommand.isStub()) continue;
-
-            String subLabel = subcommand.command().mainLabel();
-            String[] parts = subLabel.split(" ");
-            String rest = subLabel.substring(parts[0].length() + 1);
-
-            registerSubCommand(subcommand, rest, suggestionProvider, brigadierCommand, root);
+        for (CommandTreeNode subcommand : node.children().values()) {
+            registerSubCommand(root,
+                subcommand,
+                suggestionProvider,
+                executor);
         }
 
         return root;
     }
 
-    private void registerSubCommand(@NotNull ResolvedCommandNode subcommand,
-                                    @NotNull String label,
-                                    @NotNull SuggestionProvider<T> suggestionProvider,
-                                    @NotNull Command<T> brigadierCommand,
-                                    @NotNull LiteralCommandNode<T> root) {
-        if (subcommand.isStub()) return;
+    private void registerSubCommand(
+        @NotNull LiteralCommandNode<T> root,
+        @NotNull CommandTreeNode node,
+        @NotNull SuggestionProvider<T> suggestionProvider,
+        @NotNull Command<T> executor) {
+        String label = node.label();
 
-        if (label.contains(" ")) {
-            String[] parts = label.split(" ");
+        LiteralArgumentBuilder<T> builder = LiteralArgumentBuilder.<T>literal(label)
+            .requires(createPermissionPredicate(node))
+            .executes(executor);
 
-            String stubName = parts[0];
-            String rest = label.substring(stubName.length() + 1);
+        LiteralCommandNode<T> subcommandNode = builder.build();
+        root.addChild(subcommandNode);
 
-            CommandNode<T> subcommandNode = root.getChild(stubName);
+        if (node.isLeaf()) {
+            registerParams(node, subcommandNode, suggestionProvider, executor);
+        }
 
-            if (subcommandNode == null) {
-                subcommandNode = LiteralArgumentBuilder.<T>literal(stubName)
-                    .requires(createPermissionPredicate(subcommand))
-                    .executes(brigadierCommand)
-                    .build();
-            }
-
-            root.addChild(subcommandNode);
-            registerSubCommand(subcommand, rest, suggestionProvider, brigadierCommand, (LiteralCommandNode<T>) subcommandNode);
-        } else {
-            CommandNode<T> subcommandNode = root.getChild(label);
-
-            if (subcommandNode == null) {
-                subcommandNode = LiteralArgumentBuilder.<T>literal(label)
-                    .requires(createPermissionPredicate(subcommand))
-                    .executes(brigadierCommand)
-                    .build();
-            }
-
-            root.addChild(subcommandNode);
-            registerParams(subcommand, subcommandNode, suggestionProvider, brigadierCommand);
+        for (CommandTreeNode child : node.children().values()) {
+            registerSubCommand(subcommandNode, child, suggestionProvider, executor);
         }
     }
 
-    private void registerParams(@NotNull ResolvedCommandNode node,
+    private void registerParams(@NotNull CommandTreeNode node,
                                 @NotNull CommandNode<T> commandNode,
                                 @NotNull SuggestionProvider<T> suggestionProvider,
                                 @NotNull Command<T> brigadierCommand) {
-        if (node.isStub()) return;
-
         boolean hasGreedy = false;
 
         for (DefinedArgument arg : node.command().arguments()) {
@@ -141,25 +122,39 @@ public final class BladeBrigadierBuilder<T, S> {
     }
 
     @NotNull
-    private Predicate<T> createPermissionPredicate(@NotNull ResolvedCommandNode node) {
+    private Predicate<T> createPermissionPredicate(@NotNull CommandTreeNode node) {
         return sender -> {
             Sender<?> wrappedSender = wrapper.apply(converter.apply(sender));
             Context context = new Context(blade, wrappedSender, "", new String[0]);
 
-            if (node.command() != null && node.command().hidden()) {
-                boolean result = node.command().hasPermission(context);
-                if (!result) return false;
+            if (node.command() != null) {
+                return node.command().hasPermission(context);
             }
 
-            for (ResolvedCommandNode subcommand : node.subcommands()) {
-                if (!subcommand.command().hidden()) continue;
-
-                boolean result = subcommand.command().hasPermission(context);
-                if (!result) return false;
+            if (node.isStub()) {
+                return hasAccessibleCommand(node, context);
             }
 
             return true;
         };
+    }
+
+    private boolean hasAccessibleCommand(@NotNull CommandTreeNode node,
+                                         @NotNull Context context) {
+        if (node.isLeaf()) {
+            BladeCommand cmd = node.command();
+            if (cmd.hasPermission(context)) {
+                return true;
+            }
+        }
+
+        for (CommandTreeNode child : node.children().values()) {
+            if (hasAccessibleCommand(child, context)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @NotNull

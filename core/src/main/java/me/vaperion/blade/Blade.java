@@ -8,12 +8,11 @@ import me.vaperion.blade.argument.impl.*;
 import me.vaperion.blade.argument.internal.ArgBinding;
 import me.vaperion.blade.argument.internal.ArgProvider;
 import me.vaperion.blade.command.BladeCommand;
-import me.vaperion.blade.container.Container;
 import me.vaperion.blade.impl.CommandRegistrar;
 import me.vaperion.blade.impl.PermissionTester;
 import me.vaperion.blade.impl.argument.ArgumentProviderResolver;
 import me.vaperion.blade.impl.executor.CommandExecutor;
-import me.vaperion.blade.impl.node.CommandNodeResolver;
+import me.vaperion.blade.impl.node.CommandResolver;
 import me.vaperion.blade.impl.suggestions.CommandSuggestionProvider;
 import me.vaperion.blade.log.BladeLogger;
 import me.vaperion.blade.platform.BladeConfiguration;
@@ -21,6 +20,7 @@ import me.vaperion.blade.platform.BladePlatform;
 import me.vaperion.blade.sender.SenderProvider;
 import me.vaperion.blade.sender.internal.SndBinding;
 import me.vaperion.blade.sender.internal.SndProvider;
+import me.vaperion.blade.tree.CommandTree;
 import me.vaperion.blade.util.BuildParameters;
 import me.vaperion.blade.util.ClassUtil;
 import me.vaperion.blade.util.command.PermissionPredicate;
@@ -65,14 +65,12 @@ public final class Blade {
     private final List<SndProvider<?>> senderProviders = new ArrayList<>();
     private final List<BladeCommand> commands = new ArrayList<>();
 
-    private final Map<String, List<BladeCommand>> labelToCommands = new HashMap<>();
-    private final Map<String, Container> labelToContainer = new HashMap<>();
-
+    private final CommandTree commandTree = new CommandTree(this);
     private final CommandRegistrar registrar = new CommandRegistrar(this);
     private final PermissionTester permissionTester = new PermissionTester(this);
 
     private final ArgumentProviderResolver providerResolver = new ArgumentProviderResolver(this);
-    private final CommandNodeResolver nodeResolver = new CommandNodeResolver(this);
+    private final CommandResolver nodeResolver = new CommandResolver(this);
     private final CommandSuggestionProvider suggestionProvider = new CommandSuggestionProvider(this);
     private final CommandExecutor executor = new CommandExecutor(this);
 

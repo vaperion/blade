@@ -15,7 +15,7 @@ import me.vaperion.blade.exception.BladeParseError;
 import me.vaperion.blade.exception.internal.BladeFatalError;
 import me.vaperion.blade.exception.internal.BladeInternalError;
 import me.vaperion.blade.exception.internal.BladeInvocationError;
-import me.vaperion.blade.impl.node.ResolvedCommandNode;
+import me.vaperion.blade.impl.node.ResolvedCommand;
 import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.tokenizer.TokenizerError;
 import me.vaperion.blade.tokenizer.input.CommandInput;
@@ -45,31 +45,21 @@ public class VelocityContainer implements RawCommand, Container {
     );
 
     private final Blade blade;
-    private final BladeCommand baseCommand;
 
-    private VelocityContainer(@NotNull Blade blade, @NotNull BladeCommand command, @NotNull String label) {
+    private VelocityContainer(@NotNull Blade blade, @NotNull String label) {
         this.blade = blade;
-        this.baseCommand = command;
 
         ProxyServer proxyServer = blade.platformAs(BladeVelocityPlatform.class).server();
         CommandManager commandManager = proxyServer.getCommandManager();
 
-        CommandMeta meta = commandManager.metaBuilder(label)
-            .aliases(command.baseCommands())
-            .build();
+        CommandMeta meta = commandManager.metaBuilder(label).build();
         commandManager.register(meta, this);
     }
 
     @Override
     public boolean hasPermission(Invocation invocation) {
-        Context context = new Context(
-            blade,
-            new VelocitySender(invocation.source()),
-            this.baseCommand.mainLabel(),
-            new String[0]
-        );
-
-        return this.baseCommand.hasPermission(context);
+        // Permission check is done in the execute method, as we don't know the exact command here.
+        return true;
     }
 
     @Override
@@ -83,7 +73,7 @@ public class VelocityContainer implements RawCommand, Container {
 
         String commandLine = mergeLabelWithArgs(label, args);
 
-        ResolvedCommandNode node = blade.nodeResolver().resolve(
+        ResolvedCommand node = blade.nodeResolver().resolve(
             commandLine
         );
 
@@ -222,7 +212,7 @@ public class VelocityContainer implements RawCommand, Container {
 
         String commandLine = mergeLabelWithArgs(label, args);
 
-        ResolvedCommandNode node = blade.nodeResolver().resolve(
+        ResolvedCommand node = blade.nodeResolver().resolve(
             commandLine
         );
 
@@ -312,7 +302,7 @@ public class VelocityContainer implements RawCommand, Container {
 
     private void sendHelpMessage(@NotNull CommandSource sender,
                                  @NotNull Context context,
-                                 @NotNull List<ResolvedCommandNode> nodes) {
+                                 @NotNull List<ResolvedCommand> nodes) {
         List<BladeCommand> allCommands = new ArrayList<>();
 
         nodes.forEach(node ->

@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "io.github.vaperion.blade"
-version = "1.0.3"
+version = "1.0.4"
 
 subprojects {
     apply(plugin = "io.freefair.lombok")
@@ -27,6 +27,15 @@ subprojects {
         options.compilerArgs.add("-parameters")
         options.isFork = true
         options.encoding = "UTF-8"
+    }
+
+    dependencies {
+        testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+        testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    }
+
+    tasks.withType<Test> {
+        useJUnitPlatform()
     }
 
     mavenPublishing {

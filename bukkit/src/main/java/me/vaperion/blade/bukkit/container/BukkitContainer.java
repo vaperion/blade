@@ -13,7 +13,7 @@ import me.vaperion.blade.exception.BladeParseError;
 import me.vaperion.blade.exception.internal.BladeFatalError;
 import me.vaperion.blade.exception.internal.BladeInternalError;
 import me.vaperion.blade.exception.internal.BladeInvocationError;
-import me.vaperion.blade.impl.node.ResolvedCommandNode;
+import me.vaperion.blade.impl.node.ResolvedCommand;
 import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.log.BladeLogger;
 import me.vaperion.blade.tokenizer.TokenizerError;
@@ -70,16 +70,13 @@ public final class BukkitContainer extends Command implements Container {
     }
 
     private final Blade blade;
-    private final BladeCommand baseCommand;
 
     @SuppressWarnings("unchecked")
     private BukkitContainer(@NotNull Blade blade,
-                            @NotNull BladeCommand command,
                             @NotNull String label) throws Exception {
-        super(label, command.description(), "/" + label, new ArrayList<>());
+        super(label, "", "/" + label, new ArrayList<>());
 
         this.blade = blade;
-        this.baseCommand = command;
 
         SimplePluginManager simplePluginManager = (SimplePluginManager) Bukkit.getServer().getPluginManager();
         SimpleCommandMap simpleCommandMap = (SimpleCommandMap) COMMAND_MAP.get(simplePluginManager);
@@ -99,7 +96,7 @@ public final class BukkitContainer extends Command implements Container {
                 Map.Entry<String, Command> entry = iterator.next();
                 Command registeredCommand = entry.getValue();
 
-                if (doesBukkitCommandConflict(registeredCommand, label, command)) {
+                if (doesBukkitCommandConflict(registeredCommand, label)) {
                     registeredCommand.unregister(simpleCommandMap);
 
                     if (!lazyRemove)
@@ -117,27 +114,20 @@ public final class BukkitContainer extends Command implements Container {
         }
     }
 
-    private boolean doesBukkitCommandConflict(@NotNull Command bukkitCommand, @NotNull String label, @NotNull BladeCommand command) {
-        if (bukkitCommand instanceof BukkitContainer) return false; // don't override our own commands
-        if (bukkitCommand.getName().equalsIgnoreCase(label) || bukkitCommand.getAliases().stream().anyMatch(a -> a.equalsIgnoreCase(label)))
-            return true;
-        for (String realLabel : command.baseCommands()) {
-            if (bukkitCommand.getName().equalsIgnoreCase(realLabel) || bukkitCommand.getAliases().stream().anyMatch(a -> a.equalsIgnoreCase(realLabel)))
-                return true;
-        }
-        return false;
+    private boolean doesBukkitCommandConflict(@NotNull Command bukkitCommand,
+                                              @NotNull String label) {
+        if (bukkitCommand instanceof BukkitContainer)
+            return false; // don't override our own commands
+
+        return bukkitCommand.getName().equalsIgnoreCase(label) ||
+            bukkitCommand.getAliases().stream()
+                .anyMatch(a -> a.equalsIgnoreCase(label));
     }
 
     @Override
     public boolean testPermissionSilent(@NotNull CommandSender sender) {
-        Context context = new Context(
-            blade,
-            new BukkitSender(sender),
-            this.baseCommand.mainLabel(),
-            new String[0]
-        );
-
-        return this.baseCommand.hasPermission(context);
+        // Permission check is done in the execute method, as we don't know the exact command here.
+        return true;
     }
 
     @Override
@@ -153,7 +143,7 @@ public final class BukkitContainer extends Command implements Container {
 
     public boolean execute(@NotNull CommandSender sender,
                            @NotNull String commandLine) {
-        ResolvedCommandNode node = blade.nodeResolver().resolve(
+        ResolvedCommand node = blade.nodeResolver().resolve(
             commandLine
         );
 
@@ -302,7 +292,7 @@ public final class BukkitContainer extends Command implements Container {
         if (!blade.configuration().tabCompleter().isDefault())
             return Collections.emptyList();
 
-        ResolvedCommandNode node = blade.nodeResolver().resolve(
+        ResolvedCommand node = blade.nodeResolver().resolve(
             commandLine
         );
 
@@ -407,7 +397,7 @@ public final class BukkitContainer extends Command implements Container {
 
     private void sendHelpMessage(@NotNull CommandSender sender,
                                  @NotNull Context context,
-                                 @NotNull List<ResolvedCommandNode> nodes) {
+                                 @NotNull List<ResolvedCommand> nodes) {
         List<BladeCommand> allCommands = new ArrayList<>();
 
         nodes.forEach(node ->

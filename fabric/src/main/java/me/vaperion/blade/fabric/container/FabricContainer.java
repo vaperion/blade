@@ -14,7 +14,7 @@ import me.vaperion.blade.exception.internal.BladeInternalError;
 import me.vaperion.blade.exception.internal.BladeInvocationError;
 import me.vaperion.blade.fabric.command.FabricInternalUsage;
 import me.vaperion.blade.fabric.context.FabricSender;
-import me.vaperion.blade.impl.node.ResolvedCommandNode;
+import me.vaperion.blade.impl.node.ResolvedCommand;
 import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.tokenizer.TokenizerError;
 import me.vaperion.blade.tokenizer.input.CommandInput;
@@ -41,14 +41,11 @@ public final class FabricContainer implements Container {
     );
 
     private final Blade blade;
-    private final BladeCommand baseCommand;
     private final String label;
 
     private FabricContainer(@NotNull Blade blade,
-                            @NotNull BladeCommand command,
-                            @NotNull String label) throws Exception {
+                            @NotNull String label) {
         this.blade = blade;
-        this.baseCommand = command;
         this.label = label;
     }
 
@@ -57,7 +54,7 @@ public final class FabricContainer implements Container {
 
         String commandLine = removeCommandQualifier(ctx.getInput());
 
-        ResolvedCommandNode node = blade.nodeResolver().resolve(
+        ResolvedCommand node = blade.nodeResolver().resolve(
             commandLine
         );
 
@@ -217,7 +214,7 @@ public final class FabricContainer implements Container {
 
         var sender = ctx.getSource();
 
-        ResolvedCommandNode node = blade.nodeResolver().resolve(
+        ResolvedCommand node = blade.nodeResolver().resolve(
             ctx.getInput()
         );
 
@@ -310,7 +307,7 @@ public final class FabricContainer implements Container {
 
     private void sendHelpMessage(@NotNull ServerCommandSource sender,
                                  @NotNull Context context,
-                                 @NotNull List<ResolvedCommandNode> nodes) {
+                                 @NotNull List<ResolvedCommand> nodes) {
         List<BladeCommand> allCommands = new ArrayList<>();
 
         nodes.forEach(node ->

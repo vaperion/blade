@@ -7,7 +7,7 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.container.Container;
-import me.vaperion.blade.impl.node.ResolvedCommandNode;
+import me.vaperion.blade.tree.CommandTreeNode;
 import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("unused")
@@ -19,13 +19,17 @@ public final class BladeBrigadierDelegate<S, C extends Container> {
     private final DelegateExecutor<S, C> executor;
 
     @NotNull
-    public SuggestionProvider<S> suggestionProvider(
-        @NotNull ResolvedCommandNode node) {
-        C container = blade.nodeResolver().findContainer(node);
+    public SuggestionProvider<S> suggestionProvider(@NotNull CommandTreeNode node) {
+        @SuppressWarnings("unchecked")
+        C container = (C) node.container();
 
         if (container == null) {
-            return (ctx, builder) ->
-                builder.buildFuture();
+            return (ctx, builder) -> {
+                blade.logger().warn("Cannot provide suggestions for command `%s`: no container found. This is most likely a bug in Blade, not your plugin. Please report it.",
+                    ctx.getInput());
+
+                return builder.buildFuture();
+            };
         }
 
         return (ctx, builder) -> {
@@ -41,11 +45,17 @@ public final class BladeBrigadierDelegate<S, C extends Container> {
     }
 
     @NotNull
-    public Command<S> executor(@NotNull ResolvedCommandNode node) {
-        C container = blade.nodeResolver().findContainer(node);
+    public Command<S> executor(@NotNull CommandTreeNode node) {
+        @SuppressWarnings("unchecked")
+        C container = (C) node.container();
 
         if (container == null) {
-            return ctx -> 0;
+            return ctx -> {
+                blade.logger().warn("Cannot execute command `%s`: no container found. This is most likely a bug in Blade, not your plugin. Please report it.",
+                    ctx.getInput());
+
+                return 0;
+            };
         }
 
         return ctx -> {
