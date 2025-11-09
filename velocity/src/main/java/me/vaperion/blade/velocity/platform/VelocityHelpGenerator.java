@@ -8,7 +8,6 @@ import me.vaperion.blade.velocity.command.VelocityInternalUsage;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.Style;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -118,10 +117,11 @@ public class VelocityHelpGenerator implements HelpGenerator<Component> {
                 TextComponent.Builder out = text()
                     .append(
                         text(" - ", NamedTextColor.AQUA)
-                    )
-                    .append(
-                        usage.style(Style.style().build())
                     );
+
+                out.append(
+                    text(toRaw(usage), NamedTextColor.YELLOW)
+                );
 
                 if (!result.description().isEmpty()) {
                     out.append(
@@ -132,6 +132,25 @@ public class VelocityHelpGenerator implements HelpGenerator<Component> {
                 return out.build();
             }
         }.generatePage(commands, page);
+    }
+
+    @NotNull
+    private static String toRaw(@NotNull Component component) {
+        StringBuilder sb = new StringBuilder();
+
+        if (component instanceof TextComponent) {
+            TextComponent tc = (TextComponent) component;
+
+            if (!tc.content().isEmpty()) {
+                sb.append(tc.content());
+            }
+        }
+
+        for (Component child : component.children()) {
+            sb.append(toRaw(child));
+        }
+
+        return sb.toString();
     }
 
 }

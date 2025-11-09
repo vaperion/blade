@@ -3,6 +3,7 @@ package me.vaperion.blade.fabric.platform;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.fabric.command.FabricInternalUsage;
+import me.vaperion.blade.fabric.util.TextUtil;
 import me.vaperion.blade.platform.HelpGenerator;
 import me.vaperion.blade.util.command.PaginatedOutput;
 import net.minecraft.text.MutableText;
@@ -117,7 +118,10 @@ public class FabricHelpGenerator implements HelpGenerator<Text> {
                             .formatted(Formatting.AQUA)
                     );
 
-                usage.withoutStyle().forEach(out::append);
+                out.append(
+                    Text.literal(TextUtil.toRaw(usage))
+                        .formatted(Formatting.YELLOW)
+                );
 
                 if (!result.description().isEmpty()) {
                     out.append(
