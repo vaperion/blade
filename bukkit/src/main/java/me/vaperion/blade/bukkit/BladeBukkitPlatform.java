@@ -7,6 +7,8 @@ import me.vaperion.blade.bukkit.argument.OfflinePlayerArgument;
 import me.vaperion.blade.bukkit.argument.PlayerArgument;
 import me.vaperion.blade.bukkit.container.BukkitContainer;
 import me.vaperion.blade.bukkit.platform.BukkitHelpGenerator;
+import me.vaperion.blade.bukkit.platform.BukkitLogger;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.log.BladeLogger;
@@ -72,7 +74,7 @@ public class BladeBukkitPlatform implements BladePlatform<String, Plugin, Server
     }
 
     @Override
-    public @NotNull ContainerCreator<?> containerCreator() {
+    public @NotNull ContainerCreator<?> containerCreator(@NotNull BladeCommand command) {
         return BukkitContainer.CREATOR;
     }
 
@@ -81,6 +83,7 @@ public class BladeBukkitPlatform implements BladePlatform<String, Plugin, Server
                           @NotNull BladeConfiguration<String> configuration) {
         configuration.commandQualifier(plugin.getName().toLowerCase(Locale.ROOT));
         configuration.helpGenerator(new BukkitHelpGenerator());
+        configuration.logger(new BukkitLogger(this));
 
         Binder<String, Plugin, Server> binder = new Binder<>(builder, true);
         binder.bind(Player.class, new PlayerArgument());

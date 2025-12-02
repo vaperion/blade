@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.Blade.Builder.Binder;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.fabric.argument.ServerPlayerEntityArgument;
 import me.vaperion.blade.fabric.container.BladeFabricBrigadier;
@@ -63,7 +64,7 @@ public class BladeFabricPlatform implements BladePlatform<Text, ModContainer, Mi
     }
 
     @Override
-    public @NotNull ContainerCreator<?> containerCreator() {
+    public @NotNull ContainerCreator<?> containerCreator(@NotNull BladeCommand command) {
         return FabricContainer.CREATOR;
     }
 

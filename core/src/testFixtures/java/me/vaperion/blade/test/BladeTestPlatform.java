@@ -1,6 +1,7 @@
 package me.vaperion.blade.test;
 
 import me.vaperion.blade.Blade;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
@@ -27,7 +28,7 @@ public final class BladeTestPlatform implements BladePlatform<String, TestPlugin
     }
 
     @Override
-    public @NotNull ContainerCreator<?> containerCreator() {
+    public @NotNull ContainerCreator<?> containerCreator(@NotNull BladeCommand command) {
         return TestContainer.CREATOR;
     }
 

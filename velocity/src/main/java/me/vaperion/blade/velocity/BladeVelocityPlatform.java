@@ -7,6 +7,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.Blade.Builder.Binder;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
@@ -36,7 +37,7 @@ public final class BladeVelocityPlatform implements BladePlatform<Component, Plu
     }
 
     @Override
-    public @NotNull ContainerCreator<?> containerCreator() {
+    public @NotNull ContainerCreator<?> containerCreator(@NotNull BladeCommand command) {
         return VelocityContainer.CREATOR;
     }
 

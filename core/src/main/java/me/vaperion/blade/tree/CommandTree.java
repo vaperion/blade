@@ -41,8 +41,7 @@ public final class CommandTree {
         if (root.container() == null) {
             try {
                 root.container(
-                    blade.platform().containerCreator()
-                        .create(blade, rootLabel)
+                    blade.platform().containerCreator(command).create(blade, rootLabel)
                 );
             } catch (Throwable t) {
                 blade.logger().error(t, "Failed to create command container for root label: " + rootLabel);

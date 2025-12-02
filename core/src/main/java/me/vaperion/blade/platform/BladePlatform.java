@@ -2,6 +2,7 @@ package me.vaperion.blade.platform;
 
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.Blade.Builder;
+import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.ContainerCreator;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,10 +26,11 @@ public interface BladePlatform<Text, Plugin, Server> {
     /**
      * Gets the container creator.
      *
+     * @param command the Blade command
      * @return the container creator
      */
     @NotNull
-    ContainerCreator<?> containerCreator();
+    ContainerCreator<?> containerCreator(@NotNull BladeCommand command);
 
     /**
      * Configures the platform with the given Blade builder and configuration.

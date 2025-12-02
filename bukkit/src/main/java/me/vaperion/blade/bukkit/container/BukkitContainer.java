@@ -37,6 +37,7 @@ import static me.vaperion.blade.util.BladeHelper.*;
 public final class BukkitContainer extends Command implements Container {
 
     public static final ContainerCreator<BukkitContainer> CREATOR = BukkitContainer::new;
+
     private static final Field COMMAND_MAP, KNOWN_COMMANDS;
     private static final String UNKNOWN_COMMAND_MESSAGE;
 
