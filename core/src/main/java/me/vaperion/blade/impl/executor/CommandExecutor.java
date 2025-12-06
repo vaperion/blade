@@ -14,6 +14,7 @@ import me.vaperion.blade.context.Context;
 import me.vaperion.blade.exception.BladeParseError;
 import me.vaperion.blade.exception.BladeUsageMessage;
 import me.vaperion.blade.exception.internal.BladeFatalError;
+import me.vaperion.blade.exception.internal.BladeImplementationError;
 import me.vaperion.blade.exception.internal.BladeInternalError;
 import me.vaperion.blade.exception.internal.BladeInvocationError;
 import me.vaperion.blade.impl.node.ResolvedCommand;
@@ -51,6 +52,14 @@ public final class CommandExecutor {
             return ErrorMessage.showCommandUsage();
         } catch (BladeFatalError e) {
             return ErrorMessage.lines(e.getMessage());
+        } catch (BladeImplementationError e) {
+            blade.logger().error(e, String.format(
+                "An error occurred while invoking command '%s' for sender %s. This is a bug in your plugin.",
+                context.label(),
+                context.sender().name())
+            );
+
+            return ErrorMessage.lines(ERROR_MESSAGE);
         } catch (BladeInternalError e) {
             blade.logger().error(e, String.format(
                 "An error occurred while invoking command '%s' for sender %s. This is a bug in Blade, not your plugin. Please report it.",
@@ -151,7 +160,7 @@ public final class CommandExecutor {
                     : cmd.argumentProviders().get(argIndex);
 
                 if (provider == null) {
-                    throw new BladeInternalError(String.format(
+                    throw new BladeImplementationError(String.format(
                         "No argument provider found for parameter '%s' of command '%s'!",
                         parameter.name(),
                         context.label()
@@ -328,6 +337,16 @@ public final class CommandExecutor {
                 args
             );
         } catch (Throwable t) {
+            if (t instanceof BladeFatalError ||
+                t instanceof BladeImplementationError ||
+                t instanceof BladeInternalError ||
+                t instanceof BladeInvocationError ||
+                t instanceof BladeParseError ||
+                t instanceof BladeUsageMessage) {
+                // Rethrow internal errors as-is
+                throw (RuntimeException) t;
+            }
+
             throw new BladeInvocationError(
                 String.format(
                     "Command invocation failed (method: %s.%s, args: %s)",

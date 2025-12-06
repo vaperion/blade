@@ -13,6 +13,7 @@ import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.exception.BladeParseError;
 import me.vaperion.blade.exception.internal.BladeFatalError;
+import me.vaperion.blade.exception.internal.BladeImplementationError;
 import me.vaperion.blade.exception.internal.BladeInternalError;
 import me.vaperion.blade.exception.internal.BladeInvocationError;
 import me.vaperion.blade.impl.node.ResolvedCommand;
@@ -151,6 +152,16 @@ public class VelocityContainer implements RawCommand, Container {
 
                     blade.logger().error(e, "Blade failed to invoke the method for command `%s` executed by %s. This is most likely a bug in your plugin.",
                         label, sender.toString());
+                } catch (BladeImplementationError e) {
+                    sender.sendMessage(
+                        text(ERROR_MESSAGE, NamedTextColor.RED)
+                    );
+                    command.usageMessage().ensureGetOrLoad(
+                        () -> new VelocityInternalUsage(command, true)
+                    ).sendTo(context);
+
+                    blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in your plugin.",
+                        sender.toString(), label);
                 } catch (BladeInternalError e) {
                     sender.sendMessage(
                         text(ERROR_MESSAGE, NamedTextColor.RED)
@@ -272,6 +283,13 @@ public class VelocityContainer implements RawCommand, Container {
                 input,
                 SuggestionType.SUBCOMMANDS
             );
+        } catch (BladeImplementationError e) {
+            sender.sendMessage(
+                text(ERROR_MESSAGE, NamedTextColor.RED)
+            );
+
+            blade.logger().error(e, "An error occurred while %s was tab completing the command `%s`. This is a bug in your plugin.",
+                sender.toString(), label);
         } catch (BladeInternalError e) {
             sender.sendMessage(
                 text(ERROR_MESSAGE, NamedTextColor.RED)

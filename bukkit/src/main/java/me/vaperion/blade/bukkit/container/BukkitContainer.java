@@ -11,6 +11,7 @@ import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.exception.BladeParseError;
 import me.vaperion.blade.exception.internal.BladeFatalError;
+import me.vaperion.blade.exception.internal.BladeImplementationError;
 import me.vaperion.blade.exception.internal.BladeInternalError;
 import me.vaperion.blade.exception.internal.BladeInvocationError;
 import me.vaperion.blade.impl.node.ResolvedCommand;
@@ -227,8 +228,19 @@ public final class BukkitContainer extends Command implements Container {
 
                     blade.logger().error(e, "Blade failed to invoke the method for command `%s` executed by %s. This is most likely a bug in your plugin.",
                         label, sender.getName());
+                } catch (BladeImplementationError e) {
+                    sender.sendMessage(ChatColor.RED + ERROR_MESSAGE);
+                    command.usageMessage().ensureGetOrLoad(
+                        () -> new BukkitInternalUsage(command, true)
+                    ).sendTo(context);
+
+                    blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in your plugin.",
+                        sender.getName(), label);
                 } catch (BladeInternalError e) {
                     sender.sendMessage(ChatColor.RED + ERROR_MESSAGE);
+                    command.usageMessage().ensureGetOrLoad(
+                        () -> new BukkitInternalUsage(command, true)
+                    ).sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
                         sender.getName(), label);
@@ -372,6 +384,11 @@ public final class BukkitContainer extends Command implements Container {
                 input,
                 SuggestionType.SUBCOMMANDS
             );
+        } catch (BladeImplementationError e) {
+            sender.sendMessage(ChatColor.RED + ERROR_MESSAGE);
+
+            blade.logger().error(e, "An error occurred while %s was tab completing the command `%s`. This is a bug in your plugin.",
+                sender.getName(), commandLine);
         } catch (BladeInternalError e) {
             sender.sendMessage(ChatColor.RED + ERROR_MESSAGE);
 

@@ -8,7 +8,7 @@ import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.command.parameter.DefinedArgument;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.exception.BladeParseError;
-import me.vaperion.blade.exception.internal.BladeInternalError;
+import me.vaperion.blade.exception.internal.BladeImplementationError;
 import me.vaperion.blade.tokenizer.input.CommandInput;
 import me.vaperion.blade.tokenizer.input.token.impl.LabelToken;
 import me.vaperion.blade.tree.CommandTree;
@@ -212,7 +212,7 @@ public final class CommandSuggestionProvider {
         }
 
         if (provider == null) {
-            throw new BladeInternalError(String.format(
+            throw new BladeImplementationError(String.format(
                 "No argument provider found for argument `%s` of command `%s`",
                 argument.name(),
                 baseCommand
