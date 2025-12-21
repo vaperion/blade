@@ -388,6 +388,12 @@ public final class CommandExecutor {
             }
         }
 
+        if (sender != null && !cmd.senderType().isAssignableFrom(sender.getClass())) {
+            // Sanity check. This shouldn't really happen unless one of the sender providers misbehaved.
+
+            sender = null;
+        }
+
         if (friendlyName == null)
             friendlyName = blade.platform().convertSenderTypeToName(
                 cmd.senderType(),
