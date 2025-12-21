@@ -6,7 +6,6 @@ import lombok.Setter;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.Blade.Builder.Binder;
 import me.vaperion.blade.command.BladeCommand;
-import me.vaperion.blade.command.CommandFeedback;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.fabric.argument.ServerPlayerEntityArgument;
 import me.vaperion.blade.fabric.command.FabricCommandFeedback;
@@ -71,16 +70,11 @@ public class BladeFabricPlatform implements BladePlatform<Text, ModContainer, Mi
     }
 
     @Override
-    public @NotNull CommandFeedback<Text> createCommandFeedback(@NotNull BladeCommand command,
-                                                                boolean isUsage) {
-        return new FabricCommandFeedback(command, isUsage);
-    }
-
-    @Override
     public void configure(Blade.@NotNull Builder<Text, ModContainer, MinecraftServer> builder,
                           @NotNull BladeConfiguration<Text> configuration) {
         configuration.commandQualifier(mod.getMetadata().getName().toLowerCase(Locale.ROOT));
         configuration.helpGenerator(new FabricHelpGenerator());
+        configuration.feedbackCreator(FabricCommandFeedback::new);
 
         Binder<Text, ModContainer, MinecraftServer> binder = new Binder<>(builder, true);
         binder.bind(ServerPlayerEntity.class, new ServerPlayerEntityArgument());

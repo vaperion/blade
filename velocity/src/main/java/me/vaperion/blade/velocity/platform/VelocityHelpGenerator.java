@@ -2,7 +2,7 @@ package me.vaperion.blade.velocity.platform;
 
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Context;
-import me.vaperion.blade.platform.HelpGenerator;
+import me.vaperion.blade.platform.api.HelpGenerator;
 import me.vaperion.blade.util.command.PaginatedOutput;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;

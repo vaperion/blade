@@ -8,7 +8,7 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("unused")
-public final class BladePaperPlatform extends BladeBukkitPlatform {
+public class BladePaperPlatform extends BladeBukkitPlatform {
 
     public BladePaperPlatform(@NotNull Plugin plugin) {
         super(plugin);

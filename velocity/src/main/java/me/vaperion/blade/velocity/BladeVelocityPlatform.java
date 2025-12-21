@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.Blade.Builder.Binder;
 import me.vaperion.blade.command.BladeCommand;
-import me.vaperion.blade.command.CommandFeedback;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
@@ -23,7 +22,7 @@ import java.util.Locale;
 
 @SuppressWarnings("unused")
 @RequiredArgsConstructor
-public final class BladeVelocityPlatform implements BladePlatform<Component, PluginContainer, ProxyServer> {
+public class BladeVelocityPlatform implements BladePlatform<Component, PluginContainer, ProxyServer> {
 
     private final PluginContainer pluginContainer;
     private final ProxyServer proxyServer;
@@ -44,16 +43,11 @@ public final class BladeVelocityPlatform implements BladePlatform<Component, Plu
     }
 
     @Override
-    public @NotNull CommandFeedback<Component> createCommandFeedback(@NotNull BladeCommand command,
-                                                                     boolean isUsage) {
-        return new VelocityCommandFeedback(command, isUsage);
-    }
-
-    @Override
     public void configure(Blade.@NotNull Builder<Component, PluginContainer, ProxyServer> builder,
                           @NotNull BladeConfiguration<Component> configuration) {
         configuration.commandQualifier(pluginContainer.getDescription().getId());
         configuration.helpGenerator(new VelocityHelpGenerator());
+        configuration.feedbackCreator(VelocityCommandFeedback::new);
 
         Binder<Component, PluginContainer, ProxyServer> binder = new Binder<>(builder, true);
         binder.bind(Player.class, new PlayerArgument());

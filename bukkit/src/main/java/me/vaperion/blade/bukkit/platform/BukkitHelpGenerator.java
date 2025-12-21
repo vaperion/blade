@@ -2,7 +2,7 @@ package me.vaperion.blade.bukkit.platform;
 
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Context;
-import me.vaperion.blade.platform.HelpGenerator;
+import me.vaperion.blade.platform.api.HelpGenerator;
 import me.vaperion.blade.util.command.PaginatedOutput;
 import org.bukkit.ChatColor;
 import org.jetbrains.annotations.NotNull;

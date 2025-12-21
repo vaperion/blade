@@ -1,4 +1,4 @@
-package me.vaperion.blade.platform;
+package me.vaperion.blade.platform.api;
 
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Context;

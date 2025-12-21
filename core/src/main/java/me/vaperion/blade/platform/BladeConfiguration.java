@@ -7,6 +7,9 @@ import me.vaperion.blade.annotation.command.Async;
 import me.vaperion.blade.annotation.command.Permission;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.log.BladeLogger;
+import me.vaperion.blade.platform.api.CommandFeedbackCreator;
+import me.vaperion.blade.platform.api.HelpGenerator;
+import me.vaperion.blade.platform.api.TabCompleter;
 import me.vaperion.blade.util.Preconditions;
 
 import java.util.Comparator;
@@ -107,6 +110,11 @@ public final class BladeConfiguration<Text> {
      * The help generator used for generating help messages for commands.
      */
     private HelpGenerator<Text> helpGenerator = new HelpGenerator.Default<>();
+
+    /**
+     * The creator used for generating command feedback messages (usage and help).
+     */
+    private CommandFeedbackCreator<Text> feedbackCreator = new CommandFeedbackCreator.Default<>();
 
     /**
      * The logger Blade uses to log messages, warnings and errors.

@@ -10,7 +10,6 @@ import me.vaperion.blade.bukkit.container.BukkitContainer;
 import me.vaperion.blade.bukkit.platform.BukkitHelpGenerator;
 import me.vaperion.blade.bukkit.platform.BukkitLogger;
 import me.vaperion.blade.command.BladeCommand;
-import me.vaperion.blade.command.CommandFeedback;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.log.BladeLogger;
@@ -81,16 +80,11 @@ public class BladeBukkitPlatform implements BladePlatform<String, Plugin, Server
     }
 
     @Override
-    public @NotNull CommandFeedback<String> createCommandFeedback(@NotNull BladeCommand command,
-                                                                  boolean isUsage) {
-        return new BukkitCommandFeedback(command, isUsage);
-    }
-
-    @Override
     public void configure(Blade.@NotNull Builder<String, Plugin, Server> builder,
                           @NotNull BladeConfiguration<String> configuration) {
         configuration.commandQualifier(plugin.getName().toLowerCase(Locale.ROOT));
         configuration.helpGenerator(new BukkitHelpGenerator());
+        configuration.feedbackCreator(BukkitCommandFeedback::new);
         configuration.logger(new BukkitLogger(this));
 
         Binder<String, Plugin, Server> binder = new Binder<>(builder, true);

@@ -205,7 +205,7 @@ public final class BladeCommand {
     @NotNull
     public CommandFeedback<?> usageMessage() {
         return usageMessage.ensureGetOrLoad(
-            () -> blade.platform().createCommandFeedback(this, true));
+            () -> blade.configuration().feedbackCreator().create(this, true));
     }
 
     /**
@@ -216,7 +216,7 @@ public final class BladeCommand {
     @NotNull
     public CommandFeedback<?> helpMessage() {
         return helpMessage.ensureGetOrLoad(
-            () -> blade.platform().createCommandFeedback(this, false));
+            () -> blade.configuration().feedbackCreator().create(this, false));
     }
 
     /**
