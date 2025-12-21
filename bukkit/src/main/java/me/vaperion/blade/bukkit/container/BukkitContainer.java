@@ -296,12 +296,19 @@ public final class BukkitContainer extends Command implements Container {
                                     @NotNull String[] args) throws IllegalArgumentException {
         String commandLine = mergeLabelWithArgs(label, args);
 
-        return tabComplete(sender, commandLine);
+        return tabComplete(sender, commandLine, true);
     }
 
     @NotNull
     public List<String> tabComplete(@NotNull CommandSender sender,
                                     @NotNull String commandLine) throws IllegalArgumentException {
+        return tabComplete(sender, commandLine, false);
+    }
+
+    @NotNull
+    public List<String> tabComplete(@NotNull CommandSender sender,
+                                    @NotNull String commandLine,
+                                    boolean isBukkitCommand) throws IllegalArgumentException {
         if (!blade.configuration().tabCompleter().isDefault())
             return Collections.emptyList();
 
@@ -373,9 +380,11 @@ public final class BukkitContainer extends Command implements Container {
             CommandInput input = new CommandInput(
                 blade,
                 null,
-                "/" + removeCommandQualifier(commandLine),
-                InputOption.DISALLOW_FLAGS
+                "/" + removeCommandQualifier(commandLine)
             );
+
+            if (!isBukkitCommand)
+                input.options().add(InputOption.DISALLOW_FLAGS);
 
             input.tokenize();
 

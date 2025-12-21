@@ -18,4 +18,11 @@ public enum InputOption {
      * Treat everything else as normal parameters.
      */
     FLAGS_AT_END,
+
+    /**
+     * Enforce strict quote parsing.
+     * <p>
+     * For example, an unclosed quote will result in a parsing error.
+     */
+    STRICT_QUOTE_PARSING,
 }

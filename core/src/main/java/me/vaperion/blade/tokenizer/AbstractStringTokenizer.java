@@ -18,7 +18,6 @@ public abstract class AbstractStringTokenizer {
 
     public static final Predicate<Character> ESCAPE_PRED = c -> c == ESCAPE;
     public static final Predicate<Character> WHITESPACE_PRED = Character::isWhitespace;
-    public static final Predicate<Character> BACKTICK_PRED = c -> c == BACKTICK;
     public static final Predicate<Character> SINGLE_QUOTE_PRED = c -> c == SINGLE_QUOTE;
     public static final Predicate<Character> DOUBLE_QUOTE_PRED = c -> c == DOUBLE_QUOTE;
     public static final Predicate<Character> QUOTE_PRED = SINGLE_QUOTE_PRED.or(DOUBLE_QUOTE_PRED);
@@ -376,43 +375,24 @@ public abstract class AbstractStringTokenizer {
     }
 
     /**
-     * Consumes a backtick-quoted or unquoted string.
-     *
-     * @return the consumed string, or null if there's nothing left or if the quoted string is not terminated
-     */
-    @Nullable
-    public String takeBacktickQuotedString() {
-        return takeString(BACKTICK_PRED);
-    }
-
-    /**
-     * Consumes a single-quoted or unquoted string.
-     *
-     * @return the consumed string, or null if there's nothing left or if the quoted string is not terminated
-     */
-    @Nullable
-    public String takeSingleQuotedString() {
-        return takeString(SINGLE_QUOTE_PRED);
-    }
-
-    /**
-     * Consumes a double-quoted or unquoted string.
-     *
-     * @return the consumed string, or null if there's nothing left or if the quoted string is not terminated
-     */
-    @Nullable
-    public String takeDoubleQuotedString() {
-        return takeString(DOUBLE_QUOTE_PRED);
-    }
-
-    /**
      * Consumes a quoted (single or double) or unquoted string.
      *
      * @return the consumed string, or null if there's nothing left or if the quoted string is not terminated
      */
     @Nullable
     public String takeQuotedString() {
-        return takeString(QUOTE_PRED);
+        return takeQuotedString(true);
+    }
+
+    /**
+     * Consumes a quoted (single or double) or unquoted string.
+     *
+     * @param lenient whether to allow unterminated quoted strings
+     * @return the consumed string, or null if there's nothing left or if the quoted string is not terminated (and `lenient` is false)
+     */
+    @Nullable
+    public String takeQuotedString(boolean lenient) {
+        return takeString(QUOTE_PRED, lenient, lenient);
     }
 
     /**
@@ -423,12 +403,29 @@ public abstract class AbstractStringTokenizer {
      */
     @Nullable
     public String takeString(@NotNull Predicate<Character> predicate) {
-        if (!hasNext()) return null;
+        return takeString(predicate, false, false);
+    }
+
+    /**
+     * Consumes a quoted or unquoted string based on the given quote predicate.
+     *
+     * @param predicate         the predicate to test for quote characters
+     * @param allowEmpty        whether to allow empty strings
+     * @param allowUnterminated whether to allow unterminated quoted strings
+     * @return the consumed string, or null if there's nothing left (and `allowEmpty` is false) or if the quoted string is not terminated (and `allowUnterminated` is false)
+     */
+    @Nullable
+    public String takeString(@NotNull Predicate<Character> predicate,
+                             boolean allowEmpty,
+                             boolean allowUnterminated) {
+        if (!hasNext())
+            return allowEmpty ? "" : null;
+
         char c = peek();
 
         if (predicate.test(c)) {
             skip();
-            return takeUntil(c);
+            return takeUntil(allowUnterminated, c);
         } else {
             return takeUnquotedString();
         }
@@ -455,6 +452,19 @@ public abstract class AbstractStringTokenizer {
      */
     @Nullable
     public String takeUntil(char terminator) {
+        return takeUntil(false, terminator);
+    }
+
+    /**
+     * Consumes all characters until the terminator character is found.
+     * Supports escaping the terminator with a backslash.
+     *
+     * @param allowUnterminated whether to allow unterminated sequences
+     * @param terminator        the terminator character
+     * @return the consumed string, or null if the sequence is not properly terminated (and `allowUnterminated` is false)
+     */
+    @Nullable
+    public String takeUntil(boolean allowUnterminated, char terminator) {
         StringBuilder result = new StringBuilder();
         boolean escaped = false;
 
@@ -481,6 +491,6 @@ public abstract class AbstractStringTokenizer {
             }
         }
 
-        return null;
+        return allowUnterminated ? result.toString() : null;
     }
 }

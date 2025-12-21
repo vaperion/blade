@@ -239,8 +239,8 @@ public final class CommandInput {
                 }
             }
 
-            String value = command != null && command.parseQuotes() || options.contains(InputOption.ASSUME_QUOTED)
-                ? tokenizer.takeQuotedString()
+            String value = command != null && (command.parseQuotes() || options.contains(InputOption.ASSUME_QUOTED))
+                ? tokenizer.takeQuotedString(!options.contains(InputOption.STRICT_QUOTE_PARSING))
                 : tokenizer.takeUnquotedString();
 
             add(new ArgumentToken(value));
