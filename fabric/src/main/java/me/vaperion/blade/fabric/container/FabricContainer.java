@@ -13,13 +13,13 @@ import me.vaperion.blade.exception.internal.BladeFatalError;
 import me.vaperion.blade.exception.internal.BladeImplementationError;
 import me.vaperion.blade.exception.internal.BladeInternalError;
 import me.vaperion.blade.exception.internal.BladeInvocationError;
-import me.vaperion.blade.fabric.command.FabricInternalUsage;
 import me.vaperion.blade.fabric.context.FabricSender;
 import me.vaperion.blade.impl.node.ResolvedCommand;
 import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.tokenizer.TokenizerError;
 import me.vaperion.blade.tokenizer.input.CommandInput;
 import me.vaperion.blade.tokenizer.input.InputOption;
+import me.vaperion.blade.tree.CommandTreeNode;
 import me.vaperion.blade.util.ErrorMessage;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
@@ -29,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static me.vaperion.blade.util.BladeHelper.*;
 
@@ -90,13 +91,14 @@ public final class FabricContainer implements Container {
         if (node.isStub() || node.command() == null) {
             sendHelpMessage(sender,
                 context,
-                node.subcommands());
+                node.subcommands(),
+                true);
             return true;
         }
 
         BladeCommand command = node.command();
 
-        if (!command.hasPermission(context)) {
+        if (!Objects.requireNonNull(command).hasPermission(context)) {
             sender.sendMessage(
                 Text.literal(command.permissionMessage()).formatted(Formatting.RED)
             );
@@ -111,7 +113,7 @@ public final class FabricContainer implements Container {
                         "/" + commandLine
                     );
 
-                    if (!input.mergeTokensToFormWholeLabel(node.matchedLabel())) {
+                    if (!input.mergeTokensToFormWholeLabel(Objects.requireNonNull(node.matchedLabel()))) {
                         // Failed to merge label - can't execute command.
                         throw new BladeFatalError("Failed to parse command input for execution.");
                     }
@@ -129,9 +131,23 @@ public final class FabricContainer implements Container {
                                 break;
 
                             case SHOW_COMMAND_USAGE:
-                                command.usageMessage().ensureGetOrLoad(
-                                    () -> new FabricInternalUsage(command, true)
-                                ).sendTo(context);
+                                command.usageMessage().sendTo(context);
+                                break;
+
+                            case SHOW_COMMAND_HELP:
+                                CommandTreeNode parent = node.treeNode().parent();
+
+                                List<ResolvedCommand> subcommands = node.subcommands();
+
+                                if (parent != null) {
+                                    ResolvedCommand parentCommand = blade.nodeResolver().resolve(parent.label());
+
+                                    if (parentCommand != null) {
+                                        subcommands = parentCommand.subcommands();
+                                    }
+                                }
+
+                                sendHelpMessage(sender, context, subcommands, false);
                                 break;
                         }
                     }
@@ -247,12 +263,12 @@ public final class FabricContainer implements Container {
                     args
                 );
 
-                CommandInput input = node.command().tokenize(
+                CommandInput input = Objects.requireNonNull(node.command()).tokenize(
                     context.sender(),
                     removeCommandQualifier(ctx.getInput())
                 );
 
-                if (!input.mergeTokensToFormWholeLabel(node.matchedLabel())) {
+                if (!input.mergeTokensToFormWholeLabel(Objects.requireNonNull(node.matchedLabel()))) {
                     // Failed to merge label - can't suggest arguments.
                     throw new BladeFatalError("Failed to parse command input for tab completion.");
                 }
@@ -320,13 +336,14 @@ public final class FabricContainer implements Container {
 
     private void sendHelpMessage(@NotNull ServerCommandSource sender,
                                  @NotNull Context context,
-                                 @NotNull List<ResolvedCommand> nodes) {
+                                 @NotNull List<ResolvedCommand> nodes,
+                                 boolean sendUnknownCommandMessage) {
         List<BladeCommand> allCommands = new ArrayList<>();
 
         nodes.forEach(node ->
             node.collectCommandsInto(allCommands));
 
-        if (allCommands.isEmpty()) {
+        if (allCommands.isEmpty() && sendUnknownCommandMessage) {
             sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
             return;
         }

@@ -64,7 +64,6 @@ public class VelocityHelpGenerator implements HelpGenerator<Component> {
                                 "Page %d does not exist, valid range is 1 to %d.", args),
                             NamedTextColor.RED);
                 }
-                ;
 
                 return text(String.format("Unknown error: %s",
                     error), NamedTextColor.RED);

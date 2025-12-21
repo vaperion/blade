@@ -7,6 +7,7 @@ import me.vaperion.blade.Blade;
 import me.vaperion.blade.annotation.command.*;
 import me.vaperion.blade.annotation.parameter.Data;
 import me.vaperion.blade.annotation.parameter.Flag;
+import me.vaperion.blade.annotation.parameter.Greedy;
 import me.vaperion.blade.annotation.parameter.Name;
 import me.vaperion.blade.argument.ArgumentProvider;
 import me.vaperion.blade.command.parameter.DefinedArgument;
@@ -19,9 +20,12 @@ import me.vaperion.blade.tokenizer.input.InputOption;
 import me.vaperion.blade.util.BladeHelper;
 import me.vaperion.blade.util.ClassUtil;
 import me.vaperion.blade.util.LoadedValue;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -39,7 +43,7 @@ public final class BladeCommand {
     private final String[] labels, baseCommands;
     private final String description, mainLabel, customUsage, extraUsageData;
     private final String permission, permissionMessage;
-    private final boolean async, parseQuotes, hidden;
+    private final boolean async, parseQuotes, hidden, helpCommand;
 
     private final boolean hasSenderParameter, usesBladeContext, usesBladeSender;
     private final Class<?> senderType;
@@ -86,6 +90,36 @@ public final class BladeCommand {
         this.permission = permission != null ? permission.value() : "";
         this.permissionMessage = checkNotEmpty(permission != null ? permission.message() : "", blade.configuration().defaultPermissionMessage());
 
+        this.helpCommand = runOrDefault(method.getAnnotation(Help.class), false, $ -> true);
+
+        if (this.helpCommand) {
+            // If this is a help command, ignore the actual method,
+            // as Blade will handle it internally.
+
+            this.parseQuotes = false;
+
+            this.hasSenderParameter = false;
+            this.senderType = null;
+            this.usesBladeContext = false;
+            this.usesBladeSender = false;
+
+            // We add a "fake" greedy string parameter to capture all input for help commands
+            BladeParameter bladeParameter = new DefinedArgument(blade,
+                "query",
+                String.class,
+                Collections.emptyList(),
+                createHelpGreedyArgument());
+
+            ArgumentProvider<?> provider = blade.providerResolver()
+                .resolveRecursively(String.class, Collections.emptyList());
+
+            this.rawProviderList.add(provider);
+            this.parameters.add(bladeParameter);
+            this.argumentProviders.add(provider);
+
+            return;
+        }
+
         this.parseQuotes = method.isAnnotationPresent(Quoted.class);
 
         this.hasSenderParameter = method.getParameterCount() > 0 && method.getParameters()[0].isAnnotationPresent(me.vaperion.blade.annotation.parameter.Sender.class);
@@ -97,15 +131,15 @@ public final class BladeCommand {
 
         int i = 0;
         for (java.lang.reflect.Parameter parameter : method.getParameters()) {
-            if (i == 0 && hasSenderParameter) {
+            if (i == 0 && this.hasSenderParameter) {
                 for (SndProvider<?> provider : blade.senderProviders()) {
                     if (provider.type().isAssignableFrom(this.senderType)) {
-                        senderProviders.add(provider);
+                        this.senderProviders.add(provider);
                     }
                 }
 
                 // Sort providers so exact type match comes first
-                senderProviders.sort((a, b) -> {
+                this.senderProviders.sort((a, b) -> {
                     if (a.type().equals(this.senderType)) return -1;
                     if (b.type().equals(this.senderType)) return 1;
                     return 0;
@@ -151,13 +185,13 @@ public final class BladeCommand {
                     parameter);
             }
 
-            rawProviderList.add(provider);
-            parameters.add(bladeParameter);
+            this.rawProviderList.add(provider);
+            this.parameters.add(bladeParameter);
 
             if (bladeParameter instanceof DefinedFlag)
-                flagProviders.add(provider);
+                this.flagProviders.add(provider);
             else
-                argumentProviders.add(provider);
+                this.argumentProviders.add(provider);
 
             i++;
         }
@@ -221,6 +255,7 @@ public final class BladeCommand {
      * @param options the input options to use during tokenization
      * @return the tokenized command input
      */
+    @SuppressWarnings("unused")
     @NotNull
     public CommandInput tokenize(@NotNull Sender<?> sender,
                                  @NotNull String input,
@@ -254,6 +289,37 @@ public final class BladeCommand {
             .filter(DefinedFlag.class::isInstance)
             .map(DefinedFlag.class::cast)
             .collect(Collectors.toList());
+    }
+
+    @ApiStatus.Internal
+    private AnnotatedElement createHelpGreedyArgument() {
+        return new AnnotatedElement() {
+            @SuppressWarnings("unchecked")
+            @Override
+            public <T extends Annotation> T getAnnotation(@NotNull Class<T> annotationClass) {
+                if (annotationClass == Greedy.class)
+                    return (T) new Greedy() {
+                        @Override
+                        public Class<? extends Annotation> annotationType() {
+                            return Greedy.class;
+                        }
+                    };
+
+                return null;
+            }
+
+            @Override
+            public @NotNull Annotation @NotNull [] getAnnotations() {
+                Greedy greedy = Objects.requireNonNull(getAnnotation(Greedy.class));
+                return new Annotation[]{ greedy };
+            }
+
+            @Override
+            public @NotNull Annotation @NotNull [] getDeclaredAnnotations() {
+                Greedy greedy = Objects.requireNonNull(getAnnotation(Greedy.class));
+                return new Annotation[]{ greedy };
+            }
+        };
     }
 
 }

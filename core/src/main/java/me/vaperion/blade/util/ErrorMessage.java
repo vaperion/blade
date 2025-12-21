@@ -15,6 +15,11 @@ public final class ErrorMessage {
     }
 
     @NotNull
+    public static ErrorMessage showCommandHelp() {
+        return new ErrorMessage(Type.SHOW_COMMAND_HELP, Collections.emptyList());
+    }
+
+    @NotNull
     public static ErrorMessage lines(@NotNull List<String> lines) {
         return new ErrorMessage(Type.LINES, lines);
     }
@@ -45,6 +50,7 @@ public final class ErrorMessage {
 
     public enum Type {
         LINES,
-        SHOW_COMMAND_USAGE
+        SHOW_COMMAND_USAGE,
+        SHOW_COMMAND_HELP
     }
 }

@@ -2,6 +2,7 @@ package me.vaperion.blade.impl.node;
 
 import lombok.Getter;
 import me.vaperion.blade.command.BladeCommand;
+import me.vaperion.blade.tree.CommandTreeNode;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,30 +16,40 @@ public class ResolvedCommand {
 
     @NotNull
     public static ResolvedCommand match(@NotNull String label,
-                                        @NotNull BladeCommand command) {
+                                        @NotNull CommandTreeNode treeNode) {
         return new ResolvedCommand(false, label,
-            command, Collections.emptyList());
+            treeNode, Collections.emptyList());
     }
 
     @NotNull
-    public static ResolvedCommand stub(@NotNull List<ResolvedCommand> nodes) {
+    public static ResolvedCommand stub(@NotNull List<ResolvedCommand> subcommands) {
         return new ResolvedCommand(true, null,
-            null, nodes);
+            null, subcommands);
     }
 
     private final boolean isStub;
     private final String matchedLabel;
-    private final BladeCommand command;
+    private final CommandTreeNode treeNode;
     private final List<ResolvedCommand> subcommands;
 
     public ResolvedCommand(boolean isStub,
                            @Nullable String matchedLabel,
-                           @Nullable BladeCommand command,
+                           @Nullable CommandTreeNode treeNode,
                            @NotNull List<ResolvedCommand> subcommands) {
         this.isStub = isStub;
         this.matchedLabel = matchedLabel;
-        this.command = command;
+        this.treeNode = treeNode;
         this.subcommands = subcommands;
+    }
+
+    /**
+     * Returns the matched command, or {@code null} if no command was matched.
+     *
+     * @return The matched command or {@code null}.
+     */
+    @Nullable
+    public BladeCommand command() {
+        return treeNode != null ? treeNode.command() : null;
     }
 
     /**
@@ -49,7 +60,8 @@ public class ResolvedCommand {
      */
     @NotNull
     public String matchedLabelOr(@NotNull String defaultValue) {
-        return matchedLabel != null ? matchedLabel : defaultValue;
+        String label = matchedLabel();
+        return label != null ? label : defaultValue;
     }
 
     /**
@@ -63,8 +75,8 @@ public class ResolvedCommand {
             for (ResolvedCommand node : subcommands) {
                 node.collectCommandsInto(into);
             }
-        } else if (command != null) {
-            into.add(command);
+        } else if (treeNode != null) {
+            into.add(treeNode.command());
         }
     }
 
@@ -74,9 +86,9 @@ public class ResolvedCommand {
             return "ResolvedCommandNode{STUB, subcommands=" + subcommands.size() + "}";
         }
 
-        String cmdString = command == null
+        String cmdString = treeNode == null
             ? "null"
-            : command.mainLabel();
+            : treeNode.command().mainLabel();
 
         return "ResolvedCommandNode{MATCHED, label='" + matchedLabel + "', command=" + cmdString + "}";
     }

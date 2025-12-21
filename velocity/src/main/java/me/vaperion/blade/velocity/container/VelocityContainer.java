@@ -21,9 +21,9 @@ import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.tokenizer.TokenizerError;
 import me.vaperion.blade.tokenizer.input.CommandInput;
 import me.vaperion.blade.tokenizer.input.InputOption;
+import me.vaperion.blade.tree.CommandTreeNode;
 import me.vaperion.blade.util.ErrorMessage;
 import me.vaperion.blade.velocity.BladeVelocityPlatform;
-import me.vaperion.blade.velocity.command.VelocityInternalUsage;
 import me.vaperion.blade.velocity.context.VelocitySender;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -32,6 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static me.vaperion.blade.util.BladeHelper.*;
 import static net.kyori.adventure.text.Component.text;
@@ -100,13 +101,14 @@ public class VelocityContainer implements RawCommand, Container {
         if (node.isStub() || node.command() == null) {
             sendHelpMessage(sender,
                 context,
-                node.subcommands());
+                node.subcommands(),
+                true);
             return;
         }
 
         BladeCommand command = node.command();
 
-        if (!command.hasPermission(context)) {
+        if (!Objects.requireNonNull(command).hasPermission(context)) {
             sender.sendMessage(text(command.permissionMessage(), NamedTextColor.RED));
             return;
         }
@@ -119,7 +121,7 @@ public class VelocityContainer implements RawCommand, Container {
                         "/" + removeCommandQualifier(commandLine)
                     );
 
-                    if (!input.mergeTokensToFormWholeLabel(node.matchedLabel())) {
+                    if (!input.mergeTokensToFormWholeLabel(Objects.requireNonNull(node.matchedLabel()))) {
                         // Failed to merge label - can't execute command.
                         throw new BladeFatalError("Failed to parse command input for execution.");
                     }
@@ -135,9 +137,23 @@ public class VelocityContainer implements RawCommand, Container {
                                 break;
 
                             case SHOW_COMMAND_USAGE:
-                                command.usageMessage().ensureGetOrLoad(
-                                    () -> new VelocityInternalUsage(command, true)
-                                ).sendTo(context);
+                                command.usageMessage().sendTo(context);
+                                break;
+
+                            case SHOW_COMMAND_HELP:
+                                CommandTreeNode parent = node.treeNode().parent();
+
+                                List<ResolvedCommand> subcommands = node.subcommands();
+
+                                if (parent != null) {
+                                    ResolvedCommand parentCommand = blade.nodeResolver().resolve(parent.label());
+
+                                    if (parentCommand != null) {
+                                        subcommands = parentCommand.subcommands();
+                                    }
+                                }
+
+                                sendHelpMessage(sender, context, subcommands, false);
                                 break;
                         }
                     }
@@ -239,12 +255,12 @@ public class VelocityContainer implements RawCommand, Container {
                     args
                 );
 
-                CommandInput input = node.command().tokenize(
+                CommandInput input = Objects.requireNonNull(node.command()).tokenize(
                     context.sender(),
                     "/" + removeCommandQualifier(commandLine)
                 );
 
-                if (!input.mergeTokensToFormWholeLabel(node.matchedLabel())) {
+                if (!input.mergeTokensToFormWholeLabel(Objects.requireNonNull(node.matchedLabel()))) {
                     // Failed to merge label - can't suggest arguments.
                     throw new BladeFatalError("Failed to parse command input for tab completion.");
                 }
@@ -316,13 +332,14 @@ public class VelocityContainer implements RawCommand, Container {
 
     private void sendHelpMessage(@NotNull CommandSource sender,
                                  @NotNull Context context,
-                                 @NotNull List<ResolvedCommand> nodes) {
+                                 @NotNull List<ResolvedCommand> nodes,
+                                 boolean sendUnknownCommandMessage) {
         List<BladeCommand> allCommands = new ArrayList<>();
 
         nodes.forEach(node ->
             node.collectCommandsInto(allCommands));
 
-        if (allCommands.isEmpty()) {
+        if (allCommands.isEmpty() && sendUnknownCommandMessage) {
             sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
             return;
         }

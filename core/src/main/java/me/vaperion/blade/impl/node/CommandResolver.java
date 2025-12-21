@@ -69,7 +69,7 @@ public final class CommandResolver {
         List<ResolvedCommand> nodes = new ArrayList<>();
 
         if (current.isLeaf()) {
-            nodes.add(ResolvedCommand.match(current.label(), current.command()));
+            nodes.add(ResolvedCommand.match(current.label(), current));
         }
 
         for (CommandTreeNode child : current.children().values()) {
@@ -105,10 +105,10 @@ public final class CommandResolver {
         String currentInput = input;
 
         do {
-            BladeCommand match = rootNode.findCommandByLabel(currentInput);
+            CommandTreeNode match = rootNode.findNodeByLabel(currentInput);
 
-            if (match != null) {
-                for (String label : match.labels()) {
+            if (match != null && match.command() != null) {
+                for (String label : match.command().labels()) {
                     if (label.equalsIgnoreCase(currentInput)) {
                         return ResolvedCommand.match(label, match);
                     }
@@ -127,7 +127,7 @@ public final class CommandResolver {
     private void addNodeRecursively(@NotNull CommandTreeNode node,
                                     @NotNull List<ResolvedCommand> into) {
         if (node.isLeaf()) {
-            into.add(ResolvedCommand.match(node.label(), node.command()));
+            into.add(ResolvedCommand.match(node.label(), node));
         }
 
         for (CommandTreeNode child : node.children().values()) {
@@ -144,8 +144,8 @@ public final class CommandResolver {
      */
     @Nullable
     public <T extends Container> T findContainer(@NotNull ResolvedCommand node) {
-        if (node.command() != null) {
-            T container = findContainer(node.command());
+        if (node.treeNode() != null) {
+            T container = findContainer(node.treeNode().command());
 
             if (container != null)
                 return container;

@@ -36,7 +36,7 @@ public final class CommandTree {
         String rootLabel = labels.get(0);
 
         CommandTreeNode root = roots.computeIfAbsent(rootLabel,
-            CommandTreeNode::new);
+            label -> new CommandTreeNode(null, label));
 
         if (root.container() == null) {
             try {

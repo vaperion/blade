@@ -19,6 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @SuppressWarnings("unused")
 @Getter
 public final class CommandTreeNode {
+
+    private final CommandTreeNode parent;
     private final String label;
     private final Map<String, CommandTreeNode> children = new ConcurrentHashMap<>();
 
@@ -28,7 +30,9 @@ public final class CommandTreeNode {
     @Setter
     private Container container;
 
-    public CommandTreeNode(@NotNull String label) {
+    public CommandTreeNode(@Nullable CommandTreeNode parent,
+                           @NotNull String label) {
+        this.parent = parent;
         this.label = label;
     }
 
@@ -72,7 +76,8 @@ public final class CommandTreeNode {
         }
 
         String childLabel = labels.get(0);
-        CommandTreeNode child = children.computeIfAbsent(childLabel, CommandTreeNode::new);
+        CommandTreeNode child = children.computeIfAbsent(childLabel,
+            label -> new CommandTreeNode(this, label));
 
         if (labels.size() == 1) {
             child.command(command);
@@ -136,6 +141,49 @@ public final class CommandTreeNode {
     @Nullable
     public CommandTreeNode child(@NotNull String label) {
         return children.get(label);
+    }
+
+    /**
+     * Traverses the tree and collects all nodes.
+     *
+     * @return list of all nodes
+     */
+    @NotNull
+    public List<CommandTreeNode> collectNodes() {
+        List<CommandTreeNode> nodes = new ArrayList<>();
+        collectNodesRecursive(nodes);
+        return nodes;
+    }
+
+    private void collectNodesRecursive(@NotNull List<CommandTreeNode> into) {
+        if (command != null) {
+            into.add(this);
+        }
+
+        for (CommandTreeNode child : children.values()) {
+            child.collectNodesRecursive(into);
+        }
+    }
+
+    /**
+     * Finds a command node by its full label.
+     *
+     * @param fullLabel the full command label
+     * @return the command node if found, or null if not found
+     */
+    @Nullable
+    public CommandTreeNode findNodeByLabel(@NotNull String fullLabel) {
+        List<CommandTreeNode> nodes = collectNodes();
+
+        for (CommandTreeNode node : nodes) {
+            for (String label : node.command.labels()) {
+                if (label.equalsIgnoreCase(fullLabel)) {
+                    return node;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

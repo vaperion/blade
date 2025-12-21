@@ -41,6 +41,11 @@ public final class CommandExecutor {
     public ErrorMessage execute(@NotNull Context context,
                                 @NotNull CommandInput input,
                                 @NotNull ResolvedCommand node) {
+        if (node.command() != null && Objects.requireNonNull(node.command()).helpCommand()) {
+            // Help commands are handled by the container
+            return ErrorMessage.showCommandHelp();
+        }
+
         try {
             prepareAndInvoke(context, input, node);
 

@@ -3,7 +3,6 @@ package me.vaperion.blade.bukkit.container;
 import lombok.Getter;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.bukkit.BladeBukkitPlatform;
-import me.vaperion.blade.bukkit.command.BukkitInternalUsage;
 import me.vaperion.blade.bukkit.context.BukkitSender;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.Container;
@@ -20,6 +19,7 @@ import me.vaperion.blade.log.BladeLogger;
 import me.vaperion.blade.tokenizer.TokenizerError;
 import me.vaperion.blade.tokenizer.input.CommandInput;
 import me.vaperion.blade.tokenizer.input.InputOption;
+import me.vaperion.blade.tree.CommandTreeNode;
 import me.vaperion.blade.util.ErrorMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -180,11 +180,12 @@ public final class BukkitContainer extends Command implements Container {
         if (node.isStub() || node.command() == null) {
             sendHelpMessage(sender,
                 context,
-                node.subcommands());
+                node.subcommands(),
+                true);
             return true;
         }
 
-        BladeCommand command = node.command();
+        BladeCommand command = Objects.requireNonNull(node.command());
 
         if (!command.hasPermission(context)) {
             sender.sendMessage(ChatColor.RED + command.permissionMessage());
@@ -199,7 +200,7 @@ public final class BukkitContainer extends Command implements Container {
                         "/" + commandLine
                     );
 
-                    if (!input.mergeTokensToFormWholeLabel(node.matchedLabel())) {
+                    if (!input.mergeTokensToFormWholeLabel(Objects.requireNonNull(node.matchedLabel()))) {
                         // Failed to merge label - can't execute command.
                         throw new BladeFatalError("Failed to parse command input for execution.");
                     }
@@ -215,9 +216,23 @@ public final class BukkitContainer extends Command implements Container {
                                 break;
 
                             case SHOW_COMMAND_USAGE:
-                                command.usageMessage().ensureGetOrLoad(
-                                    () -> new BukkitInternalUsage(command, true)
-                                ).sendTo(context);
+                                command.usageMessage().sendTo(context);
+                                break;
+
+                            case SHOW_COMMAND_HELP:
+                                CommandTreeNode parent = node.treeNode().parent();
+
+                                List<ResolvedCommand> subcommands = node.subcommands();
+
+                                if (parent != null) {
+                                    ResolvedCommand parentCommand = blade.nodeResolver().resolve(parent.label());
+
+                                    if (parentCommand != null) {
+                                        subcommands = parentCommand.subcommands();
+                                    }
+                                }
+
+                                sendHelpMessage(sender, context, subcommands, false);
                                 break;
                         }
                     }
@@ -338,12 +353,12 @@ public final class BukkitContainer extends Command implements Container {
                     args
                 );
 
-                CommandInput input = node.command().tokenize(
+                CommandInput input = Objects.requireNonNull(node.command()).tokenize(
                     context.sender(),
                     "/" + removeCommandQualifier(commandLine)
                 );
 
-                if (!input.mergeTokensToFormWholeLabel(node.matchedLabel())) {
+                if (!input.mergeTokensToFormWholeLabel(Objects.requireNonNull(node.matchedLabel()))) {
                     // Failed to merge label - can't suggest arguments.
                     throw new BladeFatalError("Failed to parse command input for tab completion.");
                 }
@@ -418,13 +433,14 @@ public final class BukkitContainer extends Command implements Container {
 
     private void sendHelpMessage(@NotNull CommandSender sender,
                                  @NotNull Context context,
-                                 @NotNull List<ResolvedCommand> nodes) {
+                                 @NotNull List<ResolvedCommand> nodes,
+                                 boolean sendUnknownCommandMessage) {
         List<BladeCommand> allCommands = new ArrayList<>();
 
         nodes.forEach(node ->
             node.collectCommandsInto(allCommands));
 
-        if (allCommands.isEmpty()) {
+        if (allCommands.isEmpty() && sendUnknownCommandMessage) {
             sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
             return;
         }
