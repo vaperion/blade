@@ -156,9 +156,7 @@ public class VelocityContainer implements RawCommand, Container {
                     sender.sendMessage(
                         text(ERROR_MESSAGE, NamedTextColor.RED)
                     );
-                    command.usageMessage().ensureGetOrLoad(
-                        () -> new VelocityInternalUsage(command, true)
-                    ).sendTo(context);
+                    command.usageMessage().sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in your plugin.",
                         sender.toString(), label);
@@ -166,9 +164,7 @@ public class VelocityContainer implements RawCommand, Container {
                     sender.sendMessage(
                         text(ERROR_MESSAGE, NamedTextColor.RED)
                     );
-                    command.usageMessage().ensureGetOrLoad(
-                        () -> new VelocityInternalUsage(command, true)
-                    ).sendTo(context);
+                    command.usageMessage().sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
                         sender.toString(), label);

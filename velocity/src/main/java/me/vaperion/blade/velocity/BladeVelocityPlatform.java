@@ -8,10 +8,12 @@ import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.Blade.Builder.Binder;
 import me.vaperion.blade.command.BladeCommand;
+import me.vaperion.blade.command.CommandFeedback;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
 import me.vaperion.blade.velocity.argument.PlayerArgument;
+import me.vaperion.blade.velocity.command.VelocityCommandFeedback;
 import me.vaperion.blade.velocity.container.VelocityContainer;
 import me.vaperion.blade.velocity.platform.VelocityHelpGenerator;
 import net.kyori.adventure.text.Component;
@@ -39,6 +41,12 @@ public final class BladeVelocityPlatform implements BladePlatform<Component, Plu
     @Override
     public @NotNull ContainerCreator<?> containerCreator(@NotNull BladeCommand command) {
         return VelocityContainer.CREATOR;
+    }
+
+    @Override
+    public @NotNull CommandFeedback<Component> createCommandFeedback(@NotNull BladeCommand command,
+                                                                     boolean isUsage) {
+        return new VelocityCommandFeedback(command, isUsage);
     }
 
     @Override

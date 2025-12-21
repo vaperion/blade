@@ -5,10 +5,12 @@ import me.vaperion.blade.Blade;
 import me.vaperion.blade.Blade.Builder.Binder;
 import me.vaperion.blade.bukkit.argument.OfflinePlayerArgument;
 import me.vaperion.blade.bukkit.argument.PlayerArgument;
+import me.vaperion.blade.bukkit.command.BukkitCommandFeedback;
 import me.vaperion.blade.bukkit.container.BukkitContainer;
 import me.vaperion.blade.bukkit.platform.BukkitHelpGenerator;
 import me.vaperion.blade.bukkit.platform.BukkitLogger;
 import me.vaperion.blade.command.BladeCommand;
+import me.vaperion.blade.command.CommandFeedback;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.log.BladeLogger;
@@ -76,6 +78,12 @@ public class BladeBukkitPlatform implements BladePlatform<String, Plugin, Server
     @Override
     public @NotNull ContainerCreator<?> containerCreator(@NotNull BladeCommand command) {
         return BukkitContainer.CREATOR;
+    }
+
+    @Override
+    public @NotNull CommandFeedback<String> createCommandFeedback(@NotNull BladeCommand command,
+                                                                  boolean isUsage) {
+        return new BukkitCommandFeedback(command, isUsage);
     }
 
     @Override

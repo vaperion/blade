@@ -2,7 +2,9 @@ package me.vaperion.blade.test;
 
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.command.BladeCommand;
+import me.vaperion.blade.command.CommandFeedback;
 import me.vaperion.blade.container.ContainerCreator;
+import me.vaperion.blade.context.Context;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
 import me.vaperion.blade.test.container.TestContainer;
@@ -30,6 +32,22 @@ public final class BladeTestPlatform implements BladePlatform<String, TestPlugin
     @Override
     public @NotNull ContainerCreator<?> containerCreator(@NotNull BladeCommand command) {
         return TestContainer.CREATOR;
+    }
+
+    @Override
+    public @NotNull CommandFeedback<String> createCommandFeedback(@NotNull BladeCommand command,
+                                                                  boolean isUsage) {
+        return new CommandFeedback<String>() {
+            @Override
+            public @NotNull String message() {
+                return "";
+            }
+
+            @Override
+            public void sendTo(@NotNull Context context) {
+                // No-op
+            }
+        };
     }
 
     @Override

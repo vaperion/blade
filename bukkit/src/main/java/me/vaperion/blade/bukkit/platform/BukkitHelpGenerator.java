@@ -1,6 +1,5 @@
 package me.vaperion.blade.bukkit.platform;
 
-import me.vaperion.blade.bukkit.command.BukkitInternalUsage;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.platform.HelpGenerator;
@@ -35,15 +34,8 @@ public class BukkitHelpGenerator implements HelpGenerator<String> {
             }
         }
 
-        // Remove hidden commands & filter based on the input
         String filterInput = mergeLabelWithArgs(context.label(), args);
-
-        commands = commands.stream()
-            .distinct()
-            .filter(c -> c.anyLabelStartsWith(filterInput))
-            .filter(c -> !c.hidden())
-            .sorted(context.blade().configuration().helpSorter())
-            .collect(Collectors.toList());
+        commands = filterCommands(context, commands, filterInput);
 
         int originalCount = commands.size();
 
@@ -79,9 +71,7 @@ public class BukkitHelpGenerator implements HelpGenerator<String> {
 
             @Override
             public @NotNull String line(BladeCommand result, int index) {
-                String help = (String) result.helpMessage()
-                    .ensureGetOrLoad(() -> new BukkitInternalUsage(result, false))
-                    .message();
+                String help = (String) result.helpMessage().message();
 
                 return ChatColor.AQUA + " - " + ChatColor.YELLOW + ChatColor.stripColor(help) +
                     (result.description().isEmpty() ? "" : (" - " + ChatColor.GRAY + result.description()));

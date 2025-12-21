@@ -1,5 +1,6 @@
 package me.vaperion.blade.command;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.ToString;
 import me.vaperion.blade.Blade;
@@ -51,8 +52,10 @@ public final class BladeCommand {
 
     private final List<SndProvider<?>> senderProviders = new ArrayList<>();
 
-    private final LoadedValue<InternalUsage<?>> usageMessage = new LoadedValue<>(),
-        helpMessage = new LoadedValue<>();
+    @Getter(AccessLevel.NONE)
+    private final LoadedValue<CommandFeedback<?>> usageMessage = new LoadedValue<>();
+    @Getter(AccessLevel.NONE)
+    private final LoadedValue<CommandFeedback<?>> helpMessage = new LoadedValue<>();
 
     public BladeCommand(@NotNull Blade blade,
                         @Nullable Object instance,
@@ -158,6 +161,28 @@ public final class BladeCommand {
 
             i++;
         }
+    }
+
+    /**
+     * Gets or loads the usage message for this command.
+     *
+     * @return the usage message
+     */
+    @NotNull
+    public CommandFeedback<?> usageMessage() {
+        return usageMessage.ensureGetOrLoad(
+            () -> blade.platform().createCommandFeedback(this, true));
+    }
+
+    /**
+     * Gets or loads the help message for this command.
+     *
+     * @return the help message
+     */
+    @NotNull
+    public CommandFeedback<?> helpMessage() {
+        return helpMessage.ensureGetOrLoad(
+            () -> blade.platform().createCommandFeedback(this, false));
     }
 
     /**

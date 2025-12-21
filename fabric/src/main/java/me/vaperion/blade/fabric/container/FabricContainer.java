@@ -150,9 +150,7 @@ public final class FabricContainer implements Container {
                     sender.sendMessage(
                         Text.literal(ERROR_MESSAGE).formatted(Formatting.RED)
                     );
-                    command.usageMessage().ensureGetOrLoad(
-                        () -> new FabricInternalUsage(command, true)
-                    ).sendTo(context);
+                    command.usageMessage().sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in your plugin.",
                         sender.getName(), label);
@@ -160,18 +158,14 @@ public final class FabricContainer implements Container {
                     sender.sendMessage(
                         Text.literal(ERROR_MESSAGE).formatted(Formatting.RED)
                     );
-                    command.usageMessage().ensureGetOrLoad(
-                        () -> new FabricInternalUsage(command, true)
-                    ).sendTo(context);
+                    command.usageMessage().sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
                         sender.getName(), label);
                 } catch (TokenizerError error) {
                     sender.sendMessage(Text.literal(error.formatForChat())
                         .formatted(Formatting.RED));
-                    command.usageMessage().ensureGetOrLoad(
-                        () -> new FabricInternalUsage(command, true)
-                    ).sendTo(context);
+                    command.usageMessage().sendTo(context);
 
                     if (!error.type().isSilent()) {
                         blade.logger().error(

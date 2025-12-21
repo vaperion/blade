@@ -2,7 +2,7 @@ package me.vaperion.blade.fabric.command;
 
 import me.vaperion.blade.annotation.parameter.Flag;
 import me.vaperion.blade.command.BladeCommand;
-import me.vaperion.blade.command.InternalUsage;
+import me.vaperion.blade.command.CommandFeedback;
 import me.vaperion.blade.command.parameter.DefinedArgument;
 import me.vaperion.blade.command.parameter.DefinedFlag;
 import me.vaperion.blade.context.Context;
@@ -12,20 +12,15 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 
-public final class FabricInternalUsage implements InternalUsage<Text> {
+public final class FabricCommandFeedback implements CommandFeedback<Text> {
 
     private final Text component;
-    private String toString;
 
-    public FabricInternalUsage(BladeCommand command) {
-        this(command, true);
-    }
-
-    public FabricInternalUsage(BladeCommand command, boolean addPrefix) {
+    public FabricCommandFeedback(BladeCommand command, boolean isUsage) {
         MutableText builder = Text.empty();
 
         builder.append(
-            Text.literal((addPrefix ? "Usage: " : "") + "/")
+            Text.literal((isUsage ? "Usage: " : "") + "/")
                 .styled(style -> style
                     .withColor(Formatting.RED))
         );
@@ -80,7 +75,7 @@ public final class FabricInternalUsage implements InternalUsage<Text> {
             builder.append(Text.literal(" "));
 
             builder.append(
-                Text.literal(arg.isOptional() ? "(" : "<")
+                Text.literal(arg.isOptional() ? "[" : "<")
                     .formatted(Formatting.RED)
             );
 
@@ -96,7 +91,7 @@ public final class FabricInternalUsage implements InternalUsage<Text> {
             }
 
             builder.append(
-                Text.literal(arg.isOptional() ? ")" : ">")
+                Text.literal(arg.isOptional() ? "]" : ">")
                     .formatted(Formatting.RED)
             );
         }

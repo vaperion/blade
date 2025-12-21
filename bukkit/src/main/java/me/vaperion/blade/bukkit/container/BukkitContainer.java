@@ -230,25 +230,19 @@ public final class BukkitContainer extends Command implements Container {
                         label, sender.getName());
                 } catch (BladeImplementationError e) {
                     sender.sendMessage(ChatColor.RED + ERROR_MESSAGE);
-                    command.usageMessage().ensureGetOrLoad(
-                        () -> new BukkitInternalUsage(command, true)
-                    ).sendTo(context);
+                    command.usageMessage().sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in your plugin.",
                         sender.getName(), label);
                 } catch (BladeInternalError e) {
                     sender.sendMessage(ChatColor.RED + ERROR_MESSAGE);
-                    command.usageMessage().ensureGetOrLoad(
-                        () -> new BukkitInternalUsage(command, true)
-                    ).sendTo(context);
+                    command.usageMessage().sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
                         sender.getName(), label);
                 } catch (TokenizerError error) {
                     sender.sendMessage(ChatColor.RED + error.formatForChat());
-                    command.usageMessage().ensureGetOrLoad(
-                        () -> new BukkitInternalUsage(command, true)
-                    ).sendTo(context);
+                    command.usageMessage().sendTo(context);
 
                     if (!error.type().isSilent()) {
                         blade.logger().error(

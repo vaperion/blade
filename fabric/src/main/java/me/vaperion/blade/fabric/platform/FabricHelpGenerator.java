@@ -2,7 +2,6 @@ package me.vaperion.blade.fabric.platform;
 
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Context;
-import me.vaperion.blade.fabric.command.FabricInternalUsage;
 import me.vaperion.blade.fabric.util.TextUtil;
 import me.vaperion.blade.platform.HelpGenerator;
 import me.vaperion.blade.util.command.PaginatedOutput;
@@ -36,15 +35,8 @@ public class FabricHelpGenerator implements HelpGenerator<Text> {
             }
         }
 
-        // Remove hidden commands & filter based on the input
         String filterInput = mergeLabelWithArgs(context.label(), args);
-
-        commands = commands.stream()
-            .distinct()
-            .filter(c -> c.anyLabelStartsWith(filterInput))
-            .filter(c -> !c.hidden())
-            .sorted(context.blade().configuration().helpSorter())
-            .collect(Collectors.toList());
+        commands = filterCommands(context, commands, filterInput);
 
         int originalCount = commands.size();
 
@@ -108,9 +100,7 @@ public class FabricHelpGenerator implements HelpGenerator<Text> {
 
             @Override
             public @NotNull Text line(BladeCommand result, int index) {
-                Text usage = (Text) result.helpMessage().ensureGetOrLoad(
-                        () -> new FabricInternalUsage(result, false))
-                    .message();
+                Text usage = (Text) result.helpMessage().message();
 
                 MutableText out = Text.empty()
                     .append(

@@ -4,7 +4,6 @@ import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.platform.HelpGenerator;
 import me.vaperion.blade.util.command.PaginatedOutput;
-import me.vaperion.blade.velocity.command.VelocityInternalUsage;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -37,15 +36,8 @@ public class VelocityHelpGenerator implements HelpGenerator<Component> {
             }
         }
 
-        // Remove hidden commands & filter based on the input
         String filterInput = mergeLabelWithArgs(context.label(), args);
-
-        commands = commands.stream()
-            .distinct()
-            .filter(c -> c.anyLabelStartsWith(filterInput))
-            .filter(c -> !c.hidden())
-            .sorted(context.blade().configuration().helpSorter())
-            .collect(Collectors.toList());
+        commands = filterCommands(context, commands, filterInput);
 
         int originalCount = commands.size();
 
@@ -110,9 +102,7 @@ public class VelocityHelpGenerator implements HelpGenerator<Component> {
 
             @Override
             public @NotNull Component line(BladeCommand result, int index) {
-                Component usage = (Component) result.helpMessage().ensureGetOrLoad(
-                        () -> new VelocityInternalUsage(result, false))
-                    .message();
+                Component usage = (Component) result.helpMessage().message();
 
                 TextComponent.Builder out = text()
                     .append(

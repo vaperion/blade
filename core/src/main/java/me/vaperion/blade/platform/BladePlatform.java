@@ -3,6 +3,7 @@ package me.vaperion.blade.platform;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.Blade.Builder;
 import me.vaperion.blade.command.BladeCommand;
+import me.vaperion.blade.command.CommandFeedback;
 import me.vaperion.blade.container.ContainerCreator;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,6 +32,16 @@ public interface BladePlatform<Text, Plugin, Server> {
      */
     @NotNull
     ContainerCreator<?> containerCreator(@NotNull BladeCommand command);
+
+    /**
+     * Creates the feedback message for the given command.
+     *
+     * @param command the Blade command
+     * @param isUsage whether this is usage feedback (adds "Usage: " prefix)
+     * @return the feedback message
+     */
+    @NotNull
+    CommandFeedback<Text> createCommandFeedback(@NotNull BladeCommand command, boolean isUsage);
 
     /**
      * Configures the platform with the given Blade builder and configuration.
