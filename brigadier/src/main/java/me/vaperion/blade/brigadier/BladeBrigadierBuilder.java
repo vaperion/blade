@@ -165,7 +165,7 @@ public final class BladeBrigadierBuilder<T, S> {
 
         if (clazz == String.class) {
             if (parameter.isGreedy()) type = StringArgumentType.greedyString();
-            else if (command.parseQuotes()) type = StringArgumentType.string();
+            else if (command.parseQuotes() || parameter.isQuoted()) type = StringArgumentType.string();
             else type = StringArgumentType.word();
         }
 

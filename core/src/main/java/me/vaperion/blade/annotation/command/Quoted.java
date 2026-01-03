@@ -12,8 +12,10 @@ import java.lang.annotation.Target;
  * <p>
  * For example, {@code /test "hello world"} will be parsed as a single argument {@code hello world}
  * instead of two separate arguments {@code "hello} and {@code world"}.
+ * <p>
+ * The annotation can also be applied to a parameter to enable quote parsing only for that specific parameter.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
+@Target({ ElementType.METHOD, ElementType.PARAMETER })
 public @interface Quoted {
 }

@@ -1,5 +1,6 @@
 package me.vaperion.blade.argument;
 
+import me.vaperion.blade.annotation.command.Quoted;
 import me.vaperion.blade.annotation.parameter.Name;
 import me.vaperion.blade.annotation.parameter.Opt;
 import me.vaperion.blade.context.Context;
@@ -67,5 +68,17 @@ public interface ArgumentProvider<T> {
     @Nullable
     default String defaultArgName(@NotNull AnnotatedElement element) {
         return null;
+    }
+
+    /**
+     * Whether this provider wants to always parse quotes from the input.
+     * <p>
+     * If true, the input argument will have quotes parsed even if the command method or
+     * parameter is not annotated with {@link Quoted}.
+     *
+     * @return true if quotes should always be parsed, false otherwise
+     */
+    default boolean alwaysParseQuotes() {
+        return false;
     }
 }

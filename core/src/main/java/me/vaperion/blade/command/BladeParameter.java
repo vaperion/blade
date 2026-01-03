@@ -1,8 +1,10 @@
 package me.vaperion.blade.command;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.Blade;
+import me.vaperion.blade.annotation.command.Quoted;
 import me.vaperion.blade.annotation.parameter.Greedy;
 import me.vaperion.blade.annotation.parameter.Opt;
 import me.vaperion.blade.annotation.parameter.Provider;
@@ -36,6 +38,9 @@ public class BladeParameter {
 
     @Nullable
     protected final AnnotatedElement element;
+
+    @Getter(AccessLevel.NONE)
+    protected boolean alwaysQuoted = false;
 
     /**
      * Returns all annotations present on this parameter.
@@ -95,6 +100,22 @@ public class BladeParameter {
      */
     public boolean hasRange() {
         return range() != null;
+    }
+
+    /**
+     * Returns whether this parameter has a quoted annotation.
+     *
+     * @return true if the parameter has a quoted annotation
+     */
+    public boolean isQuoted() {
+        if (alwaysQuoted)
+            return true;
+
+        if (element != null) {
+            return element.isAnnotationPresent(Quoted.class);
+        }
+
+        return false;
     }
 
     /**

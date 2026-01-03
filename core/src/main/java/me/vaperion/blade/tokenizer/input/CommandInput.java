@@ -2,6 +2,7 @@ package me.vaperion.blade.tokenizer.input;
 
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.command.BladeCommand;
+import me.vaperion.blade.command.BladeParameter;
 import me.vaperion.blade.command.parameter.DefinedFlag;
 import me.vaperion.blade.tokenizer.StringTokenizer;
 import me.vaperion.blade.tokenizer.TokenizerError;
@@ -239,12 +240,32 @@ public final class CommandInput {
                 }
             }
 
-            String value = command != null && (command.parseQuotes() || options.contains(InputOption.ASSUME_QUOTED))
+            boolean parseQuoted = command != null && command.parseQuotes() ||
+                options.contains(InputOption.ASSUME_QUOTED) ||
+                nextParameterIsQuoted();
+
+            String value = parseQuoted
                 ? tokenizer.takeQuotedString(!options.contains(InputOption.STRICT_QUOTE_PARSING))
                 : tokenizer.takeUnquotedString();
 
             add(new ArgumentToken(value));
         }
+    }
+
+    /**
+     * Check if the next parameter to be parsed is defined as quoted.
+     *
+     * @return true if the next parameter is quoted, false otherwise
+     */
+    private boolean nextParameterIsQuoted() {
+        int argIndex = arguments().size();
+
+        if (command == null || command.parameters().size() <= argIndex) {
+            return false;
+        }
+
+        BladeParameter parameter = command.parameters().get(argIndex);
+        return parameter.isQuoted();
     }
 
     /**

@@ -155,6 +155,8 @@ public final class BladeCommand {
                 .resolveRecursively(type,
                     Arrays.asList(parameter.getAnnotations()));
 
+            this.rawProviderList.add(provider);
+
             String parameterName = parameter.isAnnotationPresent(Name.class)
                 ? mustGetAnnotation(parameter, Name.class).value()
                 : provider != null && provider.defaultArgName(parameter) != null
@@ -165,33 +167,31 @@ public final class BladeCommand {
                 ? mustGetAnnotation(parameter, Data.class).value()
                 : null;
 
-            BladeParameter bladeParameter;
-
             if (parameter.isAnnotationPresent(Flag.class)) {
                 Flag flag = mustGetAnnotation(parameter, Flag.class);
 
-                bladeParameter = new DefinedFlag(blade,
+                DefinedFlag definedFlag = new DefinedFlag(blade,
                     parameterName,
                     type,
                     parameter,
                     flag);
+
+                this.flagProviders.add(provider);
+                this.parameters.add(definedFlag);
             } else {
-                bladeParameter = new DefinedArgument(blade,
+                DefinedArgument definedArgument = new DefinedArgument(blade,
                     parameterName,
                     type,
                     parameterData == null
                         ? Collections.emptyList()
                         : Arrays.asList(parameterData),
                     parameter);
-            }
 
-            this.rawProviderList.add(provider);
-            this.parameters.add(bladeParameter);
+                definedArgument.alwaysQuoted = provider != null && provider.alwaysParseQuotes();
 
-            if (bladeParameter instanceof DefinedFlag)
-                this.flagProviders.add(provider);
-            else
                 this.argumentProviders.add(provider);
+                this.parameters.add(definedArgument);
+            }
 
             i++;
         }
