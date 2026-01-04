@@ -1,6 +1,5 @@
 package me.vaperion.blade.impl.executor;
 
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.annotation.parameter.Opt;
@@ -24,6 +23,7 @@ import me.vaperion.blade.tokenizer.input.token.flag.FlagValue;
 import me.vaperion.blade.tokenizer.input.token.impl.ArgumentToken;
 import me.vaperion.blade.tokenizer.input.token.impl.FlagToken;
 import me.vaperion.blade.util.ErrorMessage;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -119,8 +119,8 @@ public final class CommandExecutor {
 
         for (BladeParameter parameter : cmd.parameters()) {
             if (parameter instanceof DefinedArgument) {
-                ValueContainer value;
-                boolean treatErrorAsEmpty = false;
+                String value;
+                Opt optional = null;
                 boolean wasProvided = false;
 
                 if (argumentTokens.size() <= argIndex) {
@@ -130,8 +130,7 @@ public final class CommandExecutor {
                         // Required parameter missing
                         throw new BladeUsageMessage();
                     } else {
-                        treatErrorAsEmpty = Objects.requireNonNull(parameter.optional())
-                            .treatErrorAsEmpty();
+                        optional = parameter.optional();
                     }
 
                     value = getDefaultValue(parameter);
@@ -146,15 +145,15 @@ public final class CommandExecutor {
                             ));
                         }
 
-                        value = new ValueContainer(argumentTokens
+                        value = argumentTokens
                             .subList(argIndex, argumentTokens.size())
                             .stream()
                             .map(ArgumentToken::value)
-                            .collect(Collectors.joining(" ")));
+                            .collect(Collectors.joining(" "));
 
                         skipLengthEnforcement = true;
                     } else {
-                        value = new ValueContainer(argumentTokens.get(argIndex).value());
+                        value = argumentTokens.get(argIndex).value();
                     }
 
                     wasProvided = true;
@@ -174,8 +173,9 @@ public final class CommandExecutor {
 
                 Object methodArg;
 
-                if (value == null) {
-                    // Sanity check the type here, but it should always be non-primitive...
+                boolean isSenderType = optional != null && optional.value() == Opt.Type.SENDER;
+
+                if (value == null && !isSenderType && !provider.handlesNullInputArguments()) {
                     if (parameter.type().isPrimitive()) {
                         throw new BladeInternalError(String.format(
                             "Parameter '%s' of command '%s' is primitive but default value is null!",
@@ -188,7 +188,7 @@ public final class CommandExecutor {
                 } else {
                     InputArgument inputArg = new InputArgument(
                         parameter,
-                        value.string,
+                        value,
                         wasProvided
                             ? InputArgument.Status.PRESENT
                             : InputArgument.Status.NOT_PRESENT
@@ -197,16 +197,13 @@ public final class CommandExecutor {
                     inputArg.data().addAll(parameter.data());
                     inputArg.addAnnotations(parameter.annotations());
 
-                    if (value.string == null && !provider.handlesNullInputArguments()) {
-                        methodArg = null;
-                    } else {
-                        methodArg = adaptArgument(
-                            provider,
-                            context,
-                            inputArg,
-                            treatErrorAsEmpty
-                        );
-                    }
+                    methodArg = provideArgument(
+                        provider,
+                        context,
+                        inputArg,
+                        optional != null && optional.treatErrorAsEmpty(),
+                        optional != null
+                    );
                 }
 
                 methodArgs.add(methodArg);
@@ -215,28 +212,27 @@ public final class CommandExecutor {
             } else if (parameter instanceof DefinedFlag) {
                 DefinedFlag flag = (DefinedFlag) parameter;
 
-                ValueContainer value;
-                boolean treatErrorAsEmpty = false;
+                String value;
+                Opt optional = null;
                 boolean wasProvided = false;
 
                 if (mergedFlags.containsKey(flag.getChar())) {
                     FlagValue flagValue = mergedFlags.get(flag.getChar());
 
-                    value = new ValueContainer(flagValue.value());
+                    value = flagValue.value();
                     wasProvided = true;
                 } else if (!flag.isBooleanFlag()) {
                     if (!parameter.isOptional()) {
                         // Required flag missing
                         throw new BladeUsageMessage();
                     } else {
-                        treatErrorAsEmpty = Objects.requireNonNull(parameter.optional())
-                            .treatErrorAsEmpty();
+                        optional = parameter.optional();
                     }
 
                     value = getDefaultValue(parameter);
                 } else {
                     // Boolean flags are always optional and default to false if not provided
-                    value = new ValueContainer("false");
+                    value = "false";
                 }
 
                 ArgumentProvider<?> provider = flag.hasCustomParser()
@@ -253,8 +249,9 @@ public final class CommandExecutor {
 
                 Object methodArg;
 
-                if (value == null) {
-                    // Sanity check the type here, but it should always be non-primitive...
+                boolean isSenderType = optional != null && optional.value() == Opt.Type.SENDER;
+
+                if (value == null && !isSenderType && !provider.handlesNullInputArguments()) {
                     if (parameter.type().isPrimitive()) {
                         throw new BladeInternalError(String.format(
                             "Parameter '%s' of command '%s' is primitive but default value is null!",
@@ -267,7 +264,7 @@ public final class CommandExecutor {
                 } else {
                     InputArgument inputArg = new InputArgument(
                         parameter,
-                        value.string,
+                        value,
                         wasProvided
                             ? InputArgument.Status.PRESENT
                             : InputArgument.Status.NOT_PRESENT
@@ -276,16 +273,13 @@ public final class CommandExecutor {
                     inputArg.data().addAll(parameter.data());
                     inputArg.addAnnotations(parameter.annotations());
 
-                    if (value.string == null && !provider.handlesNullInputArguments()) {
-                        methodArg = null;
-                    } else {
-                        methodArg = adaptArgument(
-                            provider,
-                            context,
-                            inputArg,
-                            treatErrorAsEmpty
-                        );
-                    }
+                    methodArg = provideArgument(
+                        provider,
+                        context,
+                        inputArg,
+                        optional != null && optional.treatErrorAsEmpty(),
+                        optional != null
+                    );
                 }
 
                 methodArgs.add(methodArg);
@@ -363,9 +357,10 @@ public final class CommandExecutor {
         }
     }
 
+    @ApiStatus.Internal
     @NotNull
-    private Object adaptSender(@NotNull BladeCommand cmd,
-                               @NotNull Context context) {
+    public Object adaptSender(@NotNull BladeCommand cmd,
+                              @NotNull Context context) {
         Object sender = null;
         String friendlyName = null;
 
@@ -415,35 +410,61 @@ public final class CommandExecutor {
         return sender;
     }
 
+    @ApiStatus.Internal
     @Nullable
-    private Object adaptArgument(@NotNull ArgumentProvider<?> provider,
-                                 @NotNull Context context,
-                                 @NotNull InputArgument inputArg,
-                                 boolean tryRecover) {
+    public Object provideArgument(@NotNull ArgumentProvider<?> provider,
+                                  @NotNull Context context,
+                                  @NotNull InputArgument inputArg,
+                                  boolean ignoreErrors,
+                                  boolean tryRecover) {
+        boolean retry = false;
+        Throwable throwable = null;
+
         try {
             return provider.provide(context, inputArg);
         } catch (BladeParseError e) {
-            if (e.isRecoverable() && tryRecover) {
-                inputArg.value(
-                    getOptionalEmptyValue(inputArg.parameter().type())
-                );
-
-                inputArg.status(InputArgument.Status.NOT_PRESENT);
-
-                return adaptArgument(
-                    provider,
-                    context,
-                    inputArg,
-                    false
-                );
+            if ((ignoreErrors || e.isRecoverable()) && tryRecover) {
+                retry = true;
+            } else {
+                // Rethrow this parse error as-is so it can be handled by the caller
+                throw e;
             }
-
-            throw e;
+        } catch (Throwable t) {
+            if (ignoreErrors) {
+                retry = true;
+            } else {
+                // Wrap and rethrow other exceptions as invocation errors
+                throwable = t;
+            }
         }
+
+        if (retry) {
+            inputArg.value(
+                getOptionalEmptyValue(inputArg.parameter().type())
+            );
+
+            inputArg.status(InputArgument.Status.NOT_PRESENT);
+
+            return provideArgument(
+                provider,
+                context,
+                inputArg,
+                false,
+                false
+            );
+        }
+
+        throw new BladeInvocationError(String.format(
+            "Failed to provide argument for parameter '%s' of type '%s' using provider '%s'.",
+            inputArg.parameter().name(),
+            inputArg.parameter().type().getName(),
+            provider.getClass().getName()
+        ), throwable);
     }
 
+    @ApiStatus.Internal
     @Nullable
-    private CommandExecutor.ValueContainer getDefaultValue(@NotNull BladeParameter parameter) {
+    public String getDefaultValue(@NotNull BladeParameter parameter) {
         if (!parameter.isOptional())
             return null;
 
@@ -453,22 +474,21 @@ public final class CommandExecutor {
         switch (optional.value()) {
             case EMPTY_OR_CUSTOM:
                 if (!optional.custom().isEmpty()) {
-                    return new ValueContainer(optional.custom());
+                    return optional.custom();
                 }
 
                 Class<?> paramType = parameter.type();
-                return new ValueContainer(getOptionalEmptyValue(paramType));
+                return getOptionalEmptyValue(paramType);
 
             case EMPTY:
                 Class<?> type = parameter.type();
-                return new ValueContainer(getOptionalEmptyValue(type));
+                return getOptionalEmptyValue(type);
 
             case SENDER:
-                // The value we use here doesn't really matter, providers don't care.
-                return new ValueContainer(null);
+                return null;
 
             case CUSTOM:
-                return new ValueContainer(optional.custom());
+                return optional.custom();
         }
 
         throw new UnsupportedOperationException("Unhandled optional value: " + optional.value());
@@ -519,11 +539,4 @@ public final class CommandExecutor {
 
         return mergedFlags;
     }
-
-    @AllArgsConstructor
-    private static class ValueContainer {
-        @Nullable
-        private final String string;
-    }
-
 }

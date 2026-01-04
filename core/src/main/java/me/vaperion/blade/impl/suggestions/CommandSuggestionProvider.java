@@ -222,9 +222,12 @@ public final class CommandSuggestionProvider {
         try {
             provider.suggest(context, inputArgument, builder);
         } catch (BladeParseError error) {
+            if (argument.isOptional() && error.isRecoverable()) {
+                return;
+            }
+
             if (argument.isOptional() &&
-                Objects.requireNonNull(argument.optional()).treatErrorAsEmpty() &&
-                error.isRecoverable()) {
+                Objects.requireNonNull(argument.optional()).treatErrorAsEmpty()) {
                 return;
             }
 

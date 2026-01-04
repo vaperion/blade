@@ -29,24 +29,58 @@ public final class Context {
     private String label;
     private String[] arguments;
 
+    /**
+     * Gets all provided arguments.
+     *
+     * @return the arguments
+     */
     @NotNull
     public String[] arguments() {
         return arguments;
     }
 
+    /**
+     * Gets the argument at the specified index.
+     *
+     * @param index the index
+     * @return the argument, or null if not present
+     */
     @Nullable
     public String argument(int index) {
         if (index < 0 || index >= arguments.length) return null;
         return arguments[index];
     }
 
+    /**
+     * Attempts to parse the argument at the specified index using the provided argument class.
+     *
+     * @param index         the index
+     * @param argumentClass the argument class
+     * @param <T>           the type of the argument
+     * @return the parsed argument, or null if not present
+     *
+     * @implNote This method may throw exceptions such as {@link BladeParseError} and {@link BladeImplementationError} which the caller should handle.
+     */
     @Nullable
     public <T> T parseArgument(int index, @NotNull Class<T> argumentClass) {
         return parseArgument(index, argumentClass, "");
     }
 
+    /**
+     * Attempts to parse the argument at the specified index using the provided argument class and default value.
+     *
+     * @param index         the index
+     * @param argumentClass the argument class
+     * @param defaultValue  the default value to use if the argument is not present
+     * @param <T>           the type of the argument
+     * @return the parsed argument, or the default value if not present
+     *
+     * @implNote This method may throw exceptions such as {@link BladeParseError} and {@link BladeImplementationError} which the caller should handle.
+     */
     @Nullable
-    public <T> T parseArgument(int index, @NotNull Class<T> argumentClass, @NotNull String defaultValue) {
+    public <T> T parseArgument(int index,
+                               @NotNull Class<T> argumentClass,
+                               @NotNull String defaultValue) {
         ArgumentProvider<T> provider = blade.providerResolver().resolveRecursively(argumentClass, Collections.emptyList());
 
         if (provider == null)
@@ -55,23 +89,60 @@ public final class Context {
         return parseArgument(index, argumentClass, provider, defaultValue);
     }
 
+    /**
+     * Attempts to parse the argument at the specified index using the provided argument provider.
+     *
+     * @param index    the index
+     * @param provider the argument provider
+     * @param <T>      the type of the argument
+     * @return the parsed argument, or null if not present
+     *
+     * @implNote This method may throw exceptions such as {@link BladeParseError} and {@link BladeImplementationError} which the caller should handle.
+     */
     @Nullable
     public <T> T parseArgument(int index, @NotNull ArgumentProvider<T> provider) {
         return parseArgument(index, provider, "");
     }
 
+    /**
+     * Attempts to parse the argument at the specified index using the provided argument provider and default value.
+     *
+     * @param index        the index
+     * @param provider     the argument provider
+     * @param defaultValue the default value to use if the argument is not present
+     * @param <T>          the type of the argument
+     * @return the parsed argument, or the default value if not present
+     *
+     * @implNote This method may throw exceptions such as {@link BladeParseError} and {@link BladeImplementationError} which the caller should handle.
+     */
     @SuppressWarnings("unchecked")
     @Nullable
-    public <T> T parseArgument(int index, @NotNull ArgumentProvider<T> provider, @NotNull String defaultValue) {
+    public <T> T parseArgument(int index,
+                               @NotNull ArgumentProvider<T> provider,
+                               @NotNull String defaultValue) {
         return parseArgument(index,
             (Class<T>) ((ParameterizedType) provider.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0],
             provider,
             defaultValue);
     }
 
+    /**
+     * Attempts to parse the argument at the specified index using the provided argument class and provider.
+     *
+     * @param index        the index
+     * @param classOfT     the argument class
+     * @param provider     the argument provider
+     * @param defaultValue the default value to use if the argument is not present
+     * @param <T>          the type of the argument
+     * @return the parsed argument, or the default value if not present
+     *
+     * @implNote This method may throw exceptions such as {@link BladeParseError} and {@link BladeImplementationError} which the caller should handle.
+     */
+    @SuppressWarnings("unchecked")
     @Nullable
     public <T> T parseArgument(int index, @NotNull Class<T> classOfT,
-                               @NotNull ArgumentProvider<T> provider, @NotNull String defaultValue) {
+                               @NotNull ArgumentProvider<T> provider,
+                               @NotNull String defaultValue) {
         InputArgument arg = new InputArgument(new BladeParameter(
             blade,
             /*name*/ "argument " + (index + 1),
@@ -89,7 +160,11 @@ public final class Context {
             arg.value(provided);
         }
 
-        return provider.provide(this, arg);
+        return (T) blade.executor().provideArgument(provider,
+            this,
+            arg,
+            false,
+            true);
     }
 
     /**
