@@ -93,6 +93,10 @@ public final class Blade {
         binder.bind(Double.class, new DoubleArgument());
         binder.bind(float.class, new FloatArgument());
         binder.bind(Float.class, new FloatArgument());
+        binder.bind(byte.class, new ByteArgument());
+        binder.bind(Byte.class, new ByteArgument());
+        binder.bind(short.class, new ShortArgument());
+        binder.bind(Short.class, new ShortArgument());
         binder.bind(Enum.class, new EnumArgument());
 
         for (ArgBinding<?> binding : builder.bindings) {
