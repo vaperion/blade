@@ -126,6 +126,8 @@ public class VelocityContainer implements RawCommand, Container {
                         throw new BladeFatalError("Failed to parse command input for execution.");
                     }
 
+                    context.updateArgumentsFromInput(input);
+
                     ErrorMessage error = blade.executor().execute(context, input, node);
 
                     if (error != null) {
@@ -264,6 +266,8 @@ public class VelocityContainer implements RawCommand, Container {
                     // Failed to merge label - can't suggest arguments.
                     throw new BladeFatalError("Failed to parse command input for tab completion.");
                 }
+
+                context.updateArgumentsFromInput(input);
 
                 return blade.suggestionProvider().suggest(
                     context,

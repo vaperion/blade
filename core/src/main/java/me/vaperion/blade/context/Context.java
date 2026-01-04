@@ -6,12 +6,17 @@ import me.vaperion.blade.Blade;
 import me.vaperion.blade.argument.ArgumentProvider;
 import me.vaperion.blade.argument.InputArgument;
 import me.vaperion.blade.command.BladeParameter;
+import me.vaperion.blade.exception.BladeParseError;
+import me.vaperion.blade.exception.internal.BladeImplementationError;
+import me.vaperion.blade.tokenizer.input.CommandInput;
+import me.vaperion.blade.tokenizer.input.token.impl.ArgumentToken;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.Collections;
+import java.util.List;
 
 @SuppressWarnings("unused")
 @AllArgsConstructor
@@ -22,7 +27,7 @@ public final class Context {
     private final Sender<?> sender;
     @Setter(onMethod_ = @ApiStatus.Internal)
     private String label;
-    private final String[] arguments;
+    private String[] arguments;
 
     @NotNull
     public String[] arguments() {
@@ -115,6 +120,21 @@ public final class Context {
     @NotNull
     public Blade blade() {
         return blade;
+    }
+
+    /**
+     * Updates the arguments from the given command input.
+     *
+     * @param input the command input
+     */
+    @ApiStatus.Internal
+    public void updateArgumentsFromInput(@NotNull CommandInput input) {
+        List<ArgumentToken> tokens = input.arguments();
+
+        this.arguments = new String[tokens.size()];
+        for (int i = 0; i < tokens.size(); i++) {
+            this.arguments[i] = tokens.get(i).value();
+        }
     }
 
 }
