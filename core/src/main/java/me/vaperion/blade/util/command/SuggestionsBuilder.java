@@ -1,6 +1,5 @@
 package me.vaperion.blade.util.command;
 
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
@@ -19,14 +18,23 @@ public final class SuggestionsBuilder {
     private Predicate<String> filter = s -> true;
 
     /**
+     * Tests if a suggestion passes the current filter.
+     *
+     * @param suggestion the suggestion to test
+     * @return true if the suggestion passes the filter, false otherwise
+     */
+    public boolean testFilter(@NotNull String suggestion) {
+        return filter == null || filter.test(suggestion);
+    }
+
+    /**
      * Sets a filter for suggestions.
      * <p>
-     * Only suggestions that pass the filter will be included.
+     * Only suggestions that pass the filter will be included in the final list.
      *
      * @param filter the filter predicate, or null to accept all suggestions
      */
-    @ApiStatus.Internal
-    public void filter(@Nullable Predicate<String> filter) {
+    public void setFilter(@Nullable Predicate<String> filter) {
         if (filter != null) {
             this.filter = filter;
         } else {
@@ -49,7 +57,7 @@ public final class SuggestionsBuilder {
      * @param suggestion the suggestion to add
      */
     public void suggest(@NotNull String suggestion) {
-        if (!filter.test(suggestion)) {
+        if (!testFilter(suggestion)) {
             return;
         }
 

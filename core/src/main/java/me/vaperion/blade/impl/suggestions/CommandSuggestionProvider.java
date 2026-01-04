@@ -175,7 +175,7 @@ public final class CommandSuggestionProvider {
             inputArgument.addAnnotations(argument.annotations());
 
             // All suggestions are valid for a new argument
-            builder.filter(null);
+            builder.setFilter(null);
         } else {
             // Complete current argument
 
@@ -208,7 +208,7 @@ public final class CommandSuggestionProvider {
             inputArgument.addAnnotations(argument.annotations());
 
             // Only allow suggestions that start with the current token
-            builder.filter(s -> s.startsWith(token));
+            builder.setFilter(s -> s.startsWith(token));
         }
 
         if (provider == null) {
@@ -233,7 +233,7 @@ public final class CommandSuggestionProvider {
 
             throw error;
         } finally {
-            builder.filter(null);
+            builder.setFilter(null);
         }
     }
 
