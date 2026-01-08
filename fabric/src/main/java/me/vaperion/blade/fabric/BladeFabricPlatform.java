@@ -50,13 +50,7 @@ public class BladeFabricPlatform implements BladePlatform<Text, ModContainer, Mi
 
     @Override
     public @NotNull MinecraftServer server() {
-        MinecraftServer server = BladeFabricGlobal.SERVER;
-
-        if (server == null) {
-            throw new IllegalStateException("MinecraftServer instance is not available yet.");
-        }
-
-        return server;
+        return BladeFabricGlobal.server();
     }
 
     @Override

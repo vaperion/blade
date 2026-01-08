@@ -21,8 +21,8 @@ public final class BladeFabricGlobal implements DedicatedServerModInitializer {
 
     public static final List<Blade> ACTIVE_INSTANCES = new CopyOnWriteArrayList<>();
 
-    private static BladeFabricGlobal GLOBAL;
-    public static MinecraftServer SERVER;
+    private static volatile BladeFabricGlobal GLOBAL;
+    private static volatile MinecraftServer SERVER;
 
     @ApiStatus.Internal
     public static void triggerBrigadierSync() {
@@ -91,5 +91,14 @@ public final class BladeFabricGlobal implements DedicatedServerModInitializer {
 
             dispatcher.getRoot().addChild(literal);
         });
+    }
+
+    @NotNull
+    public static MinecraftServer server() {
+        if (SERVER == null) {
+            throw new IllegalStateException("MinecraftServer has not been set!");
+        }
+
+        return SERVER;
     }
 }

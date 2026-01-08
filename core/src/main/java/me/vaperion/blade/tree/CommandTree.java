@@ -80,6 +80,10 @@ public final class CommandTree {
 
                 if (!root.isBranch() && !root.isLeaf()) {
                     roots.remove(rootLabel);
+
+                    if (root.container() != null) {
+                        root.container().unregister();
+                    }
                 }
 
                 return true;
@@ -92,9 +96,8 @@ public final class CommandTree {
         if (removed && !root.isBranch() && !root.isLeaf()) {
             roots.remove(rootLabel);
 
-            //noinspection StatementWithEmptyBody
             if (root.container() != null) {
-                // unregister container somehow?
+                root.container().unregister();
             }
         }
 

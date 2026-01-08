@@ -11,4 +11,9 @@ public interface Container {
      * @return the Blade instance
      */
     @NotNull Blade blade();
+
+    /**
+     * Unregisters this container from the command system.
+     */
+    void unregister();
 }

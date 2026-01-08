@@ -1,10 +1,5 @@
-package me.vaperion.blade.velocity.container;
+package me.vaperion.blade.minestom.container;
 
-import com.velocitypowered.api.command.CommandManager;
-import com.velocitypowered.api.command.CommandMeta;
-import com.velocitypowered.api.command.CommandSource;
-import com.velocitypowered.api.command.RawCommand;
-import com.velocitypowered.api.proxy.ProxyServer;
 import lombok.Getter;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.command.BladeCommand;
@@ -18,15 +13,21 @@ import me.vaperion.blade.exception.internal.BladeInternalError;
 import me.vaperion.blade.exception.internal.BladeInvocationError;
 import me.vaperion.blade.impl.node.ResolvedCommand;
 import me.vaperion.blade.impl.suggestions.SuggestionType;
+import me.vaperion.blade.minestom.context.MinestomSender;
 import me.vaperion.blade.tokenizer.TokenizerError;
 import me.vaperion.blade.tokenizer.input.CommandInput;
 import me.vaperion.blade.tokenizer.input.InputOption;
 import me.vaperion.blade.tree.CommandTreeNode;
 import me.vaperion.blade.util.ErrorMessage;
-import me.vaperion.blade.velocity.BladeVelocityPlatform;
-import me.vaperion.blade.velocity.context.VelocitySender;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minestom.server.MinecraftServer;
+import net.minestom.server.command.CommandSender;
+import net.minestom.server.command.builder.Command;
+import net.minestom.server.command.builder.CommandContext;
+import net.minestom.server.command.builder.arguments.ArgumentType;
+import net.minestom.server.command.builder.suggestion.Suggestion;
+import net.minestom.server.command.builder.suggestion.SuggestionEntry;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -38,9 +39,9 @@ import static me.vaperion.blade.util.BladeHelper.*;
 import static net.kyori.adventure.text.Component.text;
 
 @Getter
-public class VelocityContainer implements RawCommand, Container {
+public final class MinestomContainer extends Command implements Container {
 
-    public static final ContainerCreator<VelocityContainer> CREATOR = VelocityContainer::new;
+    public static final ContainerCreator<MinestomContainer> CREATOR = MinestomContainer::new;
 
     private static final Component UNKNOWN_COMMAND_MESSAGE = text(
         "Unknown command. Type \"/help\" for help."
@@ -49,41 +50,32 @@ public class VelocityContainer implements RawCommand, Container {
     private final Blade blade;
     private final String label;
 
-    private VelocityContainer(@NotNull Blade blade, @NotNull String label) {
+    private MinestomContainer(@NotNull Blade blade, @NotNull String label) {
+        super(label);
+
         this.blade = blade;
         this.label = label;
 
-        ProxyServer proxyServer = blade.platformAs(BladeVelocityPlatform.class).server();
-        CommandManager commandManager = proxyServer.getCommandManager();
+        // Minestom uses a custom builder instead of using Brigadier, even though they end up converting it internally...
+        // Instead of that we just use a greedy string and handle it inside Blade.
+        addSyntax(
+            this::execute,
+            ArgumentType.StringArray("args")
+                .setDefaultValue(new String[0])
+                .setSuggestionCallback(this::suggest)
+        );
 
-        CommandMeta meta = commandManager.metaBuilder(label).build();
-        commandManager.register(meta, this);
+        MinecraftServer.getCommandManager().register(this);
     }
 
     @Override
     public void unregister() {
-        ProxyServer proxyServer = blade.platformAs(BladeVelocityPlatform.class).server();
-        CommandManager commandManager = proxyServer.getCommandManager();
-
-        commandManager.unregister(this.label);
+        MinecraftServer.getCommandManager().unregister(this);
     }
 
-    @Override
-    public boolean hasPermission(Invocation invocation) {
-        // Permission check is done in the execute method, as we don't know the exact command here.
-        return true;
-    }
-
-    @Override
-    public void execute(Invocation invocation) {
-        CommandSource sender = invocation.source();
-
-        String[] args = invocation.arguments().isEmpty()
-            ? new String[0]
-            : invocation.arguments().split(" ");
-        String label = invocation.alias();
-
-        String commandLine = mergeLabelWithArgs(label, args);
+    private void execute(@NotNull CommandSender sender,
+                         @NotNull CommandContext minestomContext) {
+        String commandLine = removeCommandQualifier(minestomContext.getInput());
 
         ResolvedCommand node = blade.nodeResolver().resolve(
             commandLine
@@ -101,9 +93,18 @@ public class VelocityContainer implements RawCommand, Container {
             return;
         }
 
+        String label = node.matchedLabelOr(
+            commandLine.split(" ")[0]
+        );
+
+        String[] args = removePrefix(
+            commandLine,
+            label
+        ).split(" ");
+
         Context context = new Context(
             blade,
-            new VelocitySender(sender),
+            new MinestomSender(sender),
             node.matchedLabelOr(label),
             args
         );
@@ -236,16 +237,40 @@ public class VelocityContainer implements RawCommand, Container {
         }
     }
 
-    @Override
-    public List<String> suggest(Invocation invocation) {
-        CommandSource sender = invocation.source();
-        String[] args = invocation.arguments().split(" ");
-        String label = invocation.alias();
+    private void sendHelpMessage(@NotNull CommandSender sender,
+                                 @NotNull Context context,
+                                 @NotNull List<ResolvedCommand> nodes,
+                                 boolean sendUnknownCommandMessage) {
+        List<BladeCommand> allCommands = new ArrayList<>();
 
+        nodes.forEach(node ->
+            node.collectCommandsInto(allCommands));
+
+        if (allCommands.isEmpty() && sendUnknownCommandMessage) {
+            sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
+            return;
+        }
+
+        List<Component> lines = blade.<Component>configuration().helpGenerator().generate(context, allCommands);
+
+        lines.forEach(sender::sendMessage);
+    }
+
+    private void suggest(@NotNull CommandSender sender,
+                         @NotNull CommandContext minestomContext,
+                         @NotNull Suggestion suggestion) {
+        for (String s : doSuggest(sender, minestomContext)) {
+            suggestion.addEntry(new SuggestionEntry(s));
+        }
+    }
+
+    @NotNull
+    private List<String> doSuggest(@NotNull CommandSender sender,
+                                   @NotNull CommandContext minestomContext) {
         if (!blade.configuration().tabCompleter().isDefault())
             return Collections.emptyList();
 
-        String commandLine = mergeLabelWithArgs(label, args);
+        String commandLine = removeCommandQualifier(minestomContext.getInput());
 
         ResolvedCommand node = blade.nodeResolver().resolve(
             commandLine
@@ -260,9 +285,14 @@ public class VelocityContainer implements RawCommand, Container {
             if (!node.isStub()) {
                 // Found exact command, we can suggest arguments here.
 
+                String[] args = removePrefix(
+                    removeCommandQualifier(commandLine),
+                    node.matchedLabelOr("")
+                ).split(" ");
+
                 Context context = new Context(
                     blade,
-                    new VelocitySender(sender),
+                    new MinestomSender(sender),
                     node.matchedLabel(),
                     args
                 );
@@ -288,9 +318,11 @@ public class VelocityContainer implements RawCommand, Container {
 
             // Only found command stub - suggest subcommands.
 
+            String[] args = removeCommandQualifier(minestomContext.getInput()).split(" ");
+
             Context context = new Context(
                 blade,
-                new VelocitySender(sender),
+                new MinestomSender(sender),
                 "",
                 args
             );
@@ -342,24 +374,5 @@ public class VelocityContainer implements RawCommand, Container {
         }
 
         return Collections.emptyList();
-    }
-
-    private void sendHelpMessage(@NotNull CommandSource sender,
-                                 @NotNull Context context,
-                                 @NotNull List<ResolvedCommand> nodes,
-                                 boolean sendUnknownCommandMessage) {
-        List<BladeCommand> allCommands = new ArrayList<>();
-
-        nodes.forEach(node ->
-            node.collectCommandsInto(allCommands));
-
-        if (allCommands.isEmpty() && sendUnknownCommandMessage) {
-            sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
-            return;
-        }
-
-        List<Component> lines = blade.<Component>configuration().helpGenerator().generate(context, allCommands);
-
-        lines.forEach(sender::sendMessage);
     }
 }

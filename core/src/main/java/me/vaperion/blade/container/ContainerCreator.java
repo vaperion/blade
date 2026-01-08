@@ -36,6 +36,11 @@ public interface ContainerCreator<T extends Container> {
             public @NotNull Blade blade() {
                 return this.blade;
             }
+
+            @Override
+            public void unregister() {
+                // No-op
+            }
         }
     }
 }

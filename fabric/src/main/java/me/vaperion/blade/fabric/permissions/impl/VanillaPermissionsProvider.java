@@ -19,7 +19,7 @@ public final class VanillaPermissionsProvider implements PermissionsProvider {
 
         if (source.getEntity() instanceof ServerPlayerEntity player) {
             // Allow ops
-            return BladeFabricGlobal.SERVER.getPlayerManager().isOperator(player.getPlayerConfigEntry());
+            return BladeFabricGlobal.server().getPlayerManager().isOperator(player.getPlayerConfigEntry());
         }
 
         return false;

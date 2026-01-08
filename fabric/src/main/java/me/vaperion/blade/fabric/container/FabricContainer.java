@@ -51,6 +51,11 @@ public final class FabricContainer implements Container {
         this.label = label;
     }
 
+    @Override
+    public void unregister() {
+        // No-op: Command registration is managed through Brigadier directly.
+    }
+
     public boolean execute(@NotNull CommandContext<ServerCommandSource> ctx) {
         ServerCommandSource sender = ctx.getSource();
 

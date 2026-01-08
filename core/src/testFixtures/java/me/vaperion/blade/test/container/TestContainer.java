@@ -19,4 +19,9 @@ public final class TestContainer implements Container {
         this.blade = blade;
         this.label = label;
     }
+
+    @Override
+    public void unregister() {
+        // No-op
+    }
 }

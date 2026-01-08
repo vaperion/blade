@@ -56,6 +56,10 @@ Use the `fabric` artifact.
 
 Use the `velocity` artifact.
 
+### Minestom
+
+Use the `minestom` artifact.
+
 ## Usage
 
 ### Maven

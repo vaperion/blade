@@ -112,7 +112,19 @@ public final class BukkitContainer extends Command implements Container {
         }
 
         if (!simpleCommandMap.register(blade.configuration().commandQualifier(), this)) {
-            System.err.println("Blade failed to register the command \"" + label + "\". This could lead to issues.");
+            blade.logger().error("Failed to register the command \"" + label + "\". This could lead to issues.");
+        }
+    }
+
+    @Override
+    public void unregister() {
+        try {
+            SimplePluginManager simplePluginManager = (SimplePluginManager) Bukkit.getServer().getPluginManager();
+            SimpleCommandMap simpleCommandMap = (SimpleCommandMap) COMMAND_MAP.get(simplePluginManager);
+
+            this.unregister(simpleCommandMap);
+        } catch (Throwable t) {
+            blade.logger().error(t, "Failed to unregister the command \"" + getName() + "\".");
         }
     }
 
