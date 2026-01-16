@@ -56,7 +56,8 @@ include(
     "paper",
     "paper-legacy",
     "fabric",
-    "minestom"
+    "minestom",
+    "hytale"
 )
 
 rootProject.name = "blade"

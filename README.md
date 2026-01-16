@@ -60,6 +60,10 @@ Use the `velocity` artifact.
 
 Use the `minestom` artifact.
 
+### Hytale
+
+Use the `hytale` artifact.
+
 ## Usage
 
 ### Maven
