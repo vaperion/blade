@@ -1,9 +1,12 @@
 package me.vaperion.blade.hytale.argument;
 
+import com.hypixel.hytale.component.Holder;
+import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.server.core.NameMatching;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import me.vaperion.blade.annotation.parameter.Opt;
 import me.vaperion.blade.argument.ArgumentProvider;
 import me.vaperion.blade.argument.InputArgument;
@@ -78,6 +81,7 @@ public class PlayerArgument implements ArgumentProvider<Player> {
         return UUID_PATTERN.matcher(input).matches();
     }
 
+    @SuppressWarnings("RedundantIfStatement")
     @Nullable
     private Player getPlayer(@NotNull String input) {
         PlayerRef ref;
@@ -88,10 +92,35 @@ public class PlayerArgument implements ArgumentProvider<Player> {
             ref = Universe.get().getPlayer(input, NameMatching.EXACT);
         }
 
-        if (ref == null || ref.getHolder() == null) {
+        if (ref == null) {
             return null;
         }
 
-        return ref.getHolder().getComponent(Player.getComponentType());
+        Holder<EntityStore> holder = ref.getHolder();
+        if (holder != null) {
+            // Player is not in a world?
+
+            Player player = holder.getComponent(Player.getComponentType());
+
+            if (player != null) {
+                return player;
+            }
+        }
+
+        Ref<EntityStore> entityRef = ref.getReference();
+        if (entityRef != null) {
+            // Player is in a world?
+
+            Player player = entityRef.getStore().getComponent(
+                entityRef,
+                Player.getComponentType()
+            );
+
+            if (player != null) {
+                return player;
+            }
+        }
+
+        return null;
     }
 }
