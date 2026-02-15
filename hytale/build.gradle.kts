@@ -8,12 +8,12 @@ repositories {
     mavenCentral()
 
     maven {
-        url = uri("https://nexus.lucko.me/repository/maven-hytale/")
+        url = uri("https://maven.hytale.com/release/")
     }
 }
 
 dependencies {
     api(project(":core"))
 
-    compileOnly("com.hypixel.hytale:HytaleServer:2026.01.13-dcad8778f-SNAPSHOT")
+    compileOnly("com.hypixel.hytale:Server:2026.01.24-6e2d4fc36")
 }
