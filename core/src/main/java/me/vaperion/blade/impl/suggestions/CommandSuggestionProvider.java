@@ -10,6 +10,7 @@ import me.vaperion.blade.context.Context;
 import me.vaperion.blade.exception.BladeParseError;
 import me.vaperion.blade.exception.internal.BladeImplementationError;
 import me.vaperion.blade.tokenizer.input.CommandInput;
+import me.vaperion.blade.tokenizer.input.token.impl.ArgumentToken;
 import me.vaperion.blade.tokenizer.input.token.impl.LabelToken;
 import me.vaperion.blade.tree.CommandTree;
 import me.vaperion.blade.tree.CommandTreeNode;
@@ -20,6 +21,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static me.vaperion.blade.util.BladeHelper.arrayToEnumSet;
 
@@ -144,17 +146,24 @@ public final class CommandSuggestionProvider {
                                          @NotNull SuggestionsBuilder builder) {
         BladeCommand command = input.bladeCommand();
         if (command == null) return;
+        if (command.arguments().isEmpty()) return;
 
         DefinedArgument argument;
         ArgumentProvider<?> provider;
         InputArgument inputArgument;
+        int greedyIndex = findGreedyArgumentIndex(command);
 
         if (input.endsInWhitespace()) {
             // Complete next argument
 
             int index = input.arguments().size();
+            boolean usingGreedy = greedyIndex >= 0 && index >= greedyIndex;
 
-            if (command.arguments().size() <= index) {
+            if (usingGreedy) {
+                index = greedyIndex;
+            }
+
+            if (!usingGreedy && command.arguments().size() <= index) {
                 // No more arguments to complete
                 return;
             }
@@ -165,30 +174,46 @@ public final class CommandSuggestionProvider {
                 ? argument.customCompleter()
                 : command.argumentProviders().get(index);
 
+            String token = usingGreedy
+                ? greedyArgumentValue(input, index, true)
+                : "";
+
             inputArgument = new InputArgument(
                 argument,
-                "",
-                InputArgument.Status.NOT_PRESENT
+                token,
+                token.isEmpty()
+                    ? InputArgument.Status.NOT_PRESENT
+                    : InputArgument.Status.PRESENT
             );
 
             inputArgument.data().addAll(argument.data());
             inputArgument.addAnnotations(argument.annotations());
 
-            // All suggestions are valid for a new argument
-            builder.setFilter(null);
+            if (usingGreedy) {
+                String segment = greedySegment(token);
+                builder.setFilter(s -> s.startsWith(segment));
+            } else {
+                // All suggestions are valid for a new argument
+                builder.setFilter(null);
+            }
         } else {
             // Complete current argument
 
             int index = input.arguments().size() - 1;
+            boolean usingGreedy = greedyIndex >= 0 && index >= greedyIndex;
+
+            if (usingGreedy) {
+                index = greedyIndex;
+            }
 
             if (index < 0 || command.arguments().size() <= index) {
                 // No argument to complete
                 return;
             }
 
-            String token = input.arguments()
-                .get(index)
-                .value();
+            String token = usingGreedy
+                ? greedyArgumentValue(input, index, false)
+                : input.arguments().get(index).value();
 
             argument = command.arguments().get(index);
 
@@ -207,8 +232,13 @@ public final class CommandSuggestionProvider {
             inputArgument.data().addAll(argument.data());
             inputArgument.addAnnotations(argument.annotations());
 
-            // Only allow suggestions that start with the current token
-            builder.setFilter(s -> s.startsWith(token));
+            if (usingGreedy) {
+                String segment = greedySegment(token);
+                builder.setFilter(s -> s.startsWith(segment));
+            } else {
+                // Only allow suggestions that start with the current token
+                builder.setFilter(s -> s.startsWith(token));
+            }
         }
 
         if (provider == null) {
@@ -235,6 +265,43 @@ public final class CommandSuggestionProvider {
         } finally {
             builder.setFilter(null);
         }
+    }
+
+    private int findGreedyArgumentIndex(@NotNull BladeCommand command) {
+        for (int i = 0; i < command.arguments().size(); i++) {
+            if (command.arguments().get(i).isGreedy()) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    @NotNull
+    private String greedyArgumentValue(@NotNull CommandInput input,
+                                       int index,
+                                       boolean keepTrailingWhitespace) {
+        if (input.arguments().size() <= index) {
+            return "";
+        }
+
+        String value = input.arguments()
+            .subList(index, input.arguments().size())
+            .stream()
+            .map(ArgumentToken::value)
+            .collect(Collectors.joining(" "));
+
+        if (keepTrailingWhitespace) {
+            value += " ";
+        }
+
+        return value;
+    }
+
+    @NotNull
+    private String greedySegment(@NotNull String value) {
+        int lastSpace = value.lastIndexOf(' ');
+        return lastSpace < 0 ? value : value.substring(lastSpace + 1);
     }
 
 }
