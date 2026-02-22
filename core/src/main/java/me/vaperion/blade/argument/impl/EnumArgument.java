@@ -89,14 +89,16 @@ public class EnumArgument implements ArgumentProvider<Enum> {
         EnumContainer container = container(arg.parameter().type());
 
         String input = arg.requireValue().toLowerCase(Locale.ROOT);
-        Set<String> provided = new HashSet<>();
 
         for (WrappedEnum wrapped : container.constants) {
             if (wrapped.hidden || wrapped.blocked) continue;
+
             if (wrapped.startsWith(input)) {
-                for (String suggestion : wrapped.suggestions) {
-                    if (suggestion.toLowerCase(Locale.ROOT).startsWith(input) && provided.add(suggestion)) {
-                        suggestions.suggest(suggestion);
+                suggestions.suggest(wrapped.displayName);
+
+                for (String alias : wrapped.aliases) {
+                    if (alias.toLowerCase(Locale.ROOT).startsWith(input)) {
+                        suggestions.suggest(alias);
                     }
                 }
             }
@@ -207,7 +209,6 @@ public class EnumArgument implements ArgumentProvider<Enum> {
         private final String[] aliases;
         private final int priority;
         private final List<String> lowerCandidates;
-        private final List<String> suggestions;
 
         WrappedEnum(@NotNull Enum value,
                     boolean hidden,
@@ -229,11 +230,6 @@ public class EnumArgument implements ArgumentProvider<Enum> {
                 lowerCandidates.add(alias.toLowerCase(Locale.ROOT));
             }
             this.lowerCandidates = Collections.unmodifiableList(new ArrayList<>(lowerCandidates));
-
-            Set<String> suggestions = new LinkedHashSet<>();
-            suggestions.add(displayName);
-            suggestions.addAll(Arrays.asList(aliases));
-            this.suggestions = Collections.unmodifiableList(new ArrayList<>(suggestions));
         }
 
         private boolean startsWith(@NotNull String input) {

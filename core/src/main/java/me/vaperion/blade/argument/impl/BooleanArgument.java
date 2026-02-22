@@ -9,13 +9,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.AnnotatedElement;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class BooleanArgument implements ArgumentProvider<Boolean> {
-    private static final Map<String, Boolean> BOOLEAN_MAP = new HashMap<>();
+    private static final Map<String, Boolean> BOOLEAN_MAP = new LinkedHashMap<>();
 
     static {
         BOOLEAN_MAP.put("true", true);
