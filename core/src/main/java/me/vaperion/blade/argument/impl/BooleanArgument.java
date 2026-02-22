@@ -60,10 +60,10 @@ public class BooleanArgument implements ArgumentProvider<Boolean> {
 
         String input = arg.requireValue().toLowerCase(Locale.ROOT);
 
-        if ("true" .startsWith(input))
+        if ("true".startsWith(input))
             suggestions.suggest("true");
 
-        if ("false" .startsWith(input))
+        if ("false".startsWith(input))
             suggestions.suggest("false");
     }
 

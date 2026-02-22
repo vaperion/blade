@@ -11,8 +11,11 @@ import java.lang.annotation.Target;
  * Indicates that an enum value should be hidden from suggestions, optionally blocking its usage as well.
  * <p>
  * This only applies to enum parameters if the default provider is used ({@link EnumArgument}).
+ *
+ * @deprecated use {@link EnumValue} for more flexible control over enum values
  */
 @SuppressWarnings("unused")
+@Deprecated
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface HiddenEnumValue {

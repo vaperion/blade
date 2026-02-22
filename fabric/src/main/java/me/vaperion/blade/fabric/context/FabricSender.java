@@ -47,9 +47,9 @@ public final class FabricSender implements Sender<ServerCommandSource> {
     public boolean hasPermission(@NotNull String permissionNode) {
         boolean isConsole = commandSource.output instanceof MinecraftDedicatedServer;
 
-        if ("op" .equals(permissionNode))
+        if ("op".equals(permissionNode))
             return isConsole || commandSource.hasPermissionLevel(4);
-        if ("console" .equals(permissionNode))
+        if ("console".equals(permissionNode))
             return isConsole;
 
         return blade.platformAs(BladeFabricPlatform.class)

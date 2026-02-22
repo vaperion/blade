@@ -1,7 +1,7 @@
 package me.vaperion.blade.argument.impl;
 
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import me.vaperion.blade.annotation.api.EnumValue;
 import me.vaperion.blade.annotation.api.HiddenEnumValue;
 import me.vaperion.blade.argument.ArgumentProvider;
 import me.vaperion.blade.argument.InputArgument;
@@ -12,13 +12,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Field;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-@SuppressWarnings({ "rawtypes" })
+@SuppressWarnings({ "rawtypes", "deprecation" })
 public class EnumArgument implements ArgumentProvider<Enum> {
 
-    private final Map<Class<?>, EnumContainer> container = new IdentityHashMap<>();
+    private final Map<Class<?>, EnumContainer> container = new ConcurrentHashMap<>();
 
     @NotNull
     private EnumContainer container(@NotNull Class<?> type) {
@@ -33,8 +35,8 @@ public class EnumArgument implements ArgumentProvider<Enum> {
 
         if (matches.isEmpty()) {
             String joinedNames = container.constants.stream()
-                .filter(wrapped -> !wrapped.hidden)
-                .map(wrapped -> wrapped.value.name())
+                .filter(wrapped -> !wrapped.hidden && !wrapped.blocked)
+                .map(wrapped -> wrapped.displayName)
                 .collect(Collectors.joining(", "));
 
             throw BladeParseError.recoverable(String.format(
@@ -48,10 +50,30 @@ public class EnumArgument implements ArgumentProvider<Enum> {
             return matches.get(0).value;
         }
 
-        String joinedNames = matches.stream()
-            .filter(wrapped -> !wrapped.hidden)
-            .map(wrapped -> wrapped.value.name())
+        int highestPriority = matches.stream()
+            .mapToInt(wrapped -> wrapped.priority)
+            .max()
+            .orElse(0);
+
+        List<WrappedEnum> prioritizedMatches = matches.stream()
+            .filter(wrapped -> wrapped.priority == highestPriority)
+            .collect(Collectors.toList());
+
+        if (prioritizedMatches.size() == 1) {
+            return prioritizedMatches.get(0).value;
+        }
+
+        String joinedNames = prioritizedMatches.stream()
+            .filter(wrapped -> !wrapped.hidden && !wrapped.blocked)
+            .map(wrapped -> wrapped.displayName)
             .collect(Collectors.joining(", "));
+
+        if (joinedNames.isEmpty()) {
+            throw BladeParseError.recoverable(String.format(
+                "'%s' is ambiguous. Please provide a more specific value.",
+                arg.value()
+            ));
+        }
 
         throw BladeParseError.recoverable(String.format(
             "'%s' is ambiguous. Did you mean: %s?",
@@ -67,14 +89,17 @@ public class EnumArgument implements ArgumentProvider<Enum> {
         EnumContainer container = container(arg.parameter().type());
 
         String input = arg.requireValue().toLowerCase(Locale.ROOT);
+        Set<String> provided = new HashSet<>();
 
         for (WrappedEnum wrapped : container.constants) {
-            if (wrapped.hidden) continue;
-
-            String lowerName = wrapped.value.name().toLowerCase(Locale.ROOT);
-
-            if (lowerName.startsWith(input))
-                suggestions.suggest(wrapped.value.name());
+            if (wrapped.hidden || wrapped.blocked) continue;
+            if (wrapped.startsWith(input)) {
+                for (String suggestion : wrapped.suggestions) {
+                    if (suggestion.toLowerCase(Locale.ROOT).startsWith(input) && provided.add(suggestion)) {
+                        suggestions.suggest(suggestion);
+                    }
+                }
+            }
         }
     }
 
@@ -87,6 +112,19 @@ public class EnumArgument implements ArgumentProvider<Enum> {
     private List<WrappedEnum> match(@NotNull EnumContainer container,
                                     @NotNull String input) {
         input = input.toLowerCase(Locale.ROOT);
+
+        List<WrappedEnum> matches = new ArrayList<>();
+
+        for (WrappedEnum wrapped : container.constants) {
+            if (wrapped.blocked) continue;
+            if (wrapped.startsWith(input)) {
+                matches.add(wrapped);
+            }
+        }
+
+        if (!matches.isEmpty()) {
+            return matches;
+        }
 
         try {
             int intValue = Integer.parseInt(input);
@@ -112,18 +150,6 @@ public class EnumArgument implements ArgumentProvider<Enum> {
         } catch (NumberFormatException ignored) {
         }
 
-        List<WrappedEnum> matches = new ArrayList<>();
-
-        for (WrappedEnum wrapped : container.constants) {
-            if (wrapped.blocked) continue;
-
-            String lowerName = wrapped.value.name().toLowerCase(Locale.ROOT);
-
-            if (lowerName.startsWith(input)) {
-                matches.add(wrapped);
-            }
-        }
-
         return matches;
     }
 
@@ -143,12 +169,29 @@ public class EnumArgument implements ArgumentProvider<Enum> {
 
             for (Enum value : values) {
                 try {
-                    HiddenEnumValue annotation = clazz.getField(value.name()).getAnnotation(HiddenEnumValue.class);
+                    Field field = clazz.getField(value.name());
 
-                    boolean hidden = annotation != null;
-                    boolean blocked = hidden && annotation.block();
+                    HiddenEnumValue hiddenValue = field.getAnnotation(HiddenEnumValue.class);
+                    EnumValue enumValue = field.getAnnotation(EnumValue.class);
 
-                    this.constants.add(new WrappedEnum(value, hidden, blocked));
+                    boolean hidden = hiddenValue != null || (enumValue != null && enumValue.hidden());
+                    boolean blocked = (hiddenValue != null && hiddenValue.block())
+                        || (enumValue != null && enumValue.block());
+
+                    String displayName = value.name();
+                    int priority = 0;
+                    String[] aliases = new String[0];
+
+                    if (enumValue != null) {
+                        if (!enumValue.name().isEmpty()) {
+                            displayName = enumValue.name();
+                        }
+
+                        aliases = enumValue.aliases().clone();
+                        priority = enumValue.priority();
+                    }
+
+                    this.constants.add(new WrappedEnum(value, hidden, blocked, displayName, aliases, priority));
                 } catch (NoSuchFieldException e) {
                     throw new RuntimeException("Unexpected error accessing enum field", e);
                 }
@@ -156,10 +199,50 @@ public class EnumArgument implements ArgumentProvider<Enum> {
         }
     }
 
-    @RequiredArgsConstructor
     @ToString
     static class WrappedEnum {
         private final Enum value;
         private final boolean hidden, blocked;
+        private final String displayName;
+        private final String[] aliases;
+        private final int priority;
+        private final List<String> lowerCandidates;
+        private final List<String> suggestions;
+
+        WrappedEnum(@NotNull Enum value,
+                    boolean hidden,
+                    boolean blocked,
+                    @NotNull String displayName,
+                    @NotNull String[] aliases,
+                    int priority) {
+            this.value = value;
+            this.hidden = hidden;
+            this.blocked = blocked;
+            this.displayName = displayName;
+            this.aliases = aliases;
+            this.priority = priority;
+
+            Set<String> lowerCandidates = new LinkedHashSet<>();
+            lowerCandidates.add(value.name().toLowerCase(Locale.ROOT));
+            lowerCandidates.add(displayName.toLowerCase(Locale.ROOT));
+            for (String alias : aliases) {
+                lowerCandidates.add(alias.toLowerCase(Locale.ROOT));
+            }
+            this.lowerCandidates = Collections.unmodifiableList(new ArrayList<>(lowerCandidates));
+
+            Set<String> suggestions = new LinkedHashSet<>();
+            suggestions.add(displayName);
+            suggestions.addAll(Arrays.asList(aliases));
+            this.suggestions = Collections.unmodifiableList(new ArrayList<>(suggestions));
+        }
+
+        private boolean startsWith(@NotNull String input) {
+            for (String candidate : lowerCandidates) {
+                if (candidate.startsWith(input))
+                    return true;
+            }
+
+            return false;
+        }
     }
 }
