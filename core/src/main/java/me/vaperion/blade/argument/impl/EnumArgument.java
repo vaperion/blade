@@ -193,7 +193,7 @@ public class EnumArgument implements ArgumentProvider<Enum> {
                         priority = enumValue.priority();
                     }
 
-                    this.constants.add(new WrappedEnum(value, hidden, blocked, displayName, aliases, priority));
+                    this.constants.add(new WrappedEnum(value, hidden || blocked, blocked, displayName, aliases, priority));
                 } catch (NoSuchFieldException e) {
                     throw new RuntimeException("Unexpected error accessing enum field", e);
                 }
