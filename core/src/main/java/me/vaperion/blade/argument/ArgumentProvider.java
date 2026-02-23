@@ -5,6 +5,7 @@ import me.vaperion.blade.annotation.parameter.Name;
 import me.vaperion.blade.annotation.parameter.Opt;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.exception.BladeParseError;
+import me.vaperion.blade.util.command.RichSuggestionsBuilder;
 import me.vaperion.blade.util.command.SuggestionsBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -55,6 +56,23 @@ public interface ArgumentProvider<T> {
     default void suggest(@NotNull Context ctx,
                          @NotNull InputArgument arg,
                          @NotNull SuggestionsBuilder suggestions) throws BladeParseError {
+    }
+
+    /**
+     * Suggests possible completions for the given {@link InputArgument}.
+     * <p>
+     * This overload supports richer suggestion metadata, such as tooltips and
+     * numeric suggestions, for Brigadier-based platforms.
+     *
+     * @param ctx         the command context
+     * @param arg         the input argument
+     * @param suggestions the rich suggestions builder
+     * @throws BladeParseError if an error occurs during suggestion generation (use {@link BladeParseError#fatal(String)} or {@link BladeParseError#recoverable(String)}.)
+     */
+    default void suggestRich(@NotNull Context ctx,
+                             @NotNull InputArgument arg,
+                             @NotNull RichSuggestionsBuilder suggestions) throws BladeParseError {
+        suggest(ctx, arg, suggestions.legacyView());
     }
 
     /**

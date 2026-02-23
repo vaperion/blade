@@ -21,6 +21,8 @@ import me.vaperion.blade.tokenizer.input.CommandInput;
 import me.vaperion.blade.tokenizer.input.InputOption;
 import me.vaperion.blade.tree.CommandTreeNode;
 import me.vaperion.blade.util.ErrorMessage;
+import me.vaperion.blade.util.command.RichSuggestionsBuilder;
+import me.vaperion.blade.util.command.SimpleRichSuggestionsBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -332,8 +334,28 @@ public final class BukkitContainer extends Command implements Container {
     public List<String> tabComplete(@NotNull CommandSender sender,
                                     @NotNull String commandLine,
                                     boolean isBukkitCommand) throws IllegalArgumentException {
-        if (!blade.configuration().tabCompleter().isDefault())
-            return Collections.emptyList();
+        SimpleRichSuggestionsBuilder suggestions = new SimpleRichSuggestionsBuilder(
+            removeCommandQualifier(commandLine),
+            removeCommandQualifier(commandLine).length()
+        );
+
+        tabComplete(sender, commandLine, isBukkitCommand, suggestions);
+        return suggestions.build();
+    }
+
+    public void tabComplete(@NotNull CommandSender sender,
+                            @NotNull String commandLine,
+                            @NotNull RichSuggestionsBuilder suggestions) throws IllegalArgumentException {
+        tabComplete(sender, commandLine, false, suggestions);
+    }
+
+    public void tabComplete(@NotNull CommandSender sender,
+                            @NotNull String commandLine,
+                            boolean isBukkitCommand,
+                            @NotNull RichSuggestionsBuilder suggestions) throws IllegalArgumentException {
+        if (!blade.configuration().tabCompleter().isDefault()) {
+            return;
+        }
 
         ResolvedCommand node = blade.nodeResolver().resolve(
             commandLine
@@ -341,7 +363,7 @@ public final class BukkitContainer extends Command implements Container {
 
         if (node == null) {
             // No main command and not a stub either - not a blade command at all?
-            return Collections.emptyList();
+            return;
         }
 
         try {
@@ -357,7 +379,7 @@ public final class BukkitContainer extends Command implements Container {
 
                 if (!platformTypes.contains(SuggestionType.ARGUMENTS)) {
                     // Platform doesn't support argument suggestions.
-                    return Collections.emptyList();
+                    return;
                 }
 
                 Context context = new Context(
@@ -379,18 +401,20 @@ public final class BukkitContainer extends Command implements Container {
 
                 context.updateArgumentsFromInput(input);
 
-                return blade.suggestionProvider().suggest(
+                blade.suggestionProvider().suggest(
                     context,
                     input,
-                    SuggestionType.ARGUMENTS
+                    EnumSet.of(SuggestionType.ARGUMENTS),
+                    suggestions
                 );
+                return;
             }
 
             // Only found command stub - suggest subcommands.
 
             if (!platformTypes.contains(SuggestionType.SUBCOMMANDS)) {
                 // Platform doesn't support subcommand suggestions.
-                return Collections.emptyList();
+                return;
             }
 
             String[] args = removeCommandQualifier(commandLine).split(" ");
@@ -413,10 +437,11 @@ public final class BukkitContainer extends Command implements Container {
 
             input.tokenize();
 
-            return blade.suggestionProvider().suggest(
+            blade.suggestionProvider().suggest(
                 context,
                 input,
-                SuggestionType.SUBCOMMANDS
+                EnumSet.of(SuggestionType.SUBCOMMANDS),
+                suggestions
             );
         } catch (BladeImplementationError e) {
             sender.sendMessage(ChatColor.RED + ERROR_MESSAGE);
@@ -443,8 +468,6 @@ public final class BukkitContainer extends Command implements Container {
             blade.logger().error(t, "An error occurred while %s was tab completing the command `%s`.",
                 sender.getName(), commandLine);
         }
-
-        return Collections.emptyList();
     }
 
     private void sendHelpMessage(@NotNull CommandSender sender,

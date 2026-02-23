@@ -9,6 +9,7 @@ import lombok.Getter;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.brigadier.BladeBrigadierBuilder;
 import me.vaperion.blade.brigadier.BladeBrigadierDelegate;
+import me.vaperion.blade.brigadier.BrigadierRichSuggestionsBuilder;
 import me.vaperion.blade.bukkit.container.BukkitContainer;
 import me.vaperion.blade.bukkit.context.BukkitSender;
 import me.vaperion.blade.paper.BladePaperPlatform;
@@ -38,11 +39,8 @@ public final class BladePaperBrigadier implements Listener {
             BukkitSender::new);
 
         this.delegate = new BladeBrigadierDelegate<>(blade,
-            (ctx, builder, container) -> {
-                for (String suggestion : container.tabComplete(sender(ctx), input(ctx))) {
-                    builder.suggest(suggestion);
-                }
-            },
+            (ctx, builder, container) ->
+                container.tabComplete(sender(ctx), input(ctx), new BrigadierRichSuggestionsBuilder(builder)),
             (ctx, container) ->
                 container.execute(sender(ctx), input(ctx))
         );

@@ -14,10 +14,10 @@ import me.vaperion.blade.tokenizer.input.token.impl.ArgumentToken;
 import me.vaperion.blade.tokenizer.input.token.impl.LabelToken;
 import me.vaperion.blade.tree.CommandTree;
 import me.vaperion.blade.tree.CommandTreeNode;
-import me.vaperion.blade.util.command.SuggestionsBuilder;
+import me.vaperion.blade.util.command.RichSuggestionsBuilder;
+import me.vaperion.blade.util.command.SimpleRichSuggestionsBuilder;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
@@ -57,14 +57,31 @@ public final class CommandSuggestionProvider {
     public List<String> suggest(@NotNull Context context,
                                 @NotNull CommandInput input,
                                 @NotNull EnumSet<SuggestionType> types) {
+        String sourceInput = input.unslashedInput();
+        SimpleRichSuggestionsBuilder builder = new SimpleRichSuggestionsBuilder(sourceInput, sourceInput.length());
+
+        suggest(context, input, types, builder);
+        return builder.build();
+    }
+
+    /**
+     * Generates suggestions for command input and writes them to a rich builder.
+     *
+     * @param context the command context
+     * @param input   the command input
+     * @param types   the suggestion types
+     * @param builder the target suggestions builder
+     */
+    public void suggest(@NotNull Context context,
+                        @NotNull CommandInput input,
+                        @NotNull EnumSet<SuggestionType> types,
+                        @NotNull RichSuggestionsBuilder builder) {
         input.ensureTokenized();
 
         if (input.bladeCommand() != null && !input.bladeCommand().hasPermission(context)) {
             // No suggestions if the user doesn't have permission for the command
-            return Collections.emptyList();
+            return;
         }
-
-        SuggestionsBuilder builder = new SuggestionsBuilder();
 
         String label = input.label()
             .map(LabelToken::name)
@@ -76,25 +93,23 @@ public final class CommandSuggestionProvider {
 
         if (input.bladeCommand() == null) {
             // We can't possibly suggest arguments if there's no command
-            return builder.build();
+            return;
         }
 
         if (input.bladeCommand().usesBladeContext()) {
             // We can't suggest arguments for context-based commands
-            return Collections.emptyList();
+            return;
         }
 
         if (types.contains(SuggestionType.ARGUMENTS)) {
             suggestCommandArguments(context, input, label, builder);
         }
-
-        return builder.build();
     }
 
     private void suggestSubcommands(@NotNull Context context,
                                     @NotNull CommandInput input,
                                     @NotNull String baseCommand,
-                                    @NotNull SuggestionsBuilder builder) {
+                                    @NotNull RichSuggestionsBuilder builder) {
         CommandTree tree = blade.commandTree();
         CommandTreeNode rootNode = tree.root(baseCommand);
 
@@ -143,7 +158,7 @@ public final class CommandSuggestionProvider {
     private void suggestCommandArguments(@NotNull Context context,
                                          @NotNull CommandInput input,
                                          @NotNull String baseCommand,
-                                         @NotNull SuggestionsBuilder builder) {
+                                         @NotNull RichSuggestionsBuilder builder) {
         BladeCommand command = input.bladeCommand();
         if (command == null) return;
         if (command.arguments().isEmpty()) return;
@@ -250,7 +265,8 @@ public final class CommandSuggestionProvider {
         }
 
         try {
-            provider.suggest(context, inputArgument, builder);
+            provider.suggestRich(context, inputArgument, builder);
+            builder.flushLegacy();
         } catch (BladeParseError error) {
             if (argument.isOptional() && error.isRecoverable()) {
                 return;

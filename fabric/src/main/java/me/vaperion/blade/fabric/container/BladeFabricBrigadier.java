@@ -4,6 +4,7 @@ import lombok.Getter;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.brigadier.BladeBrigadierBuilder;
 import me.vaperion.blade.brigadier.BladeBrigadierDelegate;
+import me.vaperion.blade.brigadier.BrigadierRichSuggestionsBuilder;
 import me.vaperion.blade.fabric.context.FabricSender;
 import net.minecraft.server.command.ServerCommandSource;
 import org.jetbrains.annotations.NotNull;
@@ -25,9 +26,8 @@ public final class BladeFabricBrigadier {
             s -> new FabricSender(blade, s));
 
         this.delegate = new BladeBrigadierDelegate<>(blade,
-            (ctx, builder, container) -> {
-                container.suggest(ctx, builder);
-            },
+            (ctx, builder, container) ->
+                container.suggest(ctx, new BrigadierRichSuggestionsBuilder(builder)),
             (ctx, container) -> container.execute(ctx)
         );
     }

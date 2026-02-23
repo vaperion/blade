@@ -4,6 +4,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import lombok.Getter;
 import me.vaperion.blade.Blade;
+import me.vaperion.blade.brigadier.BrigadierRichSuggestionsBuilder;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.Container;
 import me.vaperion.blade.container.ContainerCreator;
@@ -21,13 +22,14 @@ import me.vaperion.blade.tokenizer.input.CommandInput;
 import me.vaperion.blade.tokenizer.input.InputOption;
 import me.vaperion.blade.tree.CommandTreeNode;
 import me.vaperion.blade.util.ErrorMessage;
+import me.vaperion.blade.util.command.RichSuggestionsBuilder;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -231,17 +233,13 @@ public final class FabricContainer implements Container {
 
     public void suggest(@NotNull CommandContext<ServerCommandSource> ctx,
                         @NotNull SuggestionsBuilder builder) {
-        var suggestions = doSuggest(ctx);
-
-        for (var suggestion : suggestions) {
-            builder.suggest(suggestion);
-        }
+        suggest(ctx, new BrigadierRichSuggestionsBuilder(builder));
     }
 
-    @NotNull
-    private List<String> doSuggest(@NotNull CommandContext<ServerCommandSource> ctx) {
+    public void suggest(@NotNull CommandContext<ServerCommandSource> ctx,
+                        @NotNull RichSuggestionsBuilder suggestions) {
         if (!blade.configuration().tabCompleter().isDefault())
-            return Collections.emptyList();
+            return;
 
         var sender = ctx.getSource();
 
@@ -251,7 +249,7 @@ public final class FabricContainer implements Container {
 
         if (node == null) {
             // No main command and not a stub either - not a blade command at all?
-            return Collections.emptyList();
+            return;
         }
 
         try {
@@ -282,11 +280,13 @@ public final class FabricContainer implements Container {
 
                 context.updateArgumentsFromInput(input);
 
-                return blade.suggestionProvider().suggest(
+                blade.suggestionProvider().suggest(
                     context,
                     input,
-                    SuggestionType.ARGUMENTS
+                    EnumSet.of(SuggestionType.ARGUMENTS),
+                    suggestions
                 );
+                return;
             }
 
             // Only found command stub - suggest subcommands.
@@ -309,10 +309,11 @@ public final class FabricContainer implements Container {
 
             input.tokenize();
 
-            return blade.suggestionProvider().suggest(
+            blade.suggestionProvider().suggest(
                 context,
                 input,
-                SuggestionType.SUBCOMMANDS
+                EnumSet.of(SuggestionType.SUBCOMMANDS),
+                suggestions
             );
         } catch (BladeImplementationError e) {
             sender.sendMessage(Text.literal(ERROR_MESSAGE).formatted(Formatting.RED));
@@ -339,8 +340,6 @@ public final class FabricContainer implements Container {
             blade.logger().error(t, "An error occurred while %s was tab completing the command `%s`.",
                 sender.getName(), label);
         }
-
-        return Collections.emptyList();
     }
 
     private void sendHelpMessage(@NotNull ServerCommandSource sender,
