@@ -18,7 +18,7 @@
     "source": "https://github.com/vaperion/blade",
     "issues": "https://github.com/vaperion/blade/issues"
   },
-  "license": "The-Unlicense",
+  "license": "MIT",
   "environment": "server",
   "entrypoints": {
     "server": [

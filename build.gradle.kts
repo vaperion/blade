@@ -57,9 +57,9 @@ subprojects {
 
             licenses {
                 license {
-                    name.set("The Unlicense")
-                    url.set("http://opensource.org/license/unlicense")
-                    distribution.set("http://opensource.org/license/unlicense")
+                    name.set("MIT License")
+                    url.set("https://opensource.org/license/mit")
+                    distribution.set("repo")
                 }
             }
 
