@@ -19,6 +19,7 @@ import me.vaperion.blade.tokenizer.input.CommandInput;
 import me.vaperion.blade.tokenizer.input.InputOption;
 import me.vaperion.blade.tree.CommandTreeNode;
 import me.vaperion.blade.util.ErrorMessage;
+import me.vaperion.blade.util.command.CommandExecutionWrapper;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.MinecraftServer;
@@ -215,21 +216,9 @@ public final class MinestomContainer extends Command implements Container {
             };
 
             if (command.async()) {
-                blade.configuration().asyncExecutor().accept(runnable);
+                CommandExecutionWrapper.runAsync(blade, command, runnable);
             } else {
-                long time = System.nanoTime();
-                runnable.run();
-                long elapsed = (System.nanoTime() - time) / 1000000;
-
-                if (elapsed >= blade.configuration().executionTimeWarningThreshold()) {
-                    blade.logger().warn(
-                        "Command `%s` (%s#%s) took %d milliseconds to execute!",
-                        command.mainLabel(),
-                        command.method().getDeclaringClass().getName(),
-                        command.method().getName(),
-                        elapsed
-                    );
-                }
+                CommandExecutionWrapper.runSync(blade, command, runnable);
             }
         } catch (Throwable t) {
             blade.logger().error(t, "An unexpected error occurred while %s was executing the command `%s`.",

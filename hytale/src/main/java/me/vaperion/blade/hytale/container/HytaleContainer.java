@@ -21,6 +21,7 @@ import me.vaperion.blade.tokenizer.TokenizerError;
 import me.vaperion.blade.tokenizer.input.CommandInput;
 import me.vaperion.blade.tree.CommandTreeNode;
 import me.vaperion.blade.util.ErrorMessage;
+import me.vaperion.blade.util.command.CommandExecutionWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -213,7 +214,7 @@ public final class HytaleContainer extends AbstractCommand implements Container 
             };
 
             if (command.async()) {
-                blade.configuration().asyncExecutor().accept(runnable);
+                CommandExecutionWrapper.runAsync(blade, command, runnable);
             } else {
                 // Hytale ECS has thread checks, and users probably want to access
                 // data related to the player or their world, so it makes sense for us to run
@@ -222,20 +223,7 @@ public final class HytaleContainer extends AbstractCommand implements Container 
                     player.getWorld().execute(runnable);
                 } else {
                     // Fallback to running on the main server thread
-
-                    long time = System.nanoTime();
-                    runnable.run();
-                    long elapsed = (System.nanoTime() - time) / 1000000;
-
-                    if (elapsed >= blade.configuration().executionTimeWarningThreshold()) {
-                        blade.logger().warn(
-                            "Command `%s` (%s#%s) took %d milliseconds to execute!",
-                            command.mainLabel(),
-                            command.method().getDeclaringClass().getName(),
-                            command.method().getName(),
-                            elapsed
-                        );
-                    }
+                    CommandExecutionWrapper.runSync(blade, command, runnable);
                 }
             }
         } catch (Throwable t) {
