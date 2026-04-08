@@ -64,11 +64,25 @@ public class ClassUtil {
     }
 
     @NotNull
-    public Class<?> getGenericOrRawType(@NotNull Parameter parameter) {
+    public static Class<?> getGenericOrRawType(@NotNull Parameter parameter) {
         Type type = parameter.getParameterizedType();
 
         if (type instanceof ParameterizedType) {
-            return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
+            ParameterizedType parameterizedType = (ParameterizedType) type;
+            Type actualType = parameterizedType.getActualTypeArguments()[0];
+
+            if (actualType instanceof Class<?>) {
+                return (Class<?>) actualType;
+            }
+
+            if (actualType instanceof ParameterizedType) {
+                Type rawType = ((ParameterizedType) actualType).getRawType();
+                if (rawType instanceof Class<?>) {
+                    return (Class<?>) rawType;
+                }
+            }
+
+            return parameter.getType();
         }
 
         return parameter.getType();
