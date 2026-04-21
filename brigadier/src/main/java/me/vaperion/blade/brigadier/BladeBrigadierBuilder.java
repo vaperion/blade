@@ -43,6 +43,8 @@ public final class BladeBrigadierBuilder<T, S> {
 
         if (node.isLeaf()) {
             registerParams(node, root, suggestionProvider, executor);
+        } else if (blade.configuration().registerDefaultHelpArguments() && !node.children().isEmpty()) {
+            registerHelpParams(node, root, suggestionProvider, executor);
         }
 
         for (CommandTreeNode subcommand : node.children().values()) {
@@ -71,11 +73,29 @@ public final class BladeBrigadierBuilder<T, S> {
 
         if (node.isLeaf()) {
             registerParams(node, subcommandNode, suggestionProvider, executor);
+        } else if (blade.configuration().registerDefaultHelpArguments() && !node.children().isEmpty()) {
+            registerHelpParams(node, subcommandNode, suggestionProvider, executor);
         }
 
         for (CommandTreeNode child : node.children().values()) {
             registerSubCommand(subcommandNode, child, suggestionProvider, executor);
         }
+    }
+
+    private void registerHelpParams(@NotNull CommandTreeNode node,
+                                    @NotNull CommandNode<T> commandNode,
+                                    @NotNull SuggestionProvider<T> suggestionProvider,
+                                    @NotNull Command<T> brigadierCommand) {
+        // register a greedy argument at the end so the user can pass a page number, or partial command name to filter by
+
+        RequiredArgumentBuilder<T, String> builder = RequiredArgumentBuilder
+            .<T, String>argument("args", StringArgumentType.greedyString())
+            .suggests(suggestionProvider)
+            .requires(createPermissionPredicate(node))
+            .executes(brigadierCommand);
+
+        CommandNode<T> argument = builder.build();
+        commandNode.addChild(argument);
     }
 
     private void registerParams(@NotNull CommandTreeNode node,

@@ -39,12 +39,27 @@ public final class BladeConfiguration<Text> {
     private boolean verbose;
 
     /**
+     * Whether "help commands" should automatically receive a greedy argument to allow for proper pagination.
+     * <p>
+     * For example, when you register a command named {@code /foo bar}, {@code /foo} will become a "help command".
+     * This option allows users to run {@code /foo 1}, {@code /foo 2}, etc. to view multiple pages of subcommands.
+     */
+    private boolean registerDefaultHelpArguments = true;
+
+    /**
      * Whether Blade should override vanilla commands when registering commands with the same name.
      * <p>
      * For example, if you register a command named {@code whitelist}, the vanilla {@code /whitelist} command
      * will be overridden if this option is enabled.
      */
     private boolean overrideCommands;
+
+    /**
+     * Whether the use the command name as the qualifier when registering commands. (Brigadier only)
+     * <p>
+     * This means that if you have a command named {@code foo}, the qualified version of the command will be {@code /foo:foo} instead of {@code /plugin:foo}.
+     */
+    private boolean useCommandNameAsQualifier;
 
     /**
      * The qualifier used to register commands.
