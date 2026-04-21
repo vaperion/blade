@@ -78,9 +78,16 @@ public final class CommandSuggestionProvider {
                         @NotNull RichSuggestionsBuilder builder) {
         input.ensureTokenized();
 
-        if (input.bladeCommand() != null && !input.bladeCommand().hasPermission(context)) {
-            // No suggestions if the user doesn't have permission for the command
-            return;
+        if (input.bladeCommand() != null) {
+            if (input.bladeCommand().hidden()) {
+                // Hidden commands should never be suggested.
+                return;
+            }
+
+            if (!input.bladeCommand().hasPermission(context)) {
+                // No suggestions if the user doesn't have permission for the command
+                return;
+            }
         }
 
         String label = input.label()

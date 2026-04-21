@@ -40,18 +40,20 @@ public final class BladeBrigadierBuilder<T, S> {
             .executes(executor);
 
         LiteralCommandNode<T> root = builder.build();
-
-        if (node.isLeaf()) {
-            registerParams(node, root, suggestionProvider, executor);
-        } else if (blade.configuration().registerDefaultHelpArguments() && !node.children().isEmpty()) {
-            registerHelpParams(node, root, suggestionProvider, executor);
-        }
+        registerNodeData(node, root, suggestionProvider, executor);
 
         for (CommandTreeNode subcommand : node.children().values()) {
             registerSubCommand(root,
                 subcommand,
                 suggestionProvider,
                 executor);
+        }
+
+        if (hasHiddenCommand(node)) {
+            BrigadierCompat.setClientNode(
+                root,
+                buildClientLiteral(node, label, suggestionProvider, executor)
+            );
         }
 
         return root;
@@ -70,15 +72,83 @@ public final class BladeBrigadierBuilder<T, S> {
 
         LiteralCommandNode<T> subcommandNode = builder.build();
         root.addChild(subcommandNode);
-
-        if (node.isLeaf()) {
-            registerParams(node, subcommandNode, suggestionProvider, executor);
-        } else if (blade.configuration().registerDefaultHelpArguments() && !node.children().isEmpty()) {
-            registerHelpParams(node, subcommandNode, suggestionProvider, executor);
-        }
+        registerNodeData(node, subcommandNode, suggestionProvider, executor);
 
         for (CommandTreeNode child : node.children().values()) {
             registerSubCommand(subcommandNode, child, suggestionProvider, executor);
+        }
+    }
+
+    @NotNull
+    private LiteralCommandNode<T> buildClientLiteral(@NotNull CommandTreeNode node,
+                                                     @NotNull String label,
+                                                     @NotNull SuggestionProvider<T> suggestionProvider,
+                                                     @NotNull Command<T> executor) {
+        boolean visibleLeaf = node.command() != null && !node.command().hidden();
+
+        LiteralArgumentBuilder<T> builder = LiteralArgumentBuilder.<T>literal(label)
+            .requires(createClientVisibilityPredicate(node));
+
+        if (visibleLeaf) {
+            builder.executes(executor);
+        }
+
+        LiteralCommandNode<T> root = builder.build();
+
+        if (visibleLeaf) {
+            registerNodeData(node, root, suggestionProvider, executor);
+        }
+
+        for (CommandTreeNode subcommand : node.children().values()) {
+            if (!hasVisibleCommand(subcommand)) {
+                continue;
+            }
+
+            root.addChild(buildClientSubCommand(subcommand, suggestionProvider, executor));
+        }
+
+        return root;
+    }
+
+    @NotNull
+    private LiteralCommandNode<T> buildClientSubCommand(@NotNull CommandTreeNode node,
+                                                        @NotNull SuggestionProvider<T> suggestionProvider,
+                                                        @NotNull Command<T> executor) {
+        String label = node.label();
+        boolean visibleLeaf = node.command() != null && !node.command().hidden();
+
+        LiteralArgumentBuilder<T> builder = LiteralArgumentBuilder.<T>literal(label)
+            .requires(createClientVisibilityPredicate(node));
+
+        if (visibleLeaf) {
+            builder.executes(executor);
+        }
+
+        LiteralCommandNode<T> subcommandNode = builder.build();
+
+        if (visibleLeaf) {
+            registerNodeData(node, subcommandNode, suggestionProvider, executor);
+        }
+
+        for (CommandTreeNode child : node.children().values()) {
+            if (!hasVisibleCommand(child)) {
+                continue;
+            }
+
+            subcommandNode.addChild(buildClientSubCommand(child, suggestionProvider, executor));
+        }
+
+        return subcommandNode;
+    }
+
+    private void registerNodeData(@NotNull CommandTreeNode node,
+                                  @NotNull CommandNode<T> commandNode,
+                                  @NotNull SuggestionProvider<T> suggestionProvider,
+                                  @NotNull Command<T> brigadierCommand) {
+        if (node.isLeaf()) {
+            registerParams(node, commandNode, suggestionProvider, brigadierCommand);
+        } else if (blade.configuration().registerDefaultHelpArguments() && !node.children().isEmpty()) {
+            registerHelpParams(node, commandNode, suggestionProvider, brigadierCommand);
         }
     }
 
@@ -144,8 +214,7 @@ public final class BladeBrigadierBuilder<T, S> {
     @NotNull
     private Predicate<T> createPermissionPredicate(@NotNull CommandTreeNode node) {
         return sender -> {
-            Sender<?> wrappedSender = wrapper.apply(converter.apply(sender));
-            Context context = new Context(blade, wrappedSender, "", new String[0]);
+            Context context = createContext(sender);
 
             if (node.command() != null) {
                 return node.command().hasPermission(context);
@@ -159,6 +228,17 @@ public final class BladeBrigadierBuilder<T, S> {
         };
     }
 
+    @NotNull
+    private Predicate<T> createClientVisibilityPredicate(@NotNull CommandTreeNode node) {
+        return sender -> hasVisibleAccessibleCommand(node, createContext(sender));
+    }
+
+    @NotNull
+    private Context createContext(@NotNull T sender) {
+        Sender<?> wrappedSender = wrapper.apply(converter.apply(sender));
+        return new Context(blade, wrappedSender, "", new String[0]);
+    }
+
     private boolean hasAccessibleCommand(@NotNull CommandTreeNode node,
                                          @NotNull Context context) {
         if (node.isLeaf()) {
@@ -170,6 +250,58 @@ public final class BladeBrigadierBuilder<T, S> {
 
         for (CommandTreeNode child : node.children().values()) {
             if (hasAccessibleCommand(child, context)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean hasVisibleCommand(@NotNull CommandTreeNode node) {
+        if (node.isLeaf()) {
+            BladeCommand cmd = node.command();
+            if (cmd != null && !cmd.hidden()) {
+                return true;
+            }
+        }
+
+        for (CommandTreeNode child : node.children().values()) {
+            if (hasVisibleCommand(child)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean hasHiddenCommand(@NotNull CommandTreeNode node) {
+        if (node.isLeaf()) {
+            BladeCommand cmd = node.command();
+            if (cmd != null && cmd.hidden()) {
+                return true;
+            }
+        }
+
+        for (CommandTreeNode child : node.children().values()) {
+            if (hasHiddenCommand(child)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean hasVisibleAccessibleCommand(@NotNull CommandTreeNode node,
+                                                @NotNull Context context) {
+        if (node.isLeaf()) {
+            BladeCommand cmd = node.command();
+            if (cmd != null && !cmd.hidden() && cmd.hasPermission(context)) {
+                return true;
+            }
+        }
+
+        for (CommandTreeNode child : node.children().values()) {
+            if (hasVisibleAccessibleCommand(child, context)) {
                 return true;
             }
         }
@@ -262,5 +394,4 @@ public final class BladeBrigadierBuilder<T, S> {
         //noinspection unchecked
         return (ArgumentType<Object>) type;
     }
-
 }

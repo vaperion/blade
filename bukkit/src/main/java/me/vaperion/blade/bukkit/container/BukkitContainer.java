@@ -203,7 +203,11 @@ public final class BukkitContainer extends Command implements Container {
         BladeCommand command = Objects.requireNonNull(node.command());
 
         if (!command.hasPermission(context)) {
-            sender.sendMessage(ChatColor.RED + command.permissionMessage());
+            if (command.hidden()) {
+                sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
+            } else {
+                sender.sendMessage(ChatColor.RED + command.permissionMessage());
+            }
             return true;
         }
 

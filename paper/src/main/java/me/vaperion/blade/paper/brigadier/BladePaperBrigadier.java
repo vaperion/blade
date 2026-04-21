@@ -1,6 +1,8 @@
 package me.vaperion.blade.paper.brigadier;
 
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandRegistrationFlag;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -11,6 +13,7 @@ import lombok.Getter;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.brigadier.BladeBrigadierBuilder;
 import me.vaperion.blade.brigadier.BladeBrigadierDelegate;
+import me.vaperion.blade.brigadier.BrigadierCompat;
 import me.vaperion.blade.brigadier.BrigadierRichSuggestionsBuilder;
 import me.vaperion.blade.bukkit.container.BukkitContainer;
 import me.vaperion.blade.bukkit.context.BukkitSender;
@@ -86,6 +89,8 @@ public final class BladePaperBrigadier implements Listener {
                 delegate.executor(node)
             );
 
+            String pluginNamespace = pluginNamespace();
+
             if (registerModern(registrar, literal)) {
                 // try registering using the modern method first, this also allows setting the namespace
                 return;
@@ -98,7 +103,18 @@ public final class BladePaperBrigadier implements Listener {
 
             // if both methods fail, just use the default register method
             registrar.register(literal);
+            syncRegisteredClientNodes(registrar, pluginNamespace, literal);
         });
+    }
+
+    @NotNull
+    private PluginMeta pluginMeta() {
+        return blade.platformAs(BladePaperPlatform.class).plugin().getPluginMeta();
+    }
+
+    @NotNull
+    private String pluginNamespace() {
+        return pluginMeta().getName().toLowerCase(Locale.ROOT);
     }
 
     private static volatile Class<?> PAPER_COMMANDS;
@@ -114,7 +130,7 @@ public final class BladePaperBrigadier implements Listener {
         }
 
         try {
-            PluginMeta meta = blade.platformAs(BladePaperPlatform.class).plugin().getPluginMeta();
+            PluginMeta meta = pluginMeta();
 
             String namespace = blade.configuration().useCommandNameAsQualifier()
                 ? literal.getLiteral().toLowerCase(Locale.ROOT)
@@ -154,6 +170,8 @@ public final class BladePaperBrigadier implements Listener {
                 /* flags */ Set.of(CommandRegistrationFlag.FLATTEN_ALIASES)
             );
 
+            syncRegisteredClientNodes(registrar, namespace, literal);
+
             return true;
         } catch (Throwable ignored) {
             MODERN_SUPPORTED = false;
@@ -171,7 +189,7 @@ public final class BladePaperBrigadier implements Listener {
         }
 
         try {
-            PluginMeta meta = blade.platformAs(BladePaperPlatform.class).plugin().getPluginMeta();
+            PluginMeta meta = pluginMeta();
 
             registrar.registerWithFlags(
                 meta,
@@ -181,6 +199,8 @@ public final class BladePaperBrigadier implements Listener {
                 Set.of(CommandRegistrationFlag.FLATTEN_ALIASES)
             );
 
+            syncRegisteredClientNodes(registrar, pluginNamespace(), literal);
+
             return true;
         } catch (Throwable ignored) {
             LEGACY_SUPPORTED = false;
@@ -189,5 +209,64 @@ public final class BladePaperBrigadier implements Listener {
 
             return false;
         }
+    }
+
+    private void syncRegisteredClientNodes(@NotNull Commands registrar,
+                                           @NotNull String namespace,
+                                           @NotNull LiteralCommandNode<CommandSourceStack> literal) {
+        CommandNode<CommandSourceStack> clientNode = BrigadierCompat.getClientNode(literal);
+        if (!(clientNode instanceof LiteralCommandNode<CommandSourceStack> clientLiteral)) {
+            return;
+        }
+
+        syncRegisteredClientNode(literal,
+            copyLiteral(literal.getLiteral(), clientLiteral));
+
+        CommandNode<CommandSourceStack> registeredPlain = registrar.getDispatcher()
+            .getRoot()
+            .getChild(literal.getLiteral());
+
+        if (registeredPlain != null && registeredPlain != literal) {
+            syncRegisteredClientNode(registeredPlain,
+                copyLiteral(literal.getLiteral(), clientLiteral));
+        }
+
+        CommandNode<CommandSourceStack> registeredNamespaced = registrar.getDispatcher()
+            .getRoot()
+            .getChild(namespace + ":" + literal.getLiteral());
+
+        if (registeredNamespaced != null) {
+            syncRegisteredClientNode(registeredNamespaced,
+                copyLiteral(namespace + ":" + clientLiteral.getLiteral(), clientLiteral));
+        }
+    }
+
+    private void syncRegisteredClientNode(@NotNull CommandNode<CommandSourceStack> node,
+                                          @NotNull LiteralCommandNode<CommandSourceStack> clientNode) {
+        BrigadierCompat.setClientNode(node, clientNode);
+
+        CommandNode<CommandSourceStack> unwrapped = BrigadierCompat.getUnwrappedCached(node);
+        if (unwrapped != null) {
+            BrigadierCompat.setClientNode(unwrapped, clientNode);
+        }
+    }
+
+    @NotNull
+    private LiteralCommandNode<CommandSourceStack> copyLiteral(@NotNull String newLiteral,
+                                                               @NotNull LiteralCommandNode<CommandSourceStack> source) {
+        LiteralArgumentBuilder<CommandSourceStack> builder = LiteralArgumentBuilder
+            .<CommandSourceStack>literal(newLiteral)
+            .requires(source.getRequirement())
+            .forward(source.getRedirect(), source.getRedirectModifier(), source.isFork());
+
+        if (source.getCommand() != null) {
+            builder.executes(source.getCommand());
+        }
+
+        for (CommandNode<CommandSourceStack> child : source.getChildren()) {
+            builder.then(child);
+        }
+
+        return builder.build();
     }
 }
