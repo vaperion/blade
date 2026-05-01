@@ -10,13 +10,13 @@ import java.lang.annotation.Target;
 /**
  * Marks a method or class as a command.
  *
- * <h3>Usage Patterns:</h3>
+ * <h2>Usage Patterns:</h2>
  * <ul>
  *   <li><strong>Method-level:</strong> Registers the method as a standalone command</li>
  *   <li><strong>Class-level:</strong> Acts as a prefix for all command methods within the class</li>
  * </ul>
  *
- * <h3>Example:</h3>
+ * <h2>Example:</h2>
  * <pre>{@code
  * @Command("mycommand")
  * public class MyCommandClass {

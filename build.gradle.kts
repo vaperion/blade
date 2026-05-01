@@ -29,6 +29,17 @@ subprojects {
         options.encoding = "UTF-8"
     }
 
+    tasks.withType<Javadoc> {
+        javadocTool.set(javaToolchains.javadocToolFor {
+            languageVersion.set(JavaLanguageVersion.of(25))
+        })
+
+        (options as StandardJavadocDocletOptions)
+            .addStringOption("tag", "implNote:a:Implementation Note:")
+
+        options.encoding = "UTF-8"
+    }
+
     dependencies {
         testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
         testRuntimeOnly("org.junit.platform:junit-platform-launcher")
