@@ -7,7 +7,7 @@ import me.vaperion.blade.Blade;
 import me.vaperion.blade.Blade.Builder.Binder;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.ContainerCreator;
-import me.vaperion.blade.fabric.argument.ServerPlayerEntityArgument;
+import me.vaperion.blade.fabric.argument.ServerPlayerArgument;
 import me.vaperion.blade.fabric.command.FabricCommandFeedback;
 import me.vaperion.blade.fabric.container.BladeFabricBrigadier;
 import me.vaperion.blade.fabric.container.FabricContainer;
@@ -18,15 +18,15 @@ import me.vaperion.blade.fabric.platform.FabricHelpGenerator;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
 import net.fabricmc.loader.api.ModContainer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Locale;
 
 @RequiredArgsConstructor
-public class BladeFabricPlatform implements BladePlatform<Text, ModContainer, MinecraftServer> {
+public class BladeFabricPlatform implements BladePlatform<Component, ModContainer, MinecraftServer> {
 
     protected final ModContainer mod;
     protected Blade blade;
@@ -64,19 +64,19 @@ public class BladeFabricPlatform implements BladePlatform<Text, ModContainer, Mi
     }
 
     @Override
-    public void configure(Blade.@NotNull Builder<Text, ModContainer, MinecraftServer> builder,
-                          @NotNull BladeConfiguration<Text> configuration) {
+    public void configure(Blade.@NotNull Builder<Component, ModContainer, MinecraftServer> builder,
+                          @NotNull BladeConfiguration<Component> configuration) {
         configuration.commandQualifier(mod.getMetadata().getName().toLowerCase(Locale.ROOT));
         configuration.helpGenerator(new FabricHelpGenerator());
         configuration.feedbackCreator(FabricCommandFeedback::new);
 
-        Binder<Text, ModContainer, MinecraftServer> binder = new Binder<>(builder, true);
-        binder.bind(ServerPlayerEntity.class, new ServerPlayerEntityArgument());
+        Binder<Component, ModContainer, MinecraftServer> binder = new Binder<>(builder, true);
+        binder.bind(ServerPlayer.class, new ServerPlayerArgument());
     }
 
     @Override
     public @NotNull String convertSenderTypeToName(@NotNull Class<?> type, boolean plural) {
-        if (ServerPlayerEntity.class.isAssignableFrom(type)) {
+        if (ServerPlayer.class.isAssignableFrom(type)) {
             return plural ? "players" : "player";
         } else {
             // Fallback

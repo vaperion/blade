@@ -6,7 +6,7 @@ import me.vaperion.blade.brigadier.BladeBrigadierBuilder;
 import me.vaperion.blade.brigadier.BladeBrigadierDelegate;
 import me.vaperion.blade.brigadier.BrigadierRichSuggestionsBuilder;
 import me.vaperion.blade.fabric.context.FabricSender;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.commands.CommandSourceStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
@@ -15,8 +15,8 @@ import java.util.function.Function;
 public final class BladeFabricBrigadier {
 
     private final Blade blade;
-    private final BladeBrigadierBuilder<ServerCommandSource, ServerCommandSource> builder;
-    private final BladeBrigadierDelegate<ServerCommandSource, FabricContainer> delegate;
+    private final BladeBrigadierBuilder<CommandSourceStack, CommandSourceStack> builder;
+    private final BladeBrigadierDelegate<CommandSourceStack, FabricContainer> delegate;
 
     public BladeFabricBrigadier(@NotNull Blade blade) {
         this.blade = blade;

@@ -1,6 +1,6 @@
 package me.vaperion.blade.fabric.util;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -9,7 +9,7 @@ import java.util.Optional;
 public final class TextUtil {
 
     @NotNull
-    public static String toRaw(@NotNull Text text) {
+    public static String toRaw(@NotNull Component text) {
         StringBuilder builder = new StringBuilder();
 
         text.visit(v -> {
@@ -21,9 +21,9 @@ public final class TextUtil {
     }
 
     @NotNull
-    public static Text fromLegacy(@NotNull String message) {
+    public static Component fromLegacy(@NotNull String message) {
         String translated = translateColorCodes(message);
-        return Text.literal(translated);
+        return Component.literal(translated);
     }
 
     @NotNull

@@ -25,7 +25,9 @@
       "me.vaperion.blade.fabric.BladeFabricGlobal"
     ]
   },
-  "accessWidener": "blade.accesswidener",
+  "mixins": [
+    "blade.mixins.json"
+  ],
   "depends": {
     "fabricloader": ">=0.9.0",
     "fabric-api-base": "*",

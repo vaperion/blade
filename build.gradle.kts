@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "io.github.vaperion.blade"
-version = "1.0.26"
+version = "1.0.27"
 
 subprojects {
     apply(plugin = "io.freefair.lombok")

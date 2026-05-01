@@ -6,32 +6,32 @@ import me.vaperion.blade.command.CommandFeedback;
 import me.vaperion.blade.command.parameter.DefinedArgument;
 import me.vaperion.blade.command.parameter.DefinedFlag;
 import me.vaperion.blade.context.Context;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.NotNull;
 
-public final class FabricCommandFeedback implements CommandFeedback<Text> {
+public final class FabricCommandFeedback implements CommandFeedback<Component> {
 
-    private final Text component;
+    private final Component component;
 
     public FabricCommandFeedback(BladeCommand command, boolean isUsage) {
-        MutableText builder = Text.empty();
+        MutableComponent builder = Component.empty();
 
         builder.append(
-            Text.literal((isUsage ? "Usage: " : "") + "/")
-                .styled(style -> style
-                    .withColor(Formatting.RED))
+            Component.literal((isUsage ? "Usage: " : "") + "/")
+                .withStyle(style -> style
+                    .withColor(ChatFormatting.RED))
         );
 
         builder.append(
-            Text.literal(command.mainLabel()).formatted(Formatting.RED)
+            Component.literal(command.mainLabel()).withStyle(ChatFormatting.RED)
         );
 
         if (!command.customUsage().isEmpty()) {
             builder.append(
-                Text.literal(command.customUsage()).formatted(Formatting.RED)
+                Component.literal(command.customUsage()).withStyle(ChatFormatting.RED)
             );
             this.component = builder;
             return;
@@ -44,63 +44,63 @@ public final class FabricCommandFeedback implements CommandFeedback<Text> {
 
             if (first) {
                 builder.append(
-                    Text.literal(" (").styled(style -> style
-                        .withFormatting(Formatting.RED))
+                    Component.literal(" (").withStyle(style -> style
+                        .applyFormat(ChatFormatting.RED))
                 );
 
                 first = false;
             } else {
                 builder.append(
-                    Text.literal(" | ").styled(style -> style
-                        .withFormatting(Formatting.RED))
+                    Component.literal(" | ").withStyle(style -> style
+                        .applyFormat(ChatFormatting.RED))
                 );
             }
 
             builder.append(
-                Text.literal("-" + flag.value() + (definedFlag.isBooleanFlag() ? "" : " <" + definedFlag.name() + ">"))
-                    .styled(style -> style
-                        .withColor(Formatting.AQUA))
+                Component.literal("-" + flag.value() + (definedFlag.isBooleanFlag() ? "" : " <" + definedFlag.name() + ">"))
+                    .withStyle(style -> style
+                        .withColor(ChatFormatting.AQUA))
             );
         }
 
         if (!first) {
             builder.append(
-                Text.literal(")").styled(style -> style
-                    .withFormatting(Formatting.RED))
+                Component.literal(")").withStyle(style -> style
+                    .applyFormat(ChatFormatting.RED))
             );
         }
 
         // Add real parameters
         for (DefinedArgument arg : command.arguments()) {
-            builder.append(Text.literal(" "));
+            builder.append(Component.literal(" "));
 
             builder.append(
-                Text.literal(arg.isOptional() ? "[" : "<")
-                    .formatted(Formatting.RED)
+                Component.literal(arg.isOptional() ? "[" : "<")
+                    .withStyle(ChatFormatting.RED)
             );
 
             builder.append(
-                Text.literal(arg.name())
-                    .formatted(Formatting.RED)
+                Component.literal(arg.name())
+                    .withStyle(ChatFormatting.RED)
             );
 
             if (arg.isGreedy()) {
                 builder.append(
-                    Text.literal("...").formatted(Formatting.RED)
+                    Component.literal("...").withStyle(ChatFormatting.RED)
                 );
             }
 
             builder.append(
-                Text.literal(arg.isOptional() ? "]" : ">")
-                    .formatted(Formatting.RED)
+                Component.literal(arg.isOptional() ? "]" : ">")
+                    .withStyle(ChatFormatting.RED)
             );
         }
 
         // Add extra usage
         if (!command.extraUsageData().isEmpty()) {
             builder.append(
-                Text.literal(" " + command.extraUsageData().trim())
-                    .formatted(Formatting.RED)
+                Component.literal(" " + command.extraUsageData().trim())
+                    .withStyle(ChatFormatting.RED)
             );
         }
 
@@ -108,12 +108,12 @@ public final class FabricCommandFeedback implements CommandFeedback<Text> {
     }
 
     @Override
-    public @NotNull Text message() {
+    public @NotNull Component message() {
         return component;
     }
 
     @Override
     public void sendTo(@NotNull Context context) {
-        ((ServerCommandSource) context.sender().rawSender()).sendMessage(this.component);
+        ((CommandSourceStack) context.sender().rawSender()).sendSystemMessage(this.component);
     }
 }

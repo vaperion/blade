@@ -13,7 +13,8 @@ dependencies {
     api(project(":brigadier"))
 
     minecraft("com.mojang:minecraft:${libs.versions.fabric.minecraft.get()}")
-    mappings("net.fabricmc:yarn:${libs.versions.fabric.mappings.get()}:v2")
+    mappings(loom.officialMojangMappings())
+
     modImplementation("net.fabricmc:fabric-loader:${libs.versions.fabric.loader.get()}")
 
     val apiModules = listOf(
@@ -28,10 +29,6 @@ dependencies {
     }
 
     modCompileOnly("me.lucko:fabric-permissions-api:${libs.versions.lucko.permissions.get()}")
-}
-
-loom {
-    accessWidenerPath = file("src/main/resources/blade.accesswidener")
 }
 
 tasks {

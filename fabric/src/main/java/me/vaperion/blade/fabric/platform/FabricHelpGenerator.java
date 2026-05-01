@@ -5,9 +5,9 @@ import me.vaperion.blade.context.Context;
 import me.vaperion.blade.fabric.util.TextUtil;
 import me.vaperion.blade.platform.api.HelpGenerator;
 import me.vaperion.blade.util.command.PaginatedOutput;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -15,10 +15,10 @@ import java.util.stream.Collectors;
 
 import static me.vaperion.blade.util.BladeHelper.mergeLabelWithArgs;
 
-public class FabricHelpGenerator implements HelpGenerator<Text> {
+public class FabricHelpGenerator implements HelpGenerator<Component> {
 
     @Override
-    public @NotNull List<Text> generate(@NotNull Context context, @NotNull List<BladeCommand> commands) {
+    public @NotNull List<Component> generate(@NotNull Context context, @NotNull List<BladeCommand> commands) {
         String[] args = context.arguments();
 
         int page = 1;
@@ -46,77 +46,77 @@ public class FabricHelpGenerator implements HelpGenerator<Text> {
 
         if (originalCount != 0 && commands.isEmpty()) {
             return List.of(
-                Text.literal(context.blade().configuration().defaultPermissionMessage())
-                    .formatted(Formatting.RED)
+                Component.literal(context.blade().configuration().defaultPermissionMessage())
+                    .withStyle(ChatFormatting.RED)
             );
         }
 
-        return new PaginatedOutput<BladeCommand, Text>(RESULTS_PER_PAGE) {
+        return new PaginatedOutput<BladeCommand, Component>(RESULTS_PER_PAGE) {
             @Override
-            public @NotNull Text error(@NotNull Error error, Object... args) {
+            public @NotNull Component error(@NotNull Error error, Object... args) {
                 return switch (error) {
-                    case NO_RESULTS -> Text.literal("There are no available commands matching that format.")
-                        .formatted(Formatting.RED);
+                    case NO_RESULTS -> Component.literal("There are no available commands matching that format.")
+                        .withStyle(ChatFormatting.RED);
 
-                    case PAGE_OUT_OF_BOUNDS -> Text.literal(String.format(
+                    case PAGE_OUT_OF_BOUNDS -> Component.literal(String.format(
                             "Page %d does not exist, valid range is 1 to %d.", args))
-                        .formatted(Formatting.RED);
+                        .withStyle(ChatFormatting.RED);
                 };
             }
 
             @Override
-            public @NotNull Text header(int page, int totalPages) {
-                return Text.empty()
+            public @NotNull Component header(int page, int totalPages) {
+                return Component.empty()
                     .append(
-                        Text.literal("==== ")
-                            .formatted(Formatting.AQUA)
+                        Component.literal("==== ")
+                            .withStyle(ChatFormatting.AQUA)
                     )
                     .append(
-                        Text.literal("Help for /" + context.label())
-                            .formatted(Formatting.YELLOW)
+                        Component.literal("Help for /" + context.label())
+                            .withStyle(ChatFormatting.YELLOW)
                     )
                     .append(
-                        Text.literal(" ====")
-                            .formatted(Formatting.AQUA)
+                        Component.literal(" ====")
+                            .withStyle(ChatFormatting.AQUA)
                     );
             }
 
             @Override
-            public @NotNull Text footer(int page, int totalPages) {
-                return Text.empty()
+            public @NotNull Component footer(int page, int totalPages) {
+                return Component.empty()
                     .append(
-                        Text.literal("==== ")
-                            .formatted(Formatting.AQUA)
+                        Component.literal("==== ")
+                            .withStyle(ChatFormatting.AQUA)
                     )
                     .append(
-                        Text.literal("Page " + page + "/" + totalPages)
-                            .formatted(Formatting.YELLOW)
+                        Component.literal("Page " + page + "/" + totalPages)
+                            .withStyle(ChatFormatting.YELLOW)
                     )
                     .append(
-                        Text.literal(" ====")
-                            .formatted(Formatting.AQUA)
+                        Component.literal(" ====")
+                            .withStyle(ChatFormatting.AQUA)
                     );
             }
 
             @Override
-            public @NotNull Text line(BladeCommand result, int index) {
-                Text usage = (Text) result.helpMessage().message();
+            public @NotNull Component line(BladeCommand result, int index) {
+                Component usage = (Component) result.helpMessage().message();
 
-                MutableText out = Text.empty()
+                MutableComponent out = Component.empty()
                     .append(
-                        Text.literal(" - ")
-                            .formatted(Formatting.AQUA)
+                        Component.literal(" - ")
+                            .withStyle(ChatFormatting.AQUA)
                     );
 
                 out.append(
-                    Text.literal(TextUtil.toRaw(usage))
-                        .formatted(Formatting.YELLOW)
+                    Component.literal(TextUtil.toRaw(usage))
+                        .withStyle(ChatFormatting.YELLOW)
                 );
 
                 if (!result.description().isEmpty()) {
                     out.append(
-                        Text.literal(" - " + result.description())
-                            .formatted(Formatting.GRAY)
+                        Component.literal(" - " + result.description())
+                            .withStyle(ChatFormatting.GRAY)
                     );
                 }
 

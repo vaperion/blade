@@ -5,22 +5,22 @@ import me.vaperion.blade.Blade;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Sender;
 import me.vaperion.blade.fabric.BladeFabricPlatform;
-import net.minecraft.command.CommandSource;
-import net.minecraft.entity.Entity;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.dedicated.MinecraftDedicatedServer;
-import net.minecraft.server.network.ServerPlayerEntity;
+import me.vaperion.blade.fabric.ext.CommandSourceStackExt;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @RequiredArgsConstructor
-public final class FabricSender implements Sender<ServerCommandSource> {
+public final class FabricSender implements Sender<CommandSourceStack> {
     private final Blade blade;
-    private final ServerCommandSource commandSource;
+    private final CommandSourceStack commandSource;
 
     @NotNull
     @Override
-    public ServerCommandSource rawSender() {
+    public CommandSourceStack rawSender() {
         return commandSource;
     }
 
@@ -34,21 +34,21 @@ public final class FabricSender implements Sender<ServerCommandSource> {
     public @NotNull Class<?> underlyingSenderType() {
         return commandSource.getEntity() != null
             ? commandSource.getEntity().getClass()
-            : ServerCommandSource.class;
+            : CommandSourceStack.class;
     }
 
     @NotNull
     @Override
     public String name() {
-        return commandSource.getName();
+        return commandSource.getTextName();
     }
 
     @Override
     public boolean hasPermission(@NotNull String permissionNode) {
-        boolean isConsole = commandSource.output instanceof MinecraftDedicatedServer;
+        var isConsole = ((CommandSourceStackExt) commandSource).blade$isConsole();
 
         if ("op".equals(permissionNode))
-            return isConsole || commandSource.hasPermissionLevel(4);
+            return isConsole || commandSource.hasPermission(4);
         if ("console".equals(permissionNode))
             return isConsole;
 
@@ -64,11 +64,11 @@ public final class FabricSender implements Sender<ServerCommandSource> {
         // We do exact comparisons instead of isAssignableFrom / others here on purpose
         var entity = commandSource.getEntity();
 
-        if (clazz.equals(ServerPlayerEntity.class) && entity instanceof ServerPlayerEntity)
+        if (clazz.equals(ServerPlayer.class) && entity instanceof ServerPlayer)
             return (T) entity;
         else if (clazz.equals(Entity.class) && entity != null)
             return (T) entity;
-        else if (clazz.equals(ServerCommandSource.class) || clazz.equals(CommandSource.class))
+        else if (clazz.equals(CommandSourceStack.class) || clazz.equals(SharedSuggestionProvider.class))
             return (T) commandSource;
 
         return null;

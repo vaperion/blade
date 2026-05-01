@@ -1,6 +1,6 @@
 package me.vaperion.blade.fabric.permissions;
 
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.commands.CommandSourceStack;
 import org.jetbrains.annotations.NotNull;
 
 public interface PermissionsProvider {
@@ -12,7 +12,7 @@ public interface PermissionsProvider {
      * @param permission the permission node to check
      * @return true if the source has the permission, false otherwise
      */
-    boolean hasPermission(@NotNull ServerCommandSource source,
+    boolean hasPermission(@NotNull CommandSourceStack source,
                           @NotNull String permission);
 
 }

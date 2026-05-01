@@ -24,9 +24,9 @@ import me.vaperion.blade.tree.CommandTreeNode;
 import me.vaperion.blade.util.ErrorMessage;
 import me.vaperion.blade.util.command.CommandExecutionWrapper;
 import me.vaperion.blade.util.command.RichSuggestionsBuilder;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -41,7 +41,7 @@ public final class FabricContainer implements Container {
 
     public static final ContainerCreator<FabricContainer> CREATOR = FabricContainer::new;
 
-    private static final Text UNKNOWN_COMMAND_MESSAGE = Text.literal(
+    private static final Component UNKNOWN_COMMAND_MESSAGE = Component.literal(
         "Unknown command. Type \"/help\" for help."
     );
 
@@ -59,8 +59,8 @@ public final class FabricContainer implements Container {
         // No-op: Command registration is managed through Brigadier directly.
     }
 
-    public boolean execute(@NotNull CommandContext<ServerCommandSource> ctx) {
-        ServerCommandSource sender = ctx.getSource();
+    public boolean execute(@NotNull CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack sender = ctx.getSource();
 
         String commandLine = removeCommandQualifier(ctx.getInput());
 
@@ -69,12 +69,12 @@ public final class FabricContainer implements Container {
         );
 
         if (node == null) {
-            sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
+            sender.sendSystemMessage(UNKNOWN_COMMAND_MESSAGE);
 
             if (blade.configuration().verbose())
                 blade.logger().info(
                     "%s tried to execute unknown command: `%s`. This is most likely a bug in Blade, not your plugin. Please report it.",
-                    sender.getName(),
+                    sender.getTextName(),
                     commandLine
                 );
             return false;
@@ -107,8 +107,8 @@ public final class FabricContainer implements Container {
         BladeCommand command = node.command();
 
         if (!Objects.requireNonNull(command).hasPermission(context)) {
-            sender.sendMessage(
-                Text.literal(command.permissionMessage()).formatted(Formatting.RED)
+            sender.sendSystemMessage(
+                Component.literal(command.permissionMessage()).withStyle(ChatFormatting.RED)
             );
             return true;
         }
@@ -134,8 +134,8 @@ public final class FabricContainer implements Container {
                         switch (error.type()) {
                             case LINES:
                                 for (String line : error.lines()) {
-                                    sender.sendMessage(
-                                        Text.literal(line).formatted(Formatting.RED)
+                                    sender.sendSystemMessage(
+                                        Component.literal(line).withStyle(ChatFormatting.RED)
                                     );
                                 }
                                 break;
@@ -162,46 +162,46 @@ public final class FabricContainer implements Container {
                         }
                     }
                 } catch (BladeParseError | BladeFatalError e) {
-                    sender.sendMessage(
-                        Text.literal(e.getMessage()).formatted(Formatting.RED)
+                    sender.sendSystemMessage(
+                        Component.literal(e.getMessage()).withStyle(ChatFormatting.RED)
                     );
                 } catch (BladeInvocationError e) {
-                    sender.sendMessage(
-                        Text.literal(ERROR_MESSAGE).formatted(Formatting.RED)
+                    sender.sendSystemMessage(
+                        Component.literal(ERROR_MESSAGE).withStyle(ChatFormatting.RED)
                     );
 
                     blade.logger().error(e, "Blade failed to invoke the method for command `%s` executed by %s. This is most likely a bug in your plugin.",
-                        label, sender.getName());
+                        label, sender.getTextName());
                 } catch (BladeImplementationError e) {
-                    sender.sendMessage(
-                        Text.literal(ERROR_MESSAGE).formatted(Formatting.RED)
+                    sender.sendSystemMessage(
+                        Component.literal(ERROR_MESSAGE).withStyle(ChatFormatting.RED)
                     );
                     command.usageMessage().sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in your plugin.",
-                        sender.getName(), label);
+                        sender.getTextName(), label);
                 } catch (BladeInternalError e) {
-                    sender.sendMessage(
-                        Text.literal(ERROR_MESSAGE).formatted(Formatting.RED)
+                    sender.sendSystemMessage(
+                        Component.literal(ERROR_MESSAGE).withStyle(ChatFormatting.RED)
                     );
                     command.usageMessage().sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
-                        sender.getName(), label);
+                        sender.getTextName(), label);
                 } catch (TokenizerError error) {
-                    sender.sendMessage(Text.literal(error.formatForChat())
-                        .formatted(Formatting.RED));
+                    sender.sendSystemMessage(Component.literal(error.formatForChat())
+                        .withStyle(ChatFormatting.RED));
                     command.usageMessage().sendTo(context);
 
                     if (!error.type().isSilent()) {
                         blade.logger().error(
                             "Failed to parse %s's command input for command `%s`: %s",
-                            sender.getName(),
+                            sender.getTextName(),
                             label, TokenizerError.generateFancyMessage(error));
                     }
                 } catch (Throwable t) {
                     blade.logger().error(t, "An unexpected error occurred while %s was executing the command `%s`.",
-                        sender.getName(), label);
+                        sender.getTextName(), label);
                 }
             };
 
@@ -214,18 +214,18 @@ public final class FabricContainer implements Container {
             return true;
         } catch (Throwable t) {
             blade.logger().error(t, "An unexpected error occurred while %s was executing the command `%s`.",
-                sender.getName(), label);
+                sender.getTextName(), label);
         }
 
         return false;
     }
 
-    public void suggest(@NotNull CommandContext<ServerCommandSource> ctx,
+    public void suggest(@NotNull CommandContext<CommandSourceStack> ctx,
                         @NotNull SuggestionsBuilder builder) {
         suggest(ctx, new BrigadierRichSuggestionsBuilder(builder));
     }
 
-    public void suggest(@NotNull CommandContext<ServerCommandSource> ctx,
+    public void suggest(@NotNull CommandContext<CommandSourceStack> ctx,
                         @NotNull RichSuggestionsBuilder suggestions) {
         if (!blade.configuration().tabCompleter().isDefault())
             return;
@@ -305,33 +305,33 @@ public final class FabricContainer implements Container {
                 suggestions
             );
         } catch (BladeImplementationError e) {
-            sender.sendMessage(Text.literal(ERROR_MESSAGE).formatted(Formatting.RED));
+            sender.sendSystemMessage(Component.literal(ERROR_MESSAGE).withStyle(ChatFormatting.RED));
 
             blade.logger().error(e, "An error occurred while %s was tab completing the command `%s`. This is a bug in your plugin.",
-                sender.getName(), label);
+                sender.getTextName(), label);
         } catch (BladeInternalError e) {
-            sender.sendMessage(Text.literal(ERROR_MESSAGE).formatted(Formatting.RED));
+            sender.sendSystemMessage(Component.literal(ERROR_MESSAGE).withStyle(ChatFormatting.RED));
 
             blade.logger().error(e, "An error occurred while %s was tab completing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
-                sender.getName(), label);
+                sender.getTextName(), label);
         } catch (BladeFatalError ex) {
-            sender.sendMessage(Text.literal(ex.getMessage()).formatted(Formatting.RED));
+            sender.sendSystemMessage(Component.literal(ex.getMessage()).withStyle(ChatFormatting.RED));
         } catch (TokenizerError error) {
             // Don't send tokenizer errors to the user during tab completion - just log them.
 
             if (!error.type().isSilent()) {
                 blade.logger().error(
                     "Failed to parse %s's command input for command `%s`: %s",
-                    sender.getName(),
+                    sender.getTextName(),
                     label, TokenizerError.generateFancyMessage(error));
             }
         } catch (Throwable t) {
             blade.logger().error(t, "An error occurred while %s was tab completing the command `%s`.",
-                sender.getName(), label);
+                sender.getTextName(), label);
         }
     }
 
-    private void sendHelpMessage(@NotNull ServerCommandSource sender,
+    private void sendHelpMessage(@NotNull CommandSourceStack sender,
                                  @NotNull Context context,
                                  @NotNull List<ResolvedCommand> nodes,
                                  boolean sendUnknownCommandMessage) {
@@ -341,13 +341,13 @@ public final class FabricContainer implements Container {
             node.collectCommandsInto(allCommands));
 
         if (allCommands.isEmpty() && sendUnknownCommandMessage) {
-            sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
+            sender.sendSystemMessage(UNKNOWN_COMMAND_MESSAGE);
             return;
         }
 
-        var lines = blade.<Text>configuration().helpGenerator().generate(context, allCommands);
+        var lines = blade.<Component>configuration().helpGenerator().generate(context, allCommands);
 
-        lines.forEach(sender::sendMessage);
+        lines.forEach(sender::sendSystemMessage);
     }
 
 }

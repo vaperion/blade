@@ -9,7 +9,7 @@ import me.vaperion.blade.exception.BladeUsageMessage;
 import me.vaperion.blade.fabric.BladeFabricPlatform;
 import me.vaperion.blade.util.command.SuggestionsBuilder;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,7 +17,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-public class ServerPlayerEntityArgument implements ArgumentProvider<ServerPlayerEntity> {
+public class ServerPlayerArgument implements ArgumentProvider<ServerPlayer> {
 
     public static final Pattern UUID_PATTERN = Pattern.compile("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[34][0-9a-fA-F]{3}-[89ab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}");
 
@@ -28,11 +28,11 @@ public class ServerPlayerEntityArgument implements ArgumentProvider<ServerPlayer
 
     @Nullable
     @Override
-    public ServerPlayerEntity provide(@NotNull Context ctx,
-                                      @NotNull InputArgument arg) throws BladeParseError {
+    public ServerPlayer provide(@NotNull Context ctx,
+                                @NotNull InputArgument arg) throws BladeParseError {
         MinecraftServer server = ctx.blade().platformAs(BladeFabricPlatform.class).server();
 
-        ServerPlayerEntity player = ctx.sender().parseAs(ServerPlayerEntity.class);
+        ServerPlayer player = ctx.sender().parseAs(ServerPlayer.class);
 
         if (arg.isOptionalWithType(Opt.Type.SENDER) && !arg.status().isPresent()) {
             if (player != null)
@@ -46,7 +46,7 @@ public class ServerPlayerEntityArgument implements ArgumentProvider<ServerPlayer
             return null;
         }
 
-        ServerPlayerEntity onlinePlayer = getPlayer(server, arg.requireValue());
+        ServerPlayer onlinePlayer = getPlayer(server, arg.requireValue());
 
         if (onlinePlayer == null) {
             throw BladeParseError.recoverable(String.format(
@@ -64,14 +64,14 @@ public class ServerPlayerEntityArgument implements ArgumentProvider<ServerPlayer
                         @NotNull SuggestionsBuilder suggestions) throws BladeParseError {
         MinecraftServer server = ctx.blade().platformAs(BladeFabricPlatform.class).server();
 
-        ServerPlayerEntity sender = ctx.sender().parseAs(ServerPlayerEntity.class);
+        ServerPlayer sender = ctx.sender().parseAs(ServerPlayer.class);
 
         String input = arg.requireValue();
 
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            if (player.getNameForScoreboard().toLowerCase().startsWith(input.toLowerCase()) &&
-                (sender == null || sender.canSee(player)))
-                suggestions.suggest(player.getNameForScoreboard());
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (player.getScoreboardName().toLowerCase().startsWith(input.toLowerCase()) &&
+                (sender == null || sender.hasLineOfSight(player)))
+                suggestions.suggest(player.getScoreboardName());
         }
     }
 
@@ -85,8 +85,8 @@ public class ServerPlayerEntityArgument implements ArgumentProvider<ServerPlayer
     }
 
     @Nullable
-    private ServerPlayerEntity getPlayer(@NotNull MinecraftServer server, @NotNull String input) {
-        if (isUUID(input)) return server.getPlayerManager().getPlayer(UUID.fromString(input));
-        return server.getPlayerManager().getPlayer(input);
+    private ServerPlayer getPlayer(@NotNull MinecraftServer server, @NotNull String input) {
+        if (isUUID(input)) return server.getPlayerList().getPlayer(UUID.fromString(input));
+        return server.getPlayerList().getPlayerByName(input);
     }
 }

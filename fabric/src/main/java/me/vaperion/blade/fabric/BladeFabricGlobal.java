@@ -9,10 +9,10 @@ import me.vaperion.blade.fabric.container.BladeFabricBrigadier;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.minecraft.command.CommandRegistryAccess;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -45,8 +45,8 @@ public final class BladeFabricGlobal implements DedicatedServerModInitializer {
             return;
 
         try {
-            var commands = SERVER.getCommandManager();
-            var registries = SERVER.getRegistryManager();
+            var commands = SERVER.getCommands();
+            var registries = SERVER.registryAccess();
             var root = commands.getDispatcher().getRoot();
 
             // unregister all old blade command nodes
@@ -56,8 +56,8 @@ public final class BladeFabricGlobal implements DedicatedServerModInitializer {
 
             GLOBAL.registerAllCommands(
                 commands.getDispatcher(),
-                CommandManager.createRegistryAccess(registries),
-                CommandManager.RegistrationEnvironment.DEDICATED
+                Commands.createValidationContext(registries),
+                Commands.CommandSelection.DEDICATED
             );
 
             REGISTERED_ROOT_LABELS.clear();
@@ -72,10 +72,10 @@ public final class BladeFabricGlobal implements DedicatedServerModInitializer {
                 .error(t, "Failed to register commands during brigadier sync!");
         }
 
-        var manager = SERVER.getPlayerManager();
+        var manager = SERVER.getPlayerList();
 
-        for (var player : manager.getPlayerList()) {
-            manager.sendCommandTree(player);
+        for (var player : manager.getPlayers()) {
+            manager.sendPlayerPermissionLevel(player);
         }
     }
 
@@ -90,23 +90,23 @@ public final class BladeFabricGlobal implements DedicatedServerModInitializer {
         CommandRegistrationCallback.EVENT.register(this::registerAllCommands);
     }
 
-    private void registerAllCommands(@NotNull CommandDispatcher<ServerCommandSource> dispatcher,
-                                     @NotNull CommandRegistryAccess registry,
-                                     @NotNull CommandManager.RegistrationEnvironment env) {
+    private void registerAllCommands(@NotNull CommandDispatcher<CommandSourceStack> dispatcher,
+                                     @NotNull CommandBuildContext registry,
+                                     @NotNull Commands.CommandSelection env) {
         ACTIVE_INSTANCES.forEach(blade -> {
             registerCommands(blade, dispatcher, registry, env);
         });
     }
 
     private void registerCommands(@NotNull Blade blade,
-                                  @NotNull CommandDispatcher<ServerCommandSource> dispatcher,
-                                  @NotNull CommandRegistryAccess registry,
-                                  @NotNull CommandManager.RegistrationEnvironment env) {
+                                  @NotNull CommandDispatcher<CommandSourceStack> dispatcher,
+                                  @NotNull CommandBuildContext registry,
+                                  @NotNull Commands.CommandSelection env) {
         blade.commandTree().roots().forEach((label, node) -> {
             BladeFabricPlatform platform = blade.platformAs(BladeFabricPlatform.class);
             BladeFabricBrigadier brigadier = platform.brigadier();
 
-            LiteralCommandNode<ServerCommandSource> literal = brigadier.builder().buildLiteral(
+            LiteralCommandNode<CommandSourceStack> literal = brigadier.builder().buildLiteral(
                 node,
                 label,
                 brigadier.delegate().suggestionProvider(node),
@@ -121,7 +121,7 @@ public final class BladeFabricGlobal implements DedicatedServerModInitializer {
         });
     }
 
-    private void unregisterCommandLabel(@NotNull RootCommandNode<ServerCommandSource> root,
+    private void unregisterCommandLabel(@NotNull RootCommandNode<CommandSourceStack> root,
                                         @NotNull String label) {
         removeNodeFromMap(CHILDREN_FIELD, root, label);
         removeNodeFromMap(LITERALS_FIELD, root, label);
@@ -129,7 +129,7 @@ public final class BladeFabricGlobal implements DedicatedServerModInitializer {
     }
 
     private static void removeNodeFromMap(@NotNull Field field,
-                                          @NotNull RootCommandNode<ServerCommandSource> root,
+                                          @NotNull RootCommandNode<CommandSourceStack> root,
                                           @NotNull String label) {
         try {
             @SuppressWarnings("unchecked")
