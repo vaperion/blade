@@ -7,7 +7,6 @@ import me.vaperion.blade.context.Sender;
 import me.vaperion.blade.fabric.BladeFabricPlatform;
 import me.vaperion.blade.fabric.ext.CommandSourceStackExt;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -49,7 +48,7 @@ public final class FabricSender implements Sender<CommandSourceStack> {
         var isConsole = ((CommandSourceStackExt) commandSource).blade$isConsole();
 
         if ("op".equals(permissionNode))
-            return isConsole || Commands.LEVEL_OWNERS.check(commandSource.permissions());
+            return isConsole || commandSource.hasPermission(4);
         if ("console".equals(permissionNode))
             return isConsole;
 

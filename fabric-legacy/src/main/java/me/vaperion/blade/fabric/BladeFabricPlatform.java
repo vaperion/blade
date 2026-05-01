@@ -1,0 +1,114 @@
+package me.vaperion.blade.fabric;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import me.vaperion.blade.Blade;
+import me.vaperion.blade.Blade.Builder.Binder;
+import me.vaperion.blade.command.BladeCommand;
+import me.vaperion.blade.container.ContainerCreator;
+import me.vaperion.blade.fabric.argument.ServerPlayerArgument;
+import me.vaperion.blade.fabric.command.FabricCommandFeedback;
+import me.vaperion.blade.fabric.container.BladeFabricBrigadier;
+import me.vaperion.blade.fabric.container.FabricContainer;
+import me.vaperion.blade.fabric.permissions.PermissionsProvider;
+import me.vaperion.blade.fabric.permissions.impl.LuckoPermissionsProvider;
+import me.vaperion.blade.fabric.permissions.impl.VanillaPermissionsProvider;
+import me.vaperion.blade.fabric.platform.FabricHelpGenerator;
+import me.vaperion.blade.platform.BladeConfiguration;
+import me.vaperion.blade.platform.BladePlatform;
+import net.fabricmc.loader.api.ModContainer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Locale;
+
+@RequiredArgsConstructor
+public class BladeFabricPlatform implements BladePlatform<Component, ModContainer, MinecraftServer> {
+
+    protected final ModContainer mod;
+    protected Blade blade;
+
+    @Getter
+    private BladeFabricBrigadier brigadier;
+
+    @Getter
+    @Setter
+    private PermissionsProvider permissionsProvider;
+
+    @Override
+    public void ingestBlade(@NotNull Blade blade) {
+        this.blade = blade;
+
+        brigadier = new BladeFabricBrigadier(blade);
+
+        loadPermissionsProvider();
+        BladeFabricGlobal.ACTIVE_INSTANCES.add(blade);
+    }
+
+    @Override
+    public @NotNull MinecraftServer server() {
+        return BladeFabricGlobal.server();
+    }
+
+    @Override
+    public @NotNull ModContainer plugin() {
+        return mod;
+    }
+
+    @Override
+    public @NotNull ContainerCreator<?> containerCreator(@NotNull BladeCommand command) {
+        return FabricContainer.CREATOR;
+    }
+
+    @Override
+    public void configure(Blade.@NotNull Builder<Component, ModContainer, MinecraftServer> builder,
+                          @NotNull BladeConfiguration<Component> configuration) {
+        configuration.commandQualifier(mod.getMetadata().getName().toLowerCase(Locale.ROOT));
+        configuration.helpGenerator(new FabricHelpGenerator());
+        configuration.feedbackCreator(FabricCommandFeedback::new);
+
+        Binder<Component, ModContainer, MinecraftServer> binder = new Binder<>(builder, true);
+        binder.bind(ServerPlayer.class, new ServerPlayerArgument());
+    }
+
+    @Override
+    public @NotNull String convertSenderTypeToName(@NotNull Class<?> type, boolean plural) {
+        if (ServerPlayer.class.isAssignableFrom(type)) {
+            return plural ? "players" : "player";
+        } else {
+            // Fallback
+            String name = type.getSimpleName().toLowerCase(Locale.ROOT);
+            return plural ? name + "s" : name;
+        }
+    }
+
+    @Override
+    public void triggerBrigadierSync() {
+        BladeFabricGlobal.triggerBrigadierSync();
+    }
+
+    private void loadPermissionsProvider() {
+        if (permissionsProvider != null) {
+            return;
+        }
+
+        try {
+            Class.forName("me.lucko.fabric.api.permissions.v0.Permissions",
+                false,
+                getClass().getClassLoader());
+
+            permissionsProvider = new LuckoPermissionsProvider();
+            blade.logger().info("Hooked into Lucko's Fabric Permissions API for permission handling.");
+        } catch (ClassNotFoundException ignored) {
+            // mod not present
+            blade.logger().info("Lucko's Fabric Permissions API not found, falling back to vanilla permission handling.");
+        } catch (Throwable t) {
+            blade.logger().error(t, "Failed to hook into Lucko's Fabric Permissions API!");
+        }
+
+        permissionsProvider = new VanillaPermissionsProvider();
+    }
+}

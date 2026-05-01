@@ -42,11 +42,13 @@ Unfortunately we had to split the Paper artifact into two due to newer Paper API
 
 ### Fabric
 
-Use the `fabric` artifact.
+- Minecraft 26.1+ (Unobfuscated): use the `fabric` artifact
+- Minecraft <26.1 or Obfuscated: use the `fabric-legacy` artifact
 
 > [!WARNING]
 > Make sure to use `include(modImplementation("..."))` to add Blade as a jar-in-jar dependency. You'll have
 > to include the `fabric`, `brigadier`, and `core` modules as Fabric Loom doesn't resolve transitive dependencies.
+> For unobfuscated environments, use `implementation` instead of `modImplementation`.
 
 > [!TIP]
 > Blade uses [Lucko's Fabric Permissions API](https://github.com/lucko/fabric-permissions-api) for permission checks on

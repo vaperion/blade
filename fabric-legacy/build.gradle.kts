@@ -1,20 +1,21 @@
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
 plugins {
-    alias(libs.plugins.loom)
+    alias(libs.plugins.loom.remap)
 }
 
 dependencies {
     api(project(":core"))
     api(project(":brigadier"))
 
-    minecraft("com.mojang:minecraft:${libs.versions.fabric.minecraft.get()}")
+    minecraft("com.mojang:minecraft:${libs.versions.fabric.legacy.minecraft.get()}")
+    mappings(loom.officialMojangMappings())
 
-    implementation("net.fabricmc:fabric-loader:${libs.versions.fabric.loader.get()}")
+    modImplementation("net.fabricmc:fabric-loader:${libs.versions.fabric.legacy.loader.get()}")
 
     val apiModules = listOf(
         "fabric-api-base",
@@ -24,10 +25,10 @@ dependencies {
     )
 
     apiModules.forEach {
-        implementation(fabricApi.module(it, libs.versions.fabric.api.get()))
+        modImplementation(fabricApi.module(it, libs.versions.fabric.legacy.api.get()))
     }
 
-    compileOnly("me.lucko:fabric-permissions-api:${libs.versions.lucko.permissions.get()}")
+    modCompileOnly("me.lucko:fabric-permissions-api:${libs.versions.lucko.legacy.permissions.get()}")
 }
 
 tasks {
@@ -41,5 +42,9 @@ tasks {
                 "version" to project.version
             )
         }
+    }
+
+    remapJar {
+        inputFile.set(jar.get().archiveFile)
     }
 }

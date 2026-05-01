@@ -20,13 +20,14 @@ dependencyResolutionManagement {
 
     versionCatalogs {
         create("libs", Action {
-            version("lombok", "8.13.1")
-            version("loom", "1.11-SNAPSHOT")
-            version("publishing", "0.34.0")
+            version("lombok", "9.5.0")
+            version("loom", "1.16-SNAPSHOT")
+            version("publishing", "0.36.0")
             version("blossom", "2.2.0")
 
             plugin("lombok", "io.freefair.lombok").versionRef("lombok")
-            plugin("loom", "fabric-loom").versionRef("loom")
+            plugin("loom.remap", "net.fabricmc.fabric-loom-remap").versionRef("loom")
+            plugin("loom", "net.fabricmc.fabric-loom").versionRef("loom")
             plugin("publishing", "com.vanniktech.maven.publish").versionRef("publishing")
             plugin("blossom", "net.kyori.blossom").versionRef("blossom")
 
@@ -37,10 +38,15 @@ dependencyResolutionManagement {
 
             version("brigadier", "1.0.18")
 
-            version("fabric.minecraft", "1.21.10")
-            version("fabric.loader", "0.17.3")
-            version("fabric.api", "0.135.0+1.21.10")
-            version("lucko.permissions", "0.3.3")
+            version("fabric.legacy.minecraft", "1.21.10")
+            version("fabric.legacy.loader", "0.17.3")
+            version("fabric.legacy.api", "0.135.0+1.21.10")
+            version("lucko.legacy.permissions", "0.3.3")
+
+            version("fabric.minecraft", "26.1.2")
+            version("fabric.loader", "0.19.2")
+            version("fabric.api", "0.146.1+26.1.2")
+            version("lucko.permissions", "0.7.0")
 
             version("minestom", "2025.10.04-1.21.8")
         })
@@ -55,6 +61,7 @@ include(
     "paper",
     "paper-legacy",
     "fabric",
+    "fabric-legacy",
     "minestom",
     "hytale"
 )
