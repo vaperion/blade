@@ -15,11 +15,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.AnnotatedElement;
 import java.util.UUID;
-import java.util.regex.Pattern;
+
+import static me.vaperion.blade.util.BladeHelper.isUUID;
 
 public class ServerPlayerArgument implements ArgumentProvider<ServerPlayer> {
-
-    public static final Pattern UUID_PATTERN = Pattern.compile("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[34][0-9a-fA-F]{3}-[89ab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}");
 
     @Override
     public boolean handlesNullInputArguments() {
@@ -78,10 +77,6 @@ public class ServerPlayerArgument implements ArgumentProvider<ServerPlayer> {
     @Override
     public @Nullable String defaultArgName(@NotNull AnnotatedElement element) {
         return "player";
-    }
-
-    private boolean isUUID(@NotNull String input) {
-        return UUID_PATTERN.matcher(input).matches();
     }
 
     @Nullable
