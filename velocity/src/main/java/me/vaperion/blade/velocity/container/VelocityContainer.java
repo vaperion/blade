@@ -93,12 +93,14 @@ public class VelocityContainer implements RawCommand, Container {
         if (node == null) {
             sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
 
-            if (blade.configuration().verbose())
+            if (blade.configuration().verbose()) {
                 blade.logger().info(
                     "%s tried to execute unknown command: `%s`. This is most likely a bug in Blade, not your plugin. Please report it.",
                     sender.toString(),
                     commandLine
                 );
+            }
+
             return;
         }
 

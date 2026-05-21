@@ -71,12 +71,14 @@ public final class FabricContainer implements Container {
         if (node == null) {
             sender.sendSystemMessage(UNKNOWN_COMMAND_MESSAGE);
 
-            if (blade.configuration().verbose())
+            if (blade.configuration().verbose()) {
                 blade.logger().info(
                     "%s tried to execute unknown command: `%s`. This is most likely a bug in Blade, not your plugin. Please report it.",
                     sender.getTextName(),
                     commandLine
                 );
+            }
+
             return false;
         }
 

@@ -48,6 +48,7 @@ dependencyResolutionManagement {
             version("fabric.api", "0.146.1+26.1.2")
             version("lucko.permissions", "0.7.0")
 
+            version("hytale", "2026.02.17-255364b8e")
             version("minestom", "2025.10.04-1.21.8")
         })
     }

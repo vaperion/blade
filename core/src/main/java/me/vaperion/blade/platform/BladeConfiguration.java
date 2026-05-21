@@ -11,6 +11,7 @@ import me.vaperion.blade.platform.api.CommandFeedbackCreator;
 import me.vaperion.blade.platform.api.HelpGenerator;
 import me.vaperion.blade.platform.api.TabCompleter;
 import me.vaperion.blade.util.Preconditions;
+import me.vaperion.blade.util.command.CommandRegistrationPredicate;
 
 import java.util.Comparator;
 import java.util.concurrent.ExecutorService;
@@ -143,10 +144,16 @@ public final class BladeConfiguration<Text> {
      */
     private Comparator<BladeCommand> helpSorter = Comparator.comparing(BladeCommand::mainLabel);
 
+    /**
+     * The predicate used to decide whether commands should be registered.
+     */
+    private CommandRegistrationPredicate commandRegistrationPredicate = command -> true;
+
     public void validate() {
         Preconditions.checkNotNull(commandQualifier, "Command qualifier cannot be null.");
         Preconditions.checkNotNull(helpGenerator, "Help generator cannot be null.");
         Preconditions.checkNotNull(tabCompleter, "Tab completer cannot be null.");
+        Preconditions.checkNotNull(commandRegistrationPredicate, "Command registration predicate cannot be null.");
     }
 
 }

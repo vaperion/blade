@@ -29,6 +29,7 @@ import net.minestom.server.command.builder.CommandContext;
 import net.minestom.server.command.builder.arguments.ArgumentType;
 import net.minestom.server.command.builder.suggestion.Suggestion;
 import net.minestom.server.command.builder.suggestion.SuggestionEntry;
+import net.minestom.server.utils.callback.CommandCallback;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -44,9 +45,7 @@ public final class MinestomContainer extends Command implements Container {
 
     public static final ContainerCreator<MinestomContainer> CREATOR = MinestomContainer::new;
 
-    private static final Component UNKNOWN_COMMAND_MESSAGE = text(
-        "Unknown command. Type \"/help\" for help."
-    );
+    private static final char MINESTOM_COMPLETION_PLACEHOLDER = '\0';
 
     private final Blade blade;
     private final String label;
@@ -74,6 +73,14 @@ public final class MinestomContainer extends Command implements Container {
         MinecraftServer.getCommandManager().unregister(this);
     }
 
+    private void runUnknownCommandCallback(@NotNull CommandSender sender, @NotNull String commandLine) {
+        CommandCallback callback = MinecraftServer.getCommandManager().getUnknownCommandCallback();
+
+        if (callback != null) {
+            callback.apply(sender, commandLine);
+        }
+    }
+
     private void execute(@NotNull CommandSender sender,
                          @NotNull CommandContext minestomContext) {
         String commandLine = removeCommandQualifier(minestomContext.getInput());
@@ -83,14 +90,16 @@ public final class MinestomContainer extends Command implements Container {
         );
 
         if (node == null) {
-            sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
+            runUnknownCommandCallback(sender, commandLine);
 
-            if (blade.configuration().verbose())
+            if (blade.configuration().verbose()) {
                 blade.logger().info(
                     "%s tried to execute unknown command: `%s`. This is most likely a bug in Blade, not your plugin. Please report it.",
                     sender.toString(),
                     commandLine
                 );
+            }
+
             return;
         }
 
@@ -236,7 +245,7 @@ public final class MinestomContainer extends Command implements Container {
             node.collectCommandsInto(allCommands));
 
         if (allCommands.isEmpty() && sendUnknownCommandMessage) {
-            sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
+            runUnknownCommandCallback(sender, context.label());
             return;
         }
 
@@ -259,7 +268,9 @@ public final class MinestomContainer extends Command implements Container {
         if (!blade.configuration().tabCompleter().isDefault())
             return Collections.emptyList();
 
-        String commandLine = removeCommandQualifier(minestomContext.getInput());
+        String commandLine = removeCommandQualifier(
+            normalizeCompletionInput(minestomContext.getInput())
+        );
 
         ResolvedCommand node = blade.nodeResolver().resolve(
             commandLine
@@ -274,10 +285,10 @@ public final class MinestomContainer extends Command implements Container {
             if (!node.isStub()) {
                 // Found exact command, we can suggest arguments here.
 
-                String[] args = removePrefix(
-                    removeCommandQualifier(commandLine),
+                String[] args = splitSuggestionArguments(removePrefix(
+                    commandLine,
                     node.matchedLabelOr("")
-                ).split(" ");
+                ));
 
                 Context context = new Context(
                     blade,
@@ -288,7 +299,7 @@ public final class MinestomContainer extends Command implements Container {
 
                 CommandInput input = Objects.requireNonNull(node.command()).tokenize(
                     context.sender(),
-                    "/" + removeCommandQualifier(commandLine)
+                    "/" + commandLine
                 );
 
                 if (!input.mergeTokensToFormWholeLabel(Objects.requireNonNull(node.matchedLabel()))) {
@@ -307,7 +318,7 @@ public final class MinestomContainer extends Command implements Container {
 
             // Only found command stub - suggest subcommands.
 
-            String[] args = removeCommandQualifier(minestomContext.getInput()).split(" ");
+            String[] args = splitSuggestionArguments(commandLine);
 
             Context context = new Context(
                 blade,
@@ -319,7 +330,7 @@ public final class MinestomContainer extends Command implements Container {
             CommandInput input = new CommandInput(
                 blade,
                 null,
-                "/" + removeCommandQualifier(commandLine),
+                "/" + commandLine,
                 InputOption.DISALLOW_FLAGS
             );
 
@@ -363,5 +374,21 @@ public final class MinestomContainer extends Command implements Container {
         }
 
         return Collections.emptyList();
+    }
+
+    @NotNull
+    private String normalizeCompletionInput(@NotNull String input) {
+        return input.replace(MINESTOM_COMPLETION_PLACEHOLDER, ' ');
+    }
+
+    @NotNull
+    private String[] splitSuggestionArguments(@NotNull String input) {
+        input = input.stripLeading();
+
+        if (input.isEmpty()) {
+            return new String[0];
+        }
+
+        return input.split(" ", -1);
     }
 }

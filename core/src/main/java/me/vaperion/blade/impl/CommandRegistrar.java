@@ -20,8 +20,6 @@ import static me.vaperion.blade.util.Preconditions.mustGetAnnotation;
 @RequiredArgsConstructor
 public class CommandRegistrar {
 
-    private static final List<BladeCommand> EMPTY_COMMAND_LIST = new ArrayList<>();
-
     private final Blade blade;
 
     @ApiStatus.Internal
@@ -34,16 +32,18 @@ public class CommandRegistrar {
                 if (!method.isAnnotationPresent(Command.class)) continue;
                 if ((instance == null) != Modifier.isStatic(method.getModifiers())) continue;
 
-                registerMethod(instance, method);
-                n++;
+                if (doRegisterMethod(instance, method)) {
+                    n++;
+                }
             }
 
             if (n > 0) {
                 blade.platform().triggerBrigadierSync();
 
-                if (blade.configuration().verbose())
+                if (blade.configuration().verbose()) {
                     blade.logger().info("Registered %d command%s in class %s",
                         n, n == 1 ? "" : "s", clazz.getCanonicalName());
+                }
             }
         } catch (Throwable t) {
             blade.logger().error(t, "An error occurred while registering %s commands in class %s",
@@ -68,9 +68,10 @@ public class CommandRegistrar {
             if (n > 0) {
                 blade.platform().triggerBrigadierSync();
 
-                if (blade.configuration().verbose())
+                if (blade.configuration().verbose()) {
                     blade.logger().info("Unregistered %d command%s in class %s",
                         n, n == 1 ? "" : "s", clazz.getCanonicalName());
+                }
             }
         } catch (Throwable t) {
             blade.logger().error(t, "An error occurred while unregistering %s commands in class %s",
@@ -81,7 +82,29 @@ public class CommandRegistrar {
     @ApiStatus.Internal
     public void registerMethod(@Nullable Object instance,
                                @NotNull Method method) {
+        doRegisterMethod(instance, method);
+    }
+
+    private boolean doRegisterMethod(@Nullable Object instance,
+                                     @NotNull Method method) {
         BladeCommand cmd = new BladeCommand(blade, instance, method);
+
+        try {
+            if (!blade.configuration().commandRegistrationPredicate().test(cmd)) {
+                if (blade.configuration().verbose()) {
+                    blade.logger().info("Skipped command `%s`: registration predicate returned false.",
+                        cmd.mainLabel());
+                }
+
+                return false;
+            }
+        } catch (Throwable t) {
+            blade.logger().error(t, "Skipped command `%s`: registration predicate threw an exception.",
+                cmd.mainLabel());
+
+            return false;
+        }
+
         blade.commands().add(cmd);
 
         List<String> labelPath = Arrays.asList(cmd.labels()[0].split(" "));
@@ -91,6 +114,8 @@ public class CommandRegistrar {
             labelPath = Arrays.asList(label.split(" "));
             blade.commandTree().addCommand(labelPath, cmd);
         }
+
+        return true;
     }
 
     @ApiStatus.Internal
