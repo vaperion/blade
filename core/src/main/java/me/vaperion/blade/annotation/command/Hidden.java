@@ -13,4 +13,19 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Hidden {
+
+    /**
+     * Whether the command should be hidden.
+     *
+     * @return whether the command should be hidden
+     */
+    boolean hide() default true;
+
+    /**
+     * Whether the command should be sent to the client (Brigadier-only).
+     *
+     * @return whether the command should be sent to the client
+     */
+    boolean sendToClient() default false;
+
 }

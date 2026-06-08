@@ -43,7 +43,9 @@ public final class BladeCommand {
     private final String[] labels, baseCommands;
     private final String description, mainLabel, customUsage, extraUsageData;
     private final String permission, permissionMessage;
-    private final boolean async, parseQuotes, hidden, helpCommand;
+    private final boolean async, parseQuotes, helpCommand;
+
+    private final boolean hidden, hiddenStillSend;
 
     private final boolean hasSenderParameter, usesBladeContext, usesBladeSender;
     private final Class<?> senderType;
@@ -76,10 +78,13 @@ public final class BladeCommand {
 
         this.description = runOrDefault(method.getAnnotation(Description.class), "", Description::value);
         this.async = runOrDefault(method.getAnnotation(Async.class), false, $ -> true);
-        this.hidden = runOrDefault(method.getAnnotation(Hidden.class), false, $ -> true);
         this.mainLabel = runOrDefault(method.getAnnotation(MainLabel.class), this.labels[0], MainLabel::value);
         this.customUsage = runOrDefault(method.getAnnotation(Usage.class), "", Usage::value);
         this.extraUsageData = runOrDefault(method.getAnnotation(ExtraUsage.class), "", ExtraUsage::value);
+
+        Hidden hidden = method.getAnnotation(Hidden.class);
+        this.hidden = hidden != null && hidden.hide();
+        this.hiddenStillSend = hidden != null && hidden.sendToClient();
 
         this.baseCommands = Arrays.stream(this.labels)
             .map(String::toLowerCase)
@@ -160,8 +165,8 @@ public final class BladeCommand {
             String parameterName = parameter.isAnnotationPresent(Name.class)
                 ? mustGetAnnotation(parameter, Name.class).value()
                 : provider != null && provider.defaultArgName(parameter) != null
-                ? Objects.requireNonNull(provider.defaultArgName(parameter))
-                : parameter.getName();
+                  ? Objects.requireNonNull(provider.defaultArgName(parameter))
+                  : parameter.getName();
 
             String[] parameterData = parameter.isAnnotationPresent(Data.class)
                 ? mustGetAnnotation(parameter, Data.class).value()
@@ -195,6 +200,15 @@ public final class BladeCommand {
 
             i++;
         }
+    }
+
+    /**
+     * Whether the command should be sent to the client (Brigadier-only).
+     *
+     * @return whether the command should be sent to the client
+     */
+    public boolean shouldSendToClient() {
+        return !hidden || hiddenStillSend;
     }
 
     /**

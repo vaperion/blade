@@ -148,7 +148,7 @@ public final class CommandSuggestionProvider {
                                          @NotNull Context context) {
         if (node.isLeaf()) {
             BladeCommand cmd = node.command();
-            if (!cmd.hidden() && cmd.hasPermission(context)) {
+            if (cmd.shouldSendToClient() && cmd.hasPermission(context)) {
                 return true;
             }
         }

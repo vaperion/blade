@@ -84,7 +84,7 @@ public final class BladeBrigadierBuilder<T, S> {
                                                      @NotNull String label,
                                                      @NotNull SuggestionProvider<T> suggestionProvider,
                                                      @NotNull Command<T> executor) {
-        boolean visibleLeaf = node.command() != null && !node.command().hidden();
+        boolean visibleLeaf = node.command() != null && node.command().shouldSendToClient();
 
         LiteralArgumentBuilder<T> builder = LiteralArgumentBuilder.<T>literal(label)
             .requires(createClientVisibilityPredicate(node));
@@ -115,7 +115,7 @@ public final class BladeBrigadierBuilder<T, S> {
                                                         @NotNull SuggestionProvider<T> suggestionProvider,
                                                         @NotNull Command<T> executor) {
         String label = node.label();
-        boolean visibleLeaf = node.command() != null && !node.command().hidden();
+        boolean visibleLeaf = node.command() != null && node.command().shouldSendToClient();
 
         LiteralArgumentBuilder<T> builder = LiteralArgumentBuilder.<T>literal(label)
             .requires(createClientVisibilityPredicate(node));
@@ -260,7 +260,7 @@ public final class BladeBrigadierBuilder<T, S> {
     private boolean hasVisibleCommand(@NotNull CommandTreeNode node) {
         if (node.isLeaf()) {
             BladeCommand cmd = node.command();
-            if (cmd != null && !cmd.hidden()) {
+            if (cmd != null && cmd.shouldSendToClient()) {
                 return true;
             }
         }
@@ -277,7 +277,7 @@ public final class BladeBrigadierBuilder<T, S> {
     private boolean hasHiddenCommand(@NotNull CommandTreeNode node) {
         if (node.isLeaf()) {
             BladeCommand cmd = node.command();
-            if (cmd != null && cmd.hidden()) {
+            if (cmd != null && !cmd.shouldSendToClient()) {
                 return true;
             }
         }
@@ -295,7 +295,7 @@ public final class BladeBrigadierBuilder<T, S> {
                                                 @NotNull Context context) {
         if (node.isLeaf()) {
             BladeCommand cmd = node.command();
-            if (cmd != null && !cmd.hidden() && cmd.hasPermission(context)) {
+            if (cmd != null && cmd.shouldSendToClient() && cmd.hasPermission(context)) {
                 return true;
             }
         }
