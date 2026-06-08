@@ -10,6 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -53,20 +54,21 @@ public class FabricHelpGenerator implements HelpGenerator<Component> {
 
         return new PaginatedOutput<BladeCommand, Component>(RESULTS_PER_PAGE) {
             @Override
-            public @NotNull Component error(@NotNull Error error, Object... args) {
+            public @NotNull List<Component> error(@NotNull Error error, Object... args) {
                 return switch (error) {
-                    case NO_RESULTS -> Component.literal("There are no available commands matching that format.")
-                        .withStyle(ChatFormatting.RED);
+                    case NO_RESULTS ->
+                        Collections.singletonList(Component.literal("There are no available commands matching that format.")
+                            .withStyle(ChatFormatting.RED));
 
-                    case PAGE_OUT_OF_BOUNDS -> Component.literal(String.format(
+                    case PAGE_OUT_OF_BOUNDS -> Collections.singletonList(Component.literal(String.format(
                             "Page %d does not exist, valid range is 1 to %d.", args))
-                        .withStyle(ChatFormatting.RED);
+                        .withStyle(ChatFormatting.RED));
                 };
             }
 
             @Override
-            public @NotNull Component header(int page, int totalPages) {
-                return Component.empty()
+            public @NotNull List<Component> header(int page, int totalPages) {
+                return Collections.singletonList(Component.empty()
                     .append(
                         Component.literal("==== ")
                             .withStyle(ChatFormatting.AQUA)
@@ -78,12 +80,12 @@ public class FabricHelpGenerator implements HelpGenerator<Component> {
                     .append(
                         Component.literal(" ====")
                             .withStyle(ChatFormatting.AQUA)
-                    );
+                    ));
             }
 
             @Override
-            public @NotNull Component footer(int page, int totalPages) {
-                return Component.empty()
+            public @NotNull List<Component> footer(int page, int totalPages) {
+                return Collections.singletonList(Component.empty()
                     .append(
                         Component.literal("==== ")
                             .withStyle(ChatFormatting.AQUA)
@@ -95,11 +97,11 @@ public class FabricHelpGenerator implements HelpGenerator<Component> {
                     .append(
                         Component.literal(" ====")
                             .withStyle(ChatFormatting.AQUA)
-                    );
+                    ));
             }
 
             @Override
-            public @NotNull Component line(BladeCommand result, int index) {
+            public @NotNull List<Component> line(BladeCommand result, int index) {
                 Component usage = (Component) result.helpMessage().message();
 
                 MutableComponent out = Component.empty()
@@ -120,7 +122,7 @@ public class FabricHelpGenerator implements HelpGenerator<Component> {
                     );
                 }
 
-                return out;
+                return Collections.singletonList(out);
             }
         }.generatePage(commands, page);
     }

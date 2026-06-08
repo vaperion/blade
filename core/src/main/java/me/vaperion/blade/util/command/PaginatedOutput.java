@@ -5,7 +5,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -21,7 +20,7 @@ public abstract class PaginatedOutput<Value, Text> {
      * @return the formatted error message
      */
     @NotNull
-    public abstract Text error(@NotNull Error error, Object... args);
+    public abstract List<Text> error(@NotNull Error error, Object... args);
 
     /**
      * Generates the header text for a specific page.
@@ -31,7 +30,7 @@ public abstract class PaginatedOutput<Value, Text> {
      * @return the header text for the specified page
      */
     @Nullable
-    public abstract Text header(int page, int totalPages);
+    public abstract List<Text> header(int page, int totalPages);
 
     /**
      * Generates the footer text for a specific page.
@@ -41,7 +40,7 @@ public abstract class PaginatedOutput<Value, Text> {
      * @return the footer text for the specified page
      */
     @Nullable
-    public abstract Text footer(int page, int totalPages);
+    public abstract List<Text> footer(int page, int totalPages);
 
     /**
      * Formats a single line of output for a given result and its index.
@@ -51,19 +50,24 @@ public abstract class PaginatedOutput<Value, Text> {
      * @return the formatted line of output
      */
     @Nullable
-    public abstract Text line(Value result, int index);
+    public abstract List<Text> line(Value result, int index);
 
+    /**
+     * Generates a paginated output for a list of results.
+     *
+     * @param results the list of results to paginate
+     * @param page    the current page number
+     * @return the paginated output
+     */
     @NotNull
     public final List<Text> generatePage(@NotNull List<Value> results, int page) {
         if (results.isEmpty()) {
-            return Collections.singletonList(
-                error(Error.NO_RESULTS));
+            return error(Error.NO_RESULTS);
         }
 
         int totalPages = results.size() / resultsPerPage + (results.size() % resultsPerPage == 0 ? 0 : 1);
         if (page < 1 || page > totalPages) {
-            return Collections.singletonList(
-                error(Error.PAGE_OUT_OF_BOUNDS, page, totalPages));
+            return error(Error.PAGE_OUT_OF_BOUNDS, page, totalPages);
         }
 
         int startIndex = (page - 1) * resultsPerPage;
@@ -71,17 +75,17 @@ public abstract class PaginatedOutput<Value, Text> {
 
         List<Text> lines = new ArrayList<>();
 
-        Text header = header(page, totalPages);
-        if (header != null) lines.add(header);
+        List<Text> header = header(page, totalPages);
+        if (header != null) lines.addAll(header);
 
         for (Value result : results.subList(startIndex, endIndex)) {
-            Text line = line(result, startIndex + lines.size());
+            List<Text> line = line(result, startIndex + lines.size());
             if (line == null) continue;
-            lines.add(line);
+            lines.addAll(line);
         }
 
-        Text footer = footer(page, totalPages);
-        if (footer != null) lines.add(footer);
+        List<Text> footer = footer(page, totalPages);
+        if (footer != null) lines.addAll(footer);
 
         return lines;
     }

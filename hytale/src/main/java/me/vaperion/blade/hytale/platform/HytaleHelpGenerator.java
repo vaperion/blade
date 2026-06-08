@@ -11,7 +11,6 @@ import me.vaperion.blade.util.command.PaginatedOutput;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,31 +47,24 @@ public class HytaleHelpGenerator implements HelpGenerator<Message> {
             .collect(Collectors.toList());
 
         if (originalCount != 0 && commands.isEmpty()) {
-            return Collections.singletonList(
+            return List.of(
                 raw(context.blade().configuration().defaultPermissionMessage()).color(Color.RED)
             );
         }
 
         return new PaginatedOutput<BladeCommand, Message>(RESULTS_PER_PAGE) {
             @Override
-            public @NotNull Message error(@NotNull Error error, Object... args) {
-                switch (error) {
-                    case NO_RESULTS:
-                        return raw("There are no available commands matching that format.")
-                            .color(Color.RED);
-
-                    case PAGE_OUT_OF_BOUNDS:
-                        return raw(String.format(
-                            "Page %d does not exist, valid range is 1 to %d.",
-                            args)).color(Color.RED);
-                }
-
-                return raw("Unknown error: " + error)
-                    .color(Color.RED);
+            public @NotNull List<Message> error(@NotNull Error error, Object... args) {
+                return switch (error) {
+                    case NO_RESULTS ->
+                        List.of(raw("There are no available commands matching that format.").color(Color.RED));
+                    case PAGE_OUT_OF_BOUNDS ->
+                        List.of(raw(String.format("Page %d does not exist, valid range is 1 to %d.", args)).color(Color.RED));
+                };
             }
 
             @Override
-            public @NotNull Message header(int page, int totalPages) {
+            public @NotNull List<Message> header(int page, int totalPages) {
                 Message message = Message.empty();
 
                 message.insert(
@@ -87,11 +79,11 @@ public class HytaleHelpGenerator implements HelpGenerator<Message> {
                     raw(" ====").color(Color.CYAN)
                 );
 
-                return message;
+                return List.of(message);
             }
 
             @Override
-            public @NotNull Message footer(int page, int totalPages) {
+            public @NotNull List<Message> footer(int page, int totalPages) {
                 Message message = Message.empty();
 
                 message.insert(
@@ -106,11 +98,11 @@ public class HytaleHelpGenerator implements HelpGenerator<Message> {
                     raw(" ====").color(Color.CYAN)
                 );
 
-                return message;
+                return List.of(message);
             }
 
             @Override
-            public @NotNull Message line(BladeCommand result, int index) {
+            public @NotNull List<Message> line(BladeCommand result, int index) {
                 Message usage = (Message) result.helpMessage().message();
 
                 Message message = Message.empty();
@@ -127,13 +119,18 @@ public class HytaleHelpGenerator implements HelpGenerator<Message> {
                     );
                 }
 
-                return message;
+                return List.of(message);
             }
         }.generatePage(commands, page);
     }
 
+    @SuppressWarnings("ConstantValue")
     @NotNull
     private static String toRaw(@NotNull Message message) {
+        if (message == null) {
+            return "";
+        }
+
         StringBuilder sb = new StringBuilder();
 
         FormattedMessage formattedMessage = message.getFormattedMessage();
@@ -151,6 +148,7 @@ public class HytaleHelpGenerator implements HelpGenerator<Message> {
         }
 
         for (Message child : message.getChildren()) {
+            if (child == null) continue;
             sb.append(toRaw(child));
         }
 

@@ -58,35 +58,35 @@ public final class CommandExecutor {
         } catch (BladeFatalError e) {
             return ErrorMessage.lines(e.getMessage());
         } catch (BladeImplementationError e) {
-            blade.logger().error(e, String.format(
+            blade.logger().error(e,
                 "An error occurred while invoking command '%s' for sender %s. This is a bug in your plugin.",
                 context.label(),
-                context.sender().name())
+                context.sender().name()
             );
 
             return ErrorMessage.lines(ERROR_MESSAGE);
         } catch (BladeInternalError e) {
-            blade.logger().error(e, String.format(
+            blade.logger().error(e,
                 "An error occurred while invoking command '%s' for sender %s. This is a bug in Blade, not your plugin. Please report it.",
                 context.label(),
-                context.sender().name())
+                context.sender().name()
             );
 
             return ErrorMessage.lines(ERROR_MESSAGE);
         } catch (BladeInvocationError e) {
-            blade.logger().error(e, String.format(
+            blade.logger().error(e,
                 "An error occurred while invoking command '%s' for sender %s",
                 context.label(),
                 context.sender().name()
-            ));
+            );
 
             return ErrorMessage.lines(ERROR_MESSAGE);
         } catch (Throwable t) {
-            blade.logger().error(t, String.format(
+            blade.logger().error(t,
                 "An unexpected error occurred while invoking command '%s' for sender %s",
                 context.label(),
                 context.sender().name()
-            ));
+            );
 
             return ErrorMessage.lines(ERROR_MESSAGE);
         }

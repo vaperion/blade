@@ -86,36 +86,48 @@ public final class BukkitContainer extends Command implements Container {
         SimplePluginManager simplePluginManager = (SimplePluginManager) Bukkit.getServer().getPluginManager();
         SimpleCommandMap simpleCommandMap = (SimpleCommandMap) COMMAND_MAP.get(simplePluginManager);
 
-        if (blade.configuration().overrideCommands()) {
+        boolean override = blade.configuration().overrideCommands();
+
+        if (override) {
             Map<String, Command> knownCommands = (Map<String, Command>) KNOWN_COMMANDS.get(simpleCommandMap);
             Set<Map.Entry<String, Command>> entrySet = knownCommands.entrySet();
             Iterator<Map.Entry<String, Command>> iterator = entrySet.iterator();
 
             List<String> keysToRemove = new ArrayList<>();
 
-            // Paper 1.21 and above provides a custom HashMap implementation that "transparently" forwards to Brigadier
-            // Unfortunately this implementation doesn't support Iterator#remove, so we have to collect the keys
-            boolean lazyRemove = entrySet.getClass().toString().contains("BukkitBrigForwardingMap");
+            // Paper 1.21 and above uses a custom HashMap implementation that forwards to Brigadier,
+            // and this implementation doesn't support Iterator#remove, so we have to collect and remove.
 
             while (iterator.hasNext()) {
                 Map.Entry<String, Command> entry = iterator.next();
                 Command registeredCommand = entry.getValue();
 
-                if (doesBukkitCommandConflict(registeredCommand, label)) {
+                if (shouldUnregisterConflictingCommand(registeredCommand, label)) {
                     registeredCommand.unregister(simpleCommandMap);
-
-                    if (!lazyRemove)
-                        iterator.remove();
-                    else
-                        keysToRemove.add(entry.getKey());
+                    keysToRemove.add(entry.getKey());
                 }
             }
 
             keysToRemove.forEach(knownCommands::remove);
         }
 
-        if (!simpleCommandMap.register(blade.configuration().commandQualifier(), this)) {
-            blade.logger().error("Failed to register the command \"" + label + "\". This could lead to issues.");
+        String qualifier = blade.configuration().commandQualifier();
+
+        if (!simpleCommandMap.register(qualifier, this)) {
+            String context = override
+                ? "even after attempting to override existing commands"
+                : "another plugin may have already registered it";
+
+            blade.logger().warn(
+                "Failed to register command `%s` globally; %s. It will only be available as `%s:%s`.",
+                label,
+                context,
+                qualifier,
+                label
+            );
+
+            // label already gets overridden by the #register method, but we need to adjust the usage manually
+            setUsage("/" + getLabel());
         }
     }
 
@@ -127,18 +139,31 @@ public final class BukkitContainer extends Command implements Container {
 
             this.unregister(simpleCommandMap);
         } catch (Throwable t) {
-            blade.logger().error(t, "Failed to unregister the command \"" + getName() + "\".");
+            blade.logger().error(t, "Failed to unregister command `" + getName() + "`.");
         }
     }
 
-    private boolean doesBukkitCommandConflict(@NotNull Command bukkitCommand,
-                                              @NotNull String label) {
-        if (bukkitCommand instanceof BukkitContainer)
-            return false; // don't override our own commands
+    private boolean shouldUnregisterConflictingCommand(@NotNull Command bukkitCommand,
+                                                       @NotNull String label) {
+        if (bukkitCommand.getName().equalsIgnoreCase(label)
+            || bukkitCommand.getAliases().stream()
+            .anyMatch(a -> a.equalsIgnoreCase(label))) {
+            if (bukkitCommand instanceof Container) {
+                blade.logger().info(
+                    "Overriding existing blade command `%s`...",
+                    bukkitCommand
+                );
+            } else {
+                blade.logger().info(
+                    "Overriding existing command `%s`...",
+                    bukkitCommand
+                );
+            }
 
-        return bukkitCommand.getName().equalsIgnoreCase(label) ||
-            bukkitCommand.getAliases().stream()
-                .anyMatch(a -> a.equalsIgnoreCase(label));
+            return true;
+        }
+
+        return false;
     }
 
     @Override
@@ -484,4 +509,8 @@ public final class BukkitContainer extends Command implements Container {
         lines.forEach(sender::sendMessage);
     }
 
+    @Override
+    public String toString() {
+        return "BukkitContainer{blade=" + blade + ", command=" + getLabel() + '}';
+    }
 }

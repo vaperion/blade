@@ -9,7 +9,6 @@ import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,7 +45,7 @@ public class MinestomHelpGenerator implements HelpGenerator<Component> {
             .collect(Collectors.toList());
 
         if (originalCount != 0 && commands.isEmpty()) {
-            return Collections.singletonList(
+            return List.of(
                 text(context.blade().configuration().defaultPermissionMessage(),
                     NamedTextColor.RED)
             );
@@ -54,24 +53,21 @@ public class MinestomHelpGenerator implements HelpGenerator<Component> {
 
         return new PaginatedOutput<BladeCommand, Component>(RESULTS_PER_PAGE) {
             @Override
-            public @NotNull Component error(@NotNull Error error, Object... args) {
+            public @NotNull List<Component> error(@NotNull Error error, Object... args) {
                 switch (error) {
                     case NO_RESULTS:
-                        return text("There are no available commands matching that format.", NamedTextColor.RED);
+                        return List.of(text("There are no available commands matching that format.", NamedTextColor.RED));
 
                     case PAGE_OUT_OF_BOUNDS:
-                        return text(String.format(
-                                "Page %d does not exist, valid range is 1 to %d.", args),
-                            NamedTextColor.RED);
+                        return List.of(text(String.format("Page %d does not exist, valid range is 1 to %d.", args), NamedTextColor.RED));
                 }
 
-                return text(String.format("Unknown error: %s",
-                    error), NamedTextColor.RED);
+                return List.of(text(String.format("Unknown error: %s", error), NamedTextColor.RED));
             }
 
             @Override
-            public @NotNull Component header(int page, int totalPages) {
-                return text()
+            public @NotNull List<Component> header(int page, int totalPages) {
+                return List.of(text()
                     .append(
                         text("==== ", NamedTextColor.AQUA)
                     )
@@ -81,12 +77,12 @@ public class MinestomHelpGenerator implements HelpGenerator<Component> {
                     .append(
                         text(" ====", NamedTextColor.AQUA)
                     )
-                    .build();
+                    .asComponent());
             }
 
             @Override
-            public @NotNull Component footer(int page, int totalPages) {
-                return text()
+            public @NotNull List<Component> footer(int page, int totalPages) {
+                return List.of(text()
                     .append(
                         text("==== ", NamedTextColor.AQUA)
                     )
@@ -96,11 +92,11 @@ public class MinestomHelpGenerator implements HelpGenerator<Component> {
                     .append(
                         text(" ====", NamedTextColor.AQUA)
                     )
-                    .build();
+                    .asComponent());
             }
 
             @Override
-            public @NotNull Component line(BladeCommand result, int index) {
+            public @NotNull List<Component> line(BladeCommand result, int index) {
                 Component usage = (Component) result.helpMessage().message();
 
                 TextComponent.Builder out = text()
@@ -118,24 +114,28 @@ public class MinestomHelpGenerator implements HelpGenerator<Component> {
                     );
                 }
 
-                return out.build();
+                return List.of(out.asComponent());
             }
         }.generatePage(commands, page);
     }
 
+    @SuppressWarnings("ConstantValue")
     @NotNull
     private static String toRaw(@NotNull Component component) {
+        if (component == null) {
+            return "";
+        }
+
         StringBuilder sb = new StringBuilder();
 
-        if (component instanceof TextComponent) {
-            TextComponent tc = (TextComponent) component;
-
+        if (component instanceof TextComponent tc) {
             if (!tc.content().isEmpty()) {
                 sb.append(tc.content());
             }
         }
 
         for (Component child : component.children()) {
+            if (child == null) continue;
             sb.append(toRaw(child));
         }
 

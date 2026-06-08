@@ -49,32 +49,44 @@ public class BukkitHelpGenerator implements HelpGenerator<String> {
 
         return new PaginatedOutput<BladeCommand, String>(RESULTS_PER_PAGE) {
             @Override
-            public @NotNull String error(@NotNull Error error, Object... args) {
+            public @NotNull List<String> error(@NotNull Error error, Object... args) {
                 switch (error) {
                     case NO_RESULTS:
-                        return ChatColor.RED + "There are no available commands matching that format.";
+                        return Collections.singletonList(
+                            ChatColor.RED + "There are no available commands matching that format."
+                        );
                     case PAGE_OUT_OF_BOUNDS:
-                        return ChatColor.RED + String.format("Page %d does not exist, valid range is 1 to %d.", args);
+                        return Collections.singletonList(
+                            ChatColor.RED + String.format("Page %d does not exist, valid range is 1 to %d.", args)
+                        );
                 }
-                return ChatColor.RED + String.format("Unknown error %s", error.name());
+                return Collections.singletonList(
+                    ChatColor.RED + String.format("Unknown error %s", error.name())
+                );
             }
 
             @Override
-            public @NotNull String header(int page, int totalPages) {
-                return ChatColor.AQUA + "==== " + ChatColor.YELLOW + "Help for /" + context.label() + ChatColor.AQUA + " ====";
+            public @NotNull List<String> header(int page, int totalPages) {
+                return Collections.singletonList(
+                    ChatColor.AQUA + "==== " + ChatColor.YELLOW + "Help for /" + context.label() + ChatColor.AQUA + " ===="
+                );
             }
 
             @Override
-            public @NotNull String footer(int page, int totalPages) {
-                return ChatColor.AQUA + "==== " + ChatColor.YELLOW + "Page " + page + "/" + totalPages + ChatColor.AQUA + " ====";
+            public @NotNull List<String> footer(int page, int totalPages) {
+                return Collections.singletonList(
+                    ChatColor.AQUA + "==== " + ChatColor.YELLOW + "Page " + page + "/" + totalPages + ChatColor.AQUA + " ===="
+                );
             }
 
             @Override
-            public @NotNull String line(BladeCommand result, int index) {
+            public @NotNull List<String> line(BladeCommand result, int index) {
                 String help = (String) result.helpMessage().message();
 
-                return ChatColor.AQUA + " - " + ChatColor.YELLOW + ChatColor.stripColor(help) +
-                    (result.description().isEmpty() ? "" : (" - " + ChatColor.GRAY + result.description()));
+                return Collections.singletonList(
+                    ChatColor.AQUA + " - " + ChatColor.YELLOW + ChatColor.stripColor(help) +
+                        (result.description().isEmpty() ? "" : (" - " + ChatColor.GRAY + result.description()))
+                );
             }
         }.generatePage(commands, page);
     }

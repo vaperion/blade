@@ -118,7 +118,7 @@ public final class Blade {
         configuration.tabCompleter().init(this);
         platform.ingestBlade(this);
 
-        logger().info("Blade v%s initialized in %dms (bound to plugin %s)",
+        logger().info("Blade v%s initialized in %dms (bound to %s)",
             BuildParameters.VERSION,
             System.currentTimeMillis() - builder.startTime,
             platform.plugin()

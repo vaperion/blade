@@ -31,7 +31,7 @@ public class HytaleSender implements Sender<CommandSender> {
 
     @Override
     public @NotNull String name() {
-        return commandSender.getDisplayName();
+        return commandSender.getUsername();
     }
 
     @Override
