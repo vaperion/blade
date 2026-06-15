@@ -160,14 +160,8 @@ public interface BladeHelper {
             return input;
         }
 
-        if (firstSpace == -1) {
-            return (startsWithSlash ? "/" : "") +
-                input.substring(colonIndex + 1);
-        }
-
         return (startsWithSlash ? "/" : "") +
-            input.substring(colonIndex + 1) +
-            input.substring(firstSpace);
+            input.substring(colonIndex + 1);
     }
 
 }

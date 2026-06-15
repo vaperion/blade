@@ -21,6 +21,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
+import static me.vaperion.blade.util.BladeHelper.removeCommandQualifier;
+
 public class OverloadTest {
 
     @BeforeEach
@@ -204,6 +206,30 @@ public class OverloadTest {
             new HashSet<>(blade.suggestionProvider().suggestNode(
                 context, node, "/paint SQUARE ", SuggestionType.ARGUMENTS))
         );
+    }
+
+    @Test
+    public void classLevelMultiWordLabelDoesNotConsumeSubcommandAsArgument() {
+        Blade blade = BladeTestPlatform.createInstance();
+        blade.register(OverloadedCommands.LoremCommands.class);
+
+        ErrorMessage error = execute(blade, "lorem ipsum dolor");
+
+        Assertions.assertNotNull(error);
+        Assertions.assertEquals(ErrorMessage.Type.SHOW_COMMAND_USAGE, error.type());
+        Assertions.assertTrue(OverloadedCommands.INVOCATIONS.isEmpty());
+    }
+
+    @Test
+    public void qualifiedClassLevelMultiWordLabelDoesNotConsumeSubcommandAsArgument() {
+        Blade blade = BladeTestPlatform.createInstance();
+        blade.register(OverloadedCommands.LoremCommands.class);
+
+        ErrorMessage error = execute(blade, removeCommandQualifier("test:lorem ipsum dolor"));
+
+        Assertions.assertNotNull(error);
+        Assertions.assertEquals(ErrorMessage.Type.SHOW_COMMAND_USAGE, error.type());
+        Assertions.assertTrue(OverloadedCommands.INVOCATIONS.isEmpty());
     }
 
     @Test

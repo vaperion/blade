@@ -80,6 +80,19 @@ public final class OverloadedCommands {
         INVOCATIONS.add("shapes=" + first + "," + second);
     }
 
+    @Command("hello world")
+    public static void helloWorld(@Name("arg") @NotNull String arg) {
+        INVOCATIONS.add("helloWorld=" + arg);
+    }
+
+    @Command("lorem")
+    public static final class LoremCommands {
+        @Command("ipsum dolor")
+        public static void dolor(@Name("arg") @NotNull String arg) {
+            INVOCATIONS.add("dolor=" + arg);
+        }
+    }
+
     public enum Color {RED, GREEN}
 
     public enum Shape {CIRCLE, SQUARE}
