@@ -43,6 +43,8 @@ public final class BukkitContainer extends Command implements Container {
     public static final ContainerCreator<BukkitContainer> CREATOR = BukkitContainer::new;
 
     private static final Field COMMAND_MAP, KNOWN_COMMANDS;
+
+    private final String registrationQualifier;
     private static final String UNKNOWN_COMMAND_MESSAGE;
 
     static {
@@ -112,6 +114,7 @@ public final class BukkitContainer extends Command implements Container {
         }
 
         String qualifier = blade.configuration().commandQualifier();
+        this.registrationQualifier = qualifier;
 
         if (!simpleCommandMap.register(qualifier, this)) {
             String context = override
@@ -129,6 +132,11 @@ public final class BukkitContainer extends Command implements Container {
             // label already gets overridden by the #register method, but we need to adjust the usage manually
             setUsage("/" + getLabel());
         }
+    }
+
+    @NotNull
+    public String registrationQualifier() {
+        return registrationQualifier;
     }
 
     @Override

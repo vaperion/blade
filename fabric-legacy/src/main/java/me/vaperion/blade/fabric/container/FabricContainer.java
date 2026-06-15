@@ -235,9 +235,10 @@ public final class FabricContainer implements Container {
             return;
 
         var sender = ctx.getSource();
+        String commandLine = removeCommandQualifier(suggestions.input());
 
         ResolvedCommand node = blade.nodeResolver().resolve(
-            ctx.getInput()
+            commandLine
         );
 
         if (node == null) {
@@ -250,7 +251,7 @@ public final class FabricContainer implements Container {
                 // Found exact command, we can suggest arguments here.
 
                 String[] args = splitSuggestionArguments(removePrefix(
-                    removeCommandQualifier(ctx.getInput()),
+                    commandLine,
                     node.matchedLabelOr("")
                 ));
 
@@ -264,7 +265,7 @@ public final class FabricContainer implements Container {
                 blade.suggestionProvider().suggestNode(
                     context,
                     node,
-                    removeCommandQualifier(ctx.getInput()),
+                    commandLine,
                     EnumSet.of(SuggestionType.ARGUMENTS),
                     suggestions
                 );
@@ -273,7 +274,7 @@ public final class FabricContainer implements Container {
 
             // Only found command stub - suggest subcommands.
 
-            String[] args = splitSuggestionArguments(removeCommandQualifier(ctx.getInput()));
+            String[] args = splitSuggestionArguments(commandLine);
 
             Context context = new Context(
                 blade,
@@ -285,7 +286,7 @@ public final class FabricContainer implements Container {
             CommandInput input = new CommandInput(
                 blade,
                 null,
-                removeCommandQualifier(ctx.getInput()),
+                commandLine,
                 InputOption.DISALLOW_FLAGS
             );
 

@@ -2,6 +2,7 @@ package me.vaperion.blade.paper.brigadier;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandRegistrationFlag;
@@ -18,6 +19,7 @@ import me.vaperion.blade.brigadier.BrigadierRichSuggestionsBuilder;
 import me.vaperion.blade.bukkit.container.BukkitContainer;
 import me.vaperion.blade.bukkit.context.BukkitSender;
 import me.vaperion.blade.paper.BladePaperPlatform;
+import me.vaperion.blade.tree.CommandTreeNode;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Listener;
 import org.jetbrains.annotations.NotNull;
@@ -51,7 +53,7 @@ public final class BladePaperBrigadier implements Listener {
 
         this.delegate = new BladeBrigadierDelegate<>(blade,
             (ctx, builder, container) ->
-                container.tabComplete(sender(ctx), input(ctx), new BrigadierRichSuggestionsBuilder(builder)),
+                container.tabComplete(sender(ctx), input(builder), new BrigadierRichSuggestionsBuilder(builder)),
             (ctx, container) ->
                 container.execute(sender(ctx), input(ctx))
         );
@@ -72,8 +74,16 @@ public final class BladePaperBrigadier implements Listener {
 
     @NotNull
     private String input(@NotNull CommandContext<CommandSourceStack> ctx) {
-        String input = ctx.getInput();
+        return input(ctx.getInput());
+    }
 
+    @NotNull
+    private String input(@NotNull SuggestionsBuilder builder) {
+        return input(builder.getInput());
+    }
+
+    @NotNull
+    private String input(@NotNull String input) {
         if (input.startsWith("/"))
             input = input.substring(1);
 
@@ -89,21 +99,21 @@ public final class BladePaperBrigadier implements Listener {
                 delegate.executor(node)
             );
 
-            String pluginNamespace = pluginNamespace();
+            String commandNamespace = namespace(node, literal);
 
-            if (registerModern(registrar, literal)) {
+            if (registerModern(registrar, node, literal, commandNamespace)) {
                 // try registering using the modern method first, this also allows setting the namespace
                 return;
             }
 
-            if (registerLegacy(registrar, literal)) {
+            if (registerLegacy(registrar, node, literal, commandNamespace)) {
                 // fallback to old method, only allows passing custom flags
                 return;
             }
 
             // if both methods fail, just use the default register method
             registrar.register(literal);
-            syncRegisteredClientNodes(registrar, pluginNamespace, literal);
+            syncRegisteredClientNodes(registrar, commandNamespace, node, literal);
         });
     }
 
@@ -124,17 +134,15 @@ public final class BladePaperBrigadier implements Listener {
     private static boolean LEGACY_SUPPORTED = true;
 
     private boolean registerModern(@NotNull Commands registrar,
-                                   @NotNull LiteralCommandNode<CommandSourceStack> literal) {
+                                   @NotNull CommandTreeNode node,
+                                   @NotNull LiteralCommandNode<CommandSourceStack> literal,
+                                   @NotNull String namespace) {
         if (!MODERN_SUPPORTED) {
             return false;
         }
 
         try {
             PluginMeta meta = pluginMeta();
-
-            String namespace = blade.configuration().useCommandNameAsQualifier()
-                ? literal.getLiteral().toLowerCase(Locale.ROOT)
-                : blade.configuration().commandQualifier().toLowerCase(Locale.ROOT);
 
             if (namespace.equals(meta.getName().toLowerCase(Locale.ROOT))) {
                 // no point in using reflection as the default implementation will work just fine in this case
@@ -170,7 +178,7 @@ public final class BladePaperBrigadier implements Listener {
                 /* flags */ Set.of(CommandRegistrationFlag.FLATTEN_ALIASES)
             );
 
-            syncRegisteredClientNodes(registrar, namespace, literal);
+            syncRegisteredClientNodes(registrar, namespace, node, literal);
 
             return true;
         } catch (Throwable ignored) {
@@ -182,8 +190,24 @@ public final class BladePaperBrigadier implements Listener {
         }
     }
 
+    @NotNull
+    private String namespace(@NotNull CommandTreeNode node,
+                             @NotNull LiteralCommandNode<CommandSourceStack> literal) {
+        if (blade.configuration().useCommandNameAsQualifier()) {
+            return literal.getLiteral().toLowerCase(Locale.ROOT);
+        }
+
+        if (node.container() instanceof BukkitContainer container) {
+            return container.registrationQualifier().toLowerCase(Locale.ROOT);
+        }
+
+        return blade.configuration().commandQualifier().toLowerCase(Locale.ROOT);
+    }
+
     private boolean registerLegacy(@NotNull Commands registrar,
-                                   @NotNull LiteralCommandNode<CommandSourceStack> literal) {
+                                   @NotNull CommandTreeNode node,
+                                   @NotNull LiteralCommandNode<CommandSourceStack> literal,
+                                   @NotNull String namespace) {
         if (!LEGACY_SUPPORTED) {
             return false;
         }
@@ -199,7 +223,7 @@ public final class BladePaperBrigadier implements Listener {
                 Set.of(CommandRegistrationFlag.FLATTEN_ALIASES)
             );
 
-            syncRegisteredClientNodes(registrar, pluginNamespace(), literal);
+            syncRegisteredClientNodes(registrar, namespace, node, literal);
 
             return true;
         } catch (Throwable ignored) {
@@ -213,11 +237,12 @@ public final class BladePaperBrigadier implements Listener {
 
     private void syncRegisteredClientNodes(@NotNull Commands registrar,
                                            @NotNull String namespace,
+                                           @NotNull CommandTreeNode treeNode,
                                            @NotNull LiteralCommandNode<CommandSourceStack> literal) {
         CommandNode<CommandSourceStack> clientNode = BrigadierCompat.getClientNode(literal);
-        if (!(clientNode instanceof LiteralCommandNode<CommandSourceStack> clientLiteral)) {
-            return;
-        }
+        LiteralCommandNode<CommandSourceStack> clientLiteral = hasHiddenCommand(treeNode) && clientNode instanceof LiteralCommandNode<CommandSourceStack> customClientLiteral
+            ? customClientLiteral
+            : literal;
 
         syncRegisteredClientNode(literal,
             copyLiteral(literal.getLiteral(), clientLiteral));
@@ -237,8 +262,13 @@ public final class BladePaperBrigadier implements Listener {
 
         if (registeredNamespaced != null) {
             syncRegisteredClientNode(registeredNamespaced,
-                copyLiteral(namespace + ":" + clientLiteral.getLiteral(), clientLiteral));
+                copyLiteral(namespace + ":" + literal.getLiteral(), clientLiteral));
         }
+    }
+
+    private boolean hasHiddenCommand(@NotNull CommandTreeNode node) {
+        return node.commands().stream().anyMatch(command -> !command.shouldSendToClient()) ||
+            node.children().values().stream().anyMatch(this::hasHiddenCommand);
     }
 
     private void syncRegisteredClientNode(@NotNull CommandNode<CommandSourceStack> node,

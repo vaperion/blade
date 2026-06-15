@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.*;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import me.vaperion.blade.context.Context;
 import me.vaperion.blade.context.Sender;
 import me.vaperion.blade.tree.CommandTreeNode;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -200,9 +202,9 @@ public final class BladeBrigadierBuilder<T, S> {
         for (DefinedArgument arg : command.arguments()) {
             argumentPrefix.add(arg.name());
 
-            // Brigadier cannot represent sibling arguments with the same name but different parsers.
-            // Conflicts are widened below, then Blade does final overload selection.
-            CommandNode<T> existing = commandNode.getChild(arg.name());
+            // Brigadier cannot reliably complete overloaded sibling arguments at the same position.
+            // Merge by position and let Blade do final overload selection.
+            CommandNode<T> existing = findReusableArgumentChild(commandNode, arg.name());
 
             if (existing != null) {
                 commandNode = existing;
@@ -246,6 +248,23 @@ public final class BladeBrigadierBuilder<T, S> {
             CommandNode<T> argument = builder.build();
             commandNode.addChild(argument);
         }
+    }
+
+    @Nullable
+    private CommandNode<T> findReusableArgumentChild(@NotNull CommandNode<T> node,
+                                                     @NotNull String preferredName) {
+        CommandNode<T> exact = node.getChild(preferredName);
+        if (exact instanceof ArgumentCommandNode) {
+            return exact;
+        }
+
+        for (CommandNode<T> child : node.getChildren()) {
+            if (child instanceof ArgumentCommandNode && !child.getName().equals("flags")) {
+                return child;
+            }
+        }
+
+        return null;
     }
 
     @NotNull
