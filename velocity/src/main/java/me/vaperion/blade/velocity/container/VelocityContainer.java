@@ -232,7 +232,7 @@ public class VelocityContainer implements RawCommand, Container {
     @Override
     public List<String> suggest(Invocation invocation) {
         CommandSource sender = invocation.source();
-        String[] args = invocation.arguments().split(" ");
+        String[] args = splitSuggestionArguments(invocation.arguments());
         String label = invocation.alias();
 
         if (!blade.configuration().tabCompleter().isDefault())

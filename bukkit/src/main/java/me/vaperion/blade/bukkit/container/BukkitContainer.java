@@ -394,10 +394,10 @@ public final class BukkitContainer extends Command implements Container {
             if (!node.isStub()) {
                 // Found exact command, we can suggest arguments here.
 
-                String[] args = removePrefix(
+                String[] args = splitSuggestionArguments(removePrefix(
                     removeCommandQualifier(commandLine),
                     node.matchedLabelOr("")
-                ).split(" ");
+                ));
 
                 if (!platformTypes.contains(SuggestionType.ARGUMENTS)) {
                     // Platform doesn't support argument suggestions.
@@ -428,7 +428,7 @@ public final class BukkitContainer extends Command implements Container {
                 return;
             }
 
-            String[] args = removeCommandQualifier(commandLine).split(" ");
+            String[] args = splitSuggestionArguments(removeCommandQualifier(commandLine));
 
             Context context = new Context(
                 blade,

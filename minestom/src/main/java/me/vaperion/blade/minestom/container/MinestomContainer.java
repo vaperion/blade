@@ -372,14 +372,4 @@ public final class MinestomContainer extends Command implements Container {
         return input.replace(MINESTOM_COMPLETION_PLACEHOLDER, ' ');
     }
 
-    @NotNull
-    private String[] splitSuggestionArguments(@NotNull String input) {
-        input = input.stripLeading();
-
-        if (input.isEmpty()) {
-            return new String[0];
-        }
-
-        return input.split(" ", -1);
-    }
 }

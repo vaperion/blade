@@ -249,10 +249,10 @@ public final class FabricContainer implements Container {
             if (!node.isStub()) {
                 // Found exact command, we can suggest arguments here.
 
-                String[] args = removePrefix(
+                String[] args = splitSuggestionArguments(removePrefix(
                     removeCommandQualifier(ctx.getInput()),
                     node.matchedLabelOr("")
-                ).split(" ");
+                ));
 
                 Context context = new Context(
                     blade,
@@ -273,7 +273,7 @@ public final class FabricContainer implements Container {
 
             // Only found command stub - suggest subcommands.
 
-            String[] args = removeCommandQualifier(ctx.getInput()).split(" ");
+            String[] args = splitSuggestionArguments(removeCommandQualifier(ctx.getInput()));
 
             Context context = new Context(
                 blade,

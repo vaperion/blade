@@ -120,6 +120,23 @@ public interface BladeHelper {
     }
 
     @NotNull
+    static String[] splitSuggestionArguments(@NotNull String input) {
+        int start = 0;
+
+        while (start < input.length() && input.charAt(start) == ' ') {
+            start++;
+        }
+
+        input = input.substring(start);
+
+        if (input.isEmpty()) {
+            return new String[]{ "" };
+        }
+
+        return input.split(" ", -1);
+    }
+
+    @NotNull
     static String removePrefix(@NotNull String input,
                                @NotNull String prefix) {
         if (input.startsWith(prefix)) {
