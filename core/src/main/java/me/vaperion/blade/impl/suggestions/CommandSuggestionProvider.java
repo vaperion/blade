@@ -8,7 +8,10 @@ import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.command.parameter.DefinedArgument;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.exception.BladeParseError;
+import me.vaperion.blade.exception.internal.BladeFatalError;
 import me.vaperion.blade.exception.internal.BladeImplementationError;
+import me.vaperion.blade.impl.node.ResolvedCommand;
+import me.vaperion.blade.tokenizer.TokenizerError;
 import me.vaperion.blade.tokenizer.input.CommandInput;
 import me.vaperion.blade.tokenizer.input.token.impl.ArgumentToken;
 import me.vaperion.blade.tokenizer.input.token.impl.LabelToken;
@@ -64,14 +67,116 @@ public final class CommandSuggestionProvider {
         return builder.build();
     }
 
-    /**
-     * Generates suggestions for command input and writes them to a rich builder.
-     *
-     * @param context the command context
-     * @param input   the command input
-     * @param types   the suggestion types
-     * @param builder the target suggestions builder
-     */
+    @NotNull
+    public List<String> suggestNode(@NotNull Context context,
+                                    @NotNull ResolvedCommand node,
+                                    @NotNull String slashedInput,
+                                    @NotNull SuggestionType... types) {
+        String sourceInput = slashedInput.startsWith("/")
+            ? slashedInput.substring(1)
+            : slashedInput;
+
+        SimpleRichSuggestionsBuilder builder = new SimpleRichSuggestionsBuilder(sourceInput, sourceInput.length());
+
+        suggestNode(context, node, slashedInput, arrayToEnumSet(SuggestionType.class, types), builder);
+        return builder.build();
+    }
+
+    public void suggestNode(@NotNull Context context,
+                            @NotNull ResolvedCommand node,
+                            @NotNull String slashedInput,
+                            @NotNull EnumSet<SuggestionType> types,
+                            @NotNull RichSuggestionsBuilder builder) {
+        List<BladeCommand> overloads = node.overloads();
+        String matchedLabel = node.matchedLabelOr("");
+        boolean single = overloads.size() == 1;
+
+        for (BladeCommand command : overloads) {
+            try {
+                CommandInput input = command.tokenize(context.sender(), slashedInput);
+
+                if (!input.mergeTokensToFormWholeLabel(matchedLabel)) {
+                    if (single) {
+                        // Failed to merge label, can't suggest arguments
+                        throw new BladeFatalError("Failed to parse command input for tab completion.");
+                    }
+
+                    continue;
+                }
+
+                context.updateArgumentsFromInput(input);
+
+                if (!single && !typedArgumentsParse(context, command, input)) {
+                    // The arguments typed so far don't fit this overload
+                    continue;
+                }
+
+                suggest(context, input, types, builder);
+            } catch (TokenizerError | BladeParseError e) {
+                if (single) {
+                    throw e;
+                }
+            }
+        }
+    }
+
+    private boolean typedArgumentsParse(@NotNull Context context,
+                                        @NotNull BladeCommand command,
+                                        @NotNull CommandInput input) {
+        if (command.usesBladeContext()) {
+            return true;
+        }
+
+        List<ArgumentToken> tokens = input.arguments();
+
+        int completed = input.endsInWhitespace() ? tokens.size() : tokens.size() - 1;
+        int greedyIndex = findGreedyArgumentIndex(command);
+
+        if (greedyIndex >= 0) {
+            completed = Math.min(completed, greedyIndex);
+        }
+
+        List<DefinedArgument> arguments = command.arguments();
+
+        for (int i = 0; i < completed; i++) {
+            if (i >= arguments.size()) {
+                // More arguments were typed than this overload accepts.
+                return false;
+            }
+
+            DefinedArgument argument = arguments.get(i);
+
+            ArgumentProvider<?> provider = argument.hasCustomParser()
+                ? argument.customParser()
+                : command.argumentProviders().get(i);
+
+            if (provider == null) {
+                return false;
+            }
+
+            InputArgument inputArgument = new InputArgument(
+                argument,
+                tokens.get(i).value(),
+                InputArgument.Status.PRESENT
+            );
+
+            inputArgument.data().addAll(argument.data());
+            inputArgument.addAnnotations(argument.annotations());
+
+            try {
+                provider.provide(context, inputArgument);
+            } catch (BladeParseError error) {
+                if (!argument.isOptional()) {
+                    return false;
+                }
+            } catch (Throwable t) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public void suggest(@NotNull Context context,
                         @NotNull CommandInput input,
                         @NotNull EnumSet<SuggestionType> types,
@@ -146,8 +251,7 @@ public final class CommandSuggestionProvider {
 
     private boolean hasAccessibleCommand(@NotNull CommandTreeNode node,
                                          @NotNull Context context) {
-        if (node.isLeaf()) {
-            BladeCommand cmd = node.command();
+        for (BladeCommand cmd : node.commands()) {
             if (cmd.shouldSendToClient() && cmd.hasPermission(context)) {
                 return true;
             }

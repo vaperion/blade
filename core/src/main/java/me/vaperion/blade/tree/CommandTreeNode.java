@@ -1,20 +1,27 @@
 package me.vaperion.blade.tree;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.Container;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Represents a node in the command tree.
- * Can be either a branch (has children) or a leaf (has a command), or both.
+ * Can be either a branch (has children) or a leaf (has one or more commands), or both.
+ * <p>
+ * A node may hold multiple commands (overloads) registered under the same label,
+ * differing only in their parameters.
  */
 @SuppressWarnings("unused")
 @Getter
@@ -24,8 +31,8 @@ public final class CommandTreeNode {
     private final String label;
     private final Map<String, CommandTreeNode> children = new ConcurrentHashMap<>();
 
-    @Setter
-    private BladeCommand command;
+    @Getter(AccessLevel.NONE)
+    private final List<BladeCommand> commands = new CopyOnWriteArrayList<>();
 
     @Setter
     private Container container;
@@ -37,12 +44,12 @@ public final class CommandTreeNode {
     }
 
     /**
-     * Checks if this node is a leaf (has an associated command).
+     * Checks if this node is a leaf (has at least one associated command).
      *
      * @return true if this node is a leaf, false otherwise
      */
     public boolean isLeaf() {
-        return command != null;
+        return !commands.isEmpty();
     }
 
     /**
@@ -63,6 +70,35 @@ public final class CommandTreeNode {
         return !isLeaf() && isBranch();
     }
 
+    @Nullable
+    public BladeCommand command() {
+        return commands.isEmpty() ? null : commands.get(0);
+    }
+
+    public void command(@Nullable BladeCommand command) {
+        if (command == null) {
+            commands.clear();
+        } else {
+            addCommand(command);
+        }
+    }
+
+    @NotNull
+    @Unmodifiable
+    public List<BladeCommand> commands() {
+        return Collections.unmodifiableList(commands);
+    }
+
+    public void addCommand(@NotNull BladeCommand command) {
+        if (!commands.contains(command)) {
+            commands.add(command);
+        }
+    }
+
+    public boolean removeCommand(@NotNull BladeCommand command) {
+        return commands.remove(command);
+    }
+
     /**
      * Adds a child path to this node.
      *
@@ -71,7 +107,7 @@ public final class CommandTreeNode {
      */
     void addChild(@NotNull List<String> labels, @NotNull BladeCommand command) {
         if (labels.isEmpty()) {
-            this.command = command;
+            addCommand(command);
             return;
         }
 
@@ -80,7 +116,7 @@ public final class CommandTreeNode {
             label -> new CommandTreeNode(this, label));
 
         if (labels.size() == 1) {
-            child.command(command);
+            child.addCommand(command);
         } else {
             child.addChild(labels.subList(1, labels.size()), command);
         }
@@ -95,11 +131,7 @@ public final class CommandTreeNode {
      */
     boolean removeChild(@NotNull List<String> labels, @NotNull BladeCommand command) {
         if (labels.isEmpty()) {
-            if (this.command == command) {
-                this.command = null;
-                return true;
-            }
-            return false;
+            return removeCommand(command);
         }
 
         String childLabel = labels.get(0);
@@ -111,22 +143,13 @@ public final class CommandTreeNode {
 
         boolean removed;
         if (labels.size() == 1) {
-            if (child.command() == command) {
-                child.command(null);
-                removed = true;
-
-                if (!child.isBranch() && !child.isLeaf()) {
-                    children.remove(childLabel);
-                }
-            } else {
-                removed = false;
-            }
+            removed = child.removeCommand(command);
         } else {
             removed = child.removeChild(labels.subList(1, labels.size()), command);
+        }
 
-            if (removed && !child.isBranch() && !child.isLeaf()) {
-                children.remove(childLabel);
-            }
+        if (removed && !child.isBranch() && !child.isLeaf()) {
+            children.remove(childLabel);
         }
 
         return removed;
@@ -156,7 +179,7 @@ public final class CommandTreeNode {
     }
 
     private void collectNodesRecursive(@NotNull List<CommandTreeNode> into) {
-        if (command != null) {
+        if (!commands.isEmpty()) {
             into.add(this);
         }
 
@@ -176,9 +199,11 @@ public final class CommandTreeNode {
         List<CommandTreeNode> nodes = collectNodes();
 
         for (CommandTreeNode node : nodes) {
-            for (String label : node.command.labels()) {
-                if (label.equalsIgnoreCase(fullLabel)) {
-                    return node;
+            for (BladeCommand command : node.commands) {
+                for (String label : command.labels()) {
+                    if (label.equalsIgnoreCase(fullLabel)) {
+                        return node;
+                    }
                 }
             }
         }
@@ -199,9 +224,7 @@ public final class CommandTreeNode {
     }
 
     private void collectCommandsRecursive(@NotNull List<BladeCommand> into) {
-        if (command != null) {
-            into.add(command);
-        }
+        into.addAll(commands);
 
         for (CommandTreeNode child : children.values()) {
             child.collectCommandsRecursive(into);

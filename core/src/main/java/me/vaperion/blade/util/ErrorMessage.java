@@ -1,6 +1,8 @@
 package me.vaperion.blade.util;
 
+import me.vaperion.blade.command.BladeCommand;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -12,6 +14,11 @@ public final class ErrorMessage {
     @NotNull
     public static ErrorMessage showCommandUsage() {
         return new ErrorMessage(Type.SHOW_COMMAND_USAGE, Collections.emptyList());
+    }
+
+    @NotNull
+    public static ErrorMessage showCommandUsage(@Nullable BladeCommand command) {
+        return new ErrorMessage(Type.SHOW_COMMAND_USAGE, Collections.emptyList(), command);
     }
 
     @NotNull
@@ -31,11 +38,19 @@ public final class ErrorMessage {
 
     private final Type type;
     private final List<String> lines;
+    private final BladeCommand command;
 
     ErrorMessage(@NotNull Type type,
                  @NotNull List<String> lines) {
+        this(type, lines, null);
+    }
+
+    ErrorMessage(@NotNull Type type,
+                 @NotNull List<String> lines,
+                 @Nullable BladeCommand command) {
         this.type = type;
         this.lines = lines;
+        this.command = command;
     }
 
     @NotNull
@@ -46,6 +61,11 @@ public final class ErrorMessage {
     @NotNull
     public List<String> lines() {
         return lines;
+    }
+
+    @Nullable
+    public BladeCommand command() {
+        return command;
     }
 
     public enum Type {

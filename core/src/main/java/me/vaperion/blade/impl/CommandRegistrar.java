@@ -12,6 +12,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 import static me.vaperion.blade.util.Preconditions.mustGetAnnotation;
@@ -28,7 +29,13 @@ public class CommandRegistrar {
         try {
             int n = 0;
 
-            for (Method method : clazz.getDeclaredMethods()) {
+            // getDeclaredMethods does not guarantee any particular order, so we sort
+            // to keep the registration order of overloads (same label, different
+            // parameters) deterministic across JVMs.
+            Method[] methods = clazz.getDeclaredMethods();
+            Arrays.sort(methods, Comparator.comparing(Method::toGenericString));
+
+            for (Method method : methods) {
                 if (!method.isAnnotationPresent(Command.class)) continue;
                 if ((instance == null) != Modifier.isStatic(method.getModifiers())) continue;
 
@@ -87,6 +94,19 @@ public class CommandRegistrar {
 
     private boolean doRegisterMethod(@Nullable Object instance,
                                      @NotNull Method method) {
+        // Method instances are re-created on every reflective lookup, so compare with equals.
+        boolean alreadyRegistered = blade.commands().stream()
+            .anyMatch(c -> c.instance() == instance && c.method().equals(method));
+
+        if (alreadyRegistered) {
+            if (blade.configuration().verbose()) {
+                blade.logger().info("Skipped command method `%s`: it is already registered.",
+                    method.getName());
+            }
+
+            return false;
+        }
+
         BladeCommand cmd = new BladeCommand(blade, instance, method);
 
         try {
@@ -126,8 +146,9 @@ public class CommandRegistrar {
         String[] labels = command.value();
         labels = Arrays.stream(labels).map(String::toLowerCase).toArray(String[]::new);
 
+        // Method instances are re-created on every reflective lookup, so compare with equals.
         BladeCommand cmd = blade.commands().stream().filter(
-                c -> c.instance() == instance && c.method() == method)
+                c -> c.instance() == instance && c.method().equals(method))
             .findFirst().orElse(null);
         if (cmd == null) return;
 

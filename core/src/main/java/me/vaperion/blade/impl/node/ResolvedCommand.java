@@ -2,6 +2,7 @@ package me.vaperion.blade.impl.node;
 
 import lombok.Getter;
 import me.vaperion.blade.command.BladeCommand;
+import me.vaperion.blade.context.Context;
 import me.vaperion.blade.tree.CommandTreeNode;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -43,13 +44,43 @@ public class ResolvedCommand {
     }
 
     /**
-     * Returns the matched command, or {@code null} if no command was matched.
+     * Returns the matched primary command, or {@code null} if no command was matched.
+     * <p>
+     * If the matched node holds multiple overloads, the first registered one is returned.
+     * Use {@link #overloads()} to access all of them.
      *
      * @return The matched command or {@code null}.
      */
     @Nullable
     public BladeCommand command() {
         return treeNode != null ? treeNode.command() : null;
+    }
+
+    /**
+     * Returns all matched command overloads.
+     *
+     * @return The matched overloads, or an empty list if no command was matched.
+     */
+    @NotNull
+    public List<BladeCommand> overloads() {
+        return treeNode != null ? treeNode.commands() : Collections.emptyList();
+    }
+
+    /**
+     * Checks if the given context has permission to execute at least one of the
+     * matched command overloads.
+     *
+     * @param context the command context
+     * @return true if any overload is permitted, false otherwise
+     */
+    public boolean hasPermission(@NotNull Context context) {
+        for (BladeCommand command : overloads()) {
+            if (command.hasPermission(context)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -76,7 +107,7 @@ public class ResolvedCommand {
                 node.collectCommandsInto(into);
             }
         } else if (treeNode != null) {
-            into.add(treeNode.command());
+            into.addAll(treeNode.commands());
         }
     }
 

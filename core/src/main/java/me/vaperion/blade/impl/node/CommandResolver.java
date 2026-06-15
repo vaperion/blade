@@ -107,10 +107,12 @@ public final class CommandResolver {
         do {
             CommandTreeNode match = rootNode.findNodeByLabel(currentInput);
 
-            if (match != null && match.command() != null) {
-                for (String label : match.command().labels()) {
-                    if (label.equalsIgnoreCase(currentInput)) {
-                        return ResolvedCommand.match(label, match);
+            if (match != null) {
+                for (BladeCommand command : match.commands()) {
+                    for (String label : command.labels()) {
+                        if (label.equalsIgnoreCase(currentInput)) {
+                            return ResolvedCommand.match(label, match);
+                        }
                     }
                 }
             }

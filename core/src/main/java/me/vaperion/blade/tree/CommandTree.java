@@ -49,7 +49,7 @@ public final class CommandTree {
         }
 
         if (labels.size() == 1) {
-            root.command(command);
+            root.addCommand(command);
         } else {
             root.addChild(labels.subList(1, labels.size()), command);
         }
@@ -74,24 +74,9 @@ public final class CommandTree {
             return false;
         }
 
-        if (labels.size() == 1) {
-            if (root.command() == command) {
-                root.command(null);
-
-                if (!root.isBranch() && !root.isLeaf()) {
-                    roots.remove(rootLabel);
-
-                    if (root.container() != null) {
-                        root.container().unregister();
-                    }
-                }
-
-                return true;
-            }
-            return false;
-        }
-
-        boolean removed = root.removeChild(labels.subList(1, labels.size()), command);
+        boolean removed = labels.size() == 1
+            ? root.removeCommand(command)
+            : root.removeChild(labels.subList(1, labels.size()), command);
 
         if (removed && !root.isBranch() && !root.isLeaf()) {
             roots.remove(rootLabel);

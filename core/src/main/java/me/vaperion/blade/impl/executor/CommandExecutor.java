@@ -18,7 +18,9 @@ import me.vaperion.blade.exception.internal.BladeInternalError;
 import me.vaperion.blade.exception.internal.BladeInvocationError;
 import me.vaperion.blade.impl.node.ResolvedCommand;
 import me.vaperion.blade.sender.internal.SndProvider;
+import me.vaperion.blade.tokenizer.TokenizerError;
 import me.vaperion.blade.tokenizer.input.CommandInput;
+import me.vaperion.blade.tokenizer.input.InputOption;
 import me.vaperion.blade.tokenizer.input.token.flag.FlagValue;
 import me.vaperion.blade.tokenizer.input.token.impl.ArgumentToken;
 import me.vaperion.blade.tokenizer.input.token.impl.FlagToken;
@@ -41,18 +43,42 @@ public final class CommandExecutor {
     public ErrorMessage execute(@NotNull Context context,
                                 @NotNull CommandInput input,
                                 @NotNull ResolvedCommand node) {
+        return executeSafely(context, node, () -> prepareAndInvoke(context, input, node));
+    }
+
+    @Nullable
+    public ErrorMessage execute(@NotNull Context context,
+                                @NotNull ResolvedCommand node,
+                                @NotNull String input) {
+        return execute(context, node, input, EnumSet.noneOf(InputOption.class));
+    }
+
+    @Nullable
+    public ErrorMessage execute(@NotNull Context context,
+                                @NotNull ResolvedCommand node,
+                                @NotNull String input,
+                                @NotNull EnumSet<InputOption> options) {
+        return executeSafely(context, node, () -> prepareAndInvoke(context, input, node, options));
+    }
+
+    @Nullable
+    private ErrorMessage executeSafely(@NotNull Context context,
+                                       @NotNull ResolvedCommand node,
+                                       @NotNull Runnable runnable) {
         if (node.command() != null && Objects.requireNonNull(node.command()).helpCommand()) {
             // Help commands are handled by the container
             return ErrorMessage.showCommandHelp();
         }
 
         try {
-            prepareAndInvoke(context, input, node);
+            runnable.run();
 
             return null;
         } catch (BladeParseError e) {
             // Rethrow parse errors to be handled by the caller
             throw e;
+        } catch (TargetedUsageMessage e) {
+            return ErrorMessage.showCommandUsage(e.command);
         } catch (BladeUsageMessage ignored) {
             return ErrorMessage.showCommandUsage();
         } catch (BladeFatalError e) {
@@ -95,6 +121,27 @@ public final class CommandExecutor {
     private void prepareAndInvoke(@NotNull Context context,
                                   @NotNull CommandInput input,
                                   @NotNull ResolvedCommand node) {
+        List<BladeCommand> overloads = node.overloads();
+
+        if (overloads.size() > 1) {
+            invokeBestOverload(context, input, node, overloads);
+            return;
+        }
+
+        invokeSingle(context, input, node);
+    }
+
+    private void prepareAndInvoke(@NotNull Context context,
+                                  @NotNull String rawInput,
+                                  @NotNull ResolvedCommand node,
+                                  @NotNull EnumSet<InputOption> options) {
+        List<BladeCommand> overloads = node.overloads();
+
+        if (overloads.size() > 1) {
+            invokeBestOverload(context, rawInput, options, node, overloads);
+            return;
+        }
+
         BladeCommand cmd = node.command();
 
         if (cmd == null) {
@@ -109,10 +156,260 @@ public final class CommandExecutor {
             return;
         }
 
+        CommandInput input = inputForCommand(cmd, rawInput, options, node.matchedLabelOr(context.label()));
+        context.updateArgumentsFromInput(input);
+        invoke0(cmd, bind(context, input, cmd, false));
+    }
+
+    private void invokeSingle(@NotNull Context context,
+                              @NotNull CommandInput input,
+                              @NotNull ResolvedCommand node) {
+        BladeCommand cmd = node.command();
+
+        if (cmd == null) {
+            throw new BladeInternalError(String.format(
+                "Resolved command node for command '%s' does not have a command associated with it!",
+                context.label()
+            ));
+        }
+
+        if (cmd.usesBladeContext()) {
+            invoke0(cmd, new Object[]{ context });
+            return;
+        }
+
+        invoke0(cmd, bind(context, input, cmd, false));
+    }
+
+    private void invokeBestOverload(@NotNull Context context,
+                                    @NotNull CommandInput input,
+                                    @NotNull ResolvedCommand node,
+                                    @NotNull List<BladeCommand> overloads) {
+        String matchedLabel = node.matchedLabelOr(context.label());
+        invokeBestOverload(context, overloads,
+            cmd -> inputForOverload(input, cmd, matchedLabel));
+    }
+
+    private void invokeBestOverload(@NotNull Context context,
+                                    @NotNull String rawInput,
+                                    @NotNull EnumSet<InputOption> options,
+                                    @NotNull ResolvedCommand node,
+                                    @NotNull List<BladeCommand> overloads) {
+        String matchedLabel = node.matchedLabelOr(context.label());
+        invokeBestOverload(context, overloads,
+            cmd -> inputForCommand(cmd, rawInput, options, matchedLabel));
+    }
+
+    private void invokeBestOverload(@NotNull Context context,
+                                    @NotNull List<BladeCommand> overloads,
+                                    @NotNull OverloadInputFactory inputFactory) {
+        List<BladeCommand> candidates = new ArrayList<>(overloads);
+        candidates.sort(Comparator
+            .comparing(BladeCommand::usesBladeContext)
+            .thenComparing(Comparator.comparingInt(CommandExecutor::requiredArgumentCount).reversed())
+            .thenComparingInt(c -> c.arguments().size()));
+
+        RuntimeException bestError = null;
+        BladeCommand bestUsageOverload = null;
+        int bestScore = -1;
+        RuntimeException tokenizationError = null;
+        BladeCommand lenientFallback = null;
+        CommandInput lenientFallbackInput = null;
+
+        for (BladeCommand cmd : candidates) {
+            if (cmd.helpCommand()) {
+                // Help commands are handled by the container
+                continue;
+            }
+
+            if (!cmd.hasPermission(context)) {
+                continue;
+            }
+
+            if (cmd.usesBladeContext()) {
+                // Context-based commands accept any input
+                invoke0(cmd, new Object[]{ context });
+                return;
+            }
+
+            CommandInput cmdInput = null;
+            Object[] args;
+
+            try {
+                cmdInput = inputFactory.create(cmd);
+                args = bind(context, cmdInput, cmd, true);
+            } catch (BladeUsageMessage e) {
+                // Try the next overload
+                continue;
+            } catch (TrialExcessArguments e) {
+                if (!blade.configuration().strictArgumentCount()) {
+                    if (lenientFallback == null) {
+                        lenientFallback = cmd;
+                        lenientFallbackInput = cmdInput;
+                    }
+                    continue;
+                }
+
+                int score = e.bound * 2 + 1;
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestUsageOverload = null;
+                    bestError = BladeParseError.fatal(String.format(
+                        "Too many arguments. Please remove the last %d argument%s.",
+                        e.extra,
+                        e.extra == 1 ? "" : "s"
+                    ));
+                }
+                continue;
+            } catch (TrialMissingArguments e) {
+                int score = e.bound * 2;
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestError = null;
+                    bestUsageOverload = cmd;
+                }
+                continue;
+            } catch (TrialParseFailure e) {
+                int score = e.depth * 2 + (e.arityMatches ? 1 : 0);
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestUsageOverload = null;
+                    bestError = e.error;
+                }
+                continue;
+            } catch (BladeParseError | TokenizerError e) {
+                if (tokenizationError == null) {
+                    tokenizationError = e;
+                }
+                continue;
+            }
+
+            context.updateArgumentsFromInput(cmdInput);
+            invoke0(cmd, args);
+            return;
+        }
+
+        if (lenientFallback != null) {
+            Object[] args = bind(context, lenientFallbackInput, lenientFallback, false);
+
+            context.updateArgumentsFromInput(lenientFallbackInput);
+            invoke0(lenientFallback, args);
+            return;
+        }
+
+        if (bestError != null) {
+            throw bestError;
+        }
+
+        if (bestUsageOverload != null) {
+            throw new TargetedUsageMessage(bestUsageOverload);
+        }
+
+        if (tokenizationError != null) {
+            throw tokenizationError;
+        }
+
+        throw new BladeUsageMessage();
+    }
+
+    private interface OverloadInputFactory {
+        @NotNull CommandInput create(@NotNull BladeCommand command);
+    }
+
+    private static final class TrialParseFailure extends RuntimeException {
+        private final BladeParseError error;
+        private final int depth;
+        private final boolean arityMatches;
+
+        private TrialParseFailure(BladeParseError error, int depth, boolean arityMatches) {
+            super(null, null, false, false);
+            this.error = error;
+            this.depth = depth;
+            this.arityMatches = arityMatches;
+        }
+    }
+
+    private static final class TrialMissingArguments extends RuntimeException {
+        private final int bound;
+
+        private TrialMissingArguments(int bound) {
+            super(null, null, false, false);
+            this.bound = bound;
+        }
+    }
+
+    private static final class TargetedUsageMessage extends BladeUsageMessage {
+        private final BladeCommand command;
+
+        private TargetedUsageMessage(BladeCommand command) {
+            this.command = command;
+        }
+    }
+
+    private static final class TrialExcessArguments extends RuntimeException {
+        private final int extra;
+        private final int bound;
+
+        private TrialExcessArguments(int extra, int bound) {
+            super(null, null, false, false);
+            this.extra = extra;
+            this.bound = bound;
+        }
+    }
+
+    @NotNull
+    private CommandInput inputForOverload(@NotNull CommandInput original,
+                                          @NotNull BladeCommand cmd,
+                                          @NotNull String matchedLabel) {
+        if (original.bladeCommand() == cmd) {
+            // The container already tokenized the input
+            return original;
+        }
+
+        return inputForCommand(cmd, original.input(), original.options(), matchedLabel);
+    }
+
+    @NotNull
+    private CommandInput inputForCommand(@NotNull BladeCommand cmd,
+                                         @NotNull String rawInput,
+                                         @NotNull EnumSet<InputOption> options,
+                                         @NotNull String matchedLabel) {
+        CommandInput input = new CommandInput(blade, cmd, rawInput, options);
+        input.tokenize();
+
+        if (!input.mergeTokensToFormWholeLabel(matchedLabel)) {
+            throw new BladeUsageMessage();
+        }
+
+        return input;
+    }
+
+    private static int requiredArgumentCount(@NotNull BladeCommand cmd) {
+        int count = 0;
+
+        for (DefinedArgument argument : cmd.arguments()) {
+            if (!argument.isOptional()) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    @NotNull
+    private Object[] bind(@NotNull Context context,
+                          @NotNull CommandInput input,
+                          @NotNull BladeCommand cmd,
+                          boolean exactArgumentCount) {
         List<Object> methodArgs = new ArrayList<>();
 
         List<ArgumentToken> argumentTokens = input.arguments();
         Map<Character, FlagValue> mergedFlags = mergeAllFlags(input.flags());
+
+        boolean trialArityMatches = argumentTokens.size() >= requiredArgumentCount(cmd);
 
         int argIndex = 0, flagIndex = 0;
         boolean skipLengthEnforcement = false;
@@ -128,6 +425,11 @@ public final class CommandExecutor {
 
                     if (!parameter.isOptional()) {
                         // Required parameter missing
+
+                        if (exactArgumentCount && !argumentTokens.isEmpty()) {
+                            throw new TrialMissingArguments(argumentTokens.size());
+                        }
+
                         throw new BladeUsageMessage();
                     } else {
                         optional = parameter.optional();
@@ -171,6 +473,8 @@ public final class CommandExecutor {
                     ));
                 }
 
+                int parseDepth = argIndex;
+
                 Object methodArg;
 
                 boolean isSenderType = optional != null && optional.value() == Opt.Type.SENDER;
@@ -197,13 +501,21 @@ public final class CommandExecutor {
                     inputArg.data().addAll(parameter.data());
                     inputArg.addAnnotations(parameter.annotations());
 
-                    methodArg = provideArgument(
-                        provider,
-                        context,
-                        inputArg,
-                        optional != null && optional.treatErrorAsEmpty(),
-                        optional != null
-                    );
+                    try {
+                        methodArg = provideArgument(
+                            provider,
+                            context,
+                            inputArg,
+                            optional != null && optional.treatErrorAsEmpty(),
+                            optional != null
+                        );
+                    } catch (BladeParseError e) {
+                        if (exactArgumentCount) {
+                            throw new TrialParseFailure(e, parseDepth, trialArityMatches);
+                        }
+
+                        throw e;
+                    }
                 }
 
                 methodArgs.add(methodArg);
@@ -247,6 +559,8 @@ public final class CommandExecutor {
                     ));
                 }
 
+                int parseDepth = argIndex;
+
                 Object methodArg;
 
                 boolean isSenderType = optional != null && optional.value() == Opt.Type.SENDER;
@@ -273,13 +587,21 @@ public final class CommandExecutor {
                     inputArg.data().addAll(parameter.data());
                     inputArg.addAnnotations(parameter.annotations());
 
-                    methodArg = provideArgument(
-                        provider,
-                        context,
-                        inputArg,
-                        optional != null && optional.treatErrorAsEmpty(),
-                        optional != null
-                    );
+                    try {
+                        methodArg = provideArgument(
+                            provider,
+                            context,
+                            inputArg,
+                            optional != null && optional.treatErrorAsEmpty(),
+                            optional != null
+                        );
+                    } catch (BladeParseError e) {
+                        if (exactArgumentCount) {
+                            throw new TrialParseFailure(e, parseDepth, trialArityMatches);
+                        }
+
+                        throw e;
+                    }
                 }
 
                 methodArgs.add(methodArg);
@@ -295,9 +617,13 @@ public final class CommandExecutor {
             }
         }
 
-        if (!skipLengthEnforcement && blade.configuration().strictArgumentCount()) {
-            // Argument count must match exactly
-            if (argIndex < argumentTokens.size()) {
+        if (!skipLengthEnforcement && argIndex < argumentTokens.size()) {
+            if (exactArgumentCount) {
+                throw new TrialExcessArguments(argumentTokens.size() - argIndex, argIndex);
+            }
+
+            if (blade.configuration().strictArgumentCount()) {
+                // Argument count must match exactly
                 int extra = argumentTokens.size() - argIndex;
 
                 throw BladeParseError.fatal(String.format(
@@ -312,9 +638,19 @@ public final class CommandExecutor {
         Object[] finalArgs = new Object[methodArgs.size() + (prependSender ? 1 : 0)];
 
         if (prependSender) {
-            finalArgs[0] = cmd.usesBladeSender()
-                ? context.sender()
-                : adaptSender(cmd, context);
+            if (cmd.usesBladeSender()) {
+                finalArgs[0] = context.sender();
+            } else {
+                try {
+                    finalArgs[0] = adaptSender(cmd, context);
+                } catch (BladeParseError e) {
+                    if (exactArgumentCount) {
+                        throw new TrialParseFailure(e, argumentTokens.size() + 1, true);
+                    }
+
+                    throw e;
+                }
+            }
         }
 
         System.arraycopy(
@@ -325,7 +661,7 @@ public final class CommandExecutor {
             methodArgs.size()
         );
 
-        invoke0(cmd, finalArgs);
+        return finalArgs;
     }
 
     private void invoke0(@NotNull BladeCommand cmd,

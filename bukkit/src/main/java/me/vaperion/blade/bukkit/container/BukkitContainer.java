@@ -229,7 +229,7 @@ public final class BukkitContainer extends Command implements Container {
 
         BladeCommand command = Objects.requireNonNull(node.command());
 
-        if (!command.hasPermission(context)) {
+        if (!node.hasPermission(context)) {
             if (command.hidden()) {
                 sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
             } else {
@@ -241,19 +241,11 @@ public final class BukkitContainer extends Command implements Container {
         try {
             Runnable runnable = () -> {
                 try {
-                    CommandInput input = command.tokenize(
-                        context.sender(),
+                    ErrorMessage error = blade.executor().execute(
+                        context,
+                        node,
                         "/" + commandLine
                     );
-
-                    if (!input.mergeTokensToFormWholeLabel(Objects.requireNonNull(node.matchedLabel()))) {
-                        // Failed to merge label - can't execute command.
-                        throw new BladeFatalError("Failed to parse command input for execution.");
-                    }
-
-                    context.updateArgumentsFromInput(input);
-
-                    ErrorMessage error = blade.executor().execute(context, input, node);
 
                     if (error != null) {
                         switch (error.type()) {
@@ -264,7 +256,17 @@ public final class BukkitContainer extends Command implements Container {
                                 break;
 
                             case SHOW_COMMAND_USAGE:
-                                command.usageMessage().sendTo(context);
+                                if (error.command() != null) {
+                                    error.command().usageMessage().sendTo(context);
+                                    break;
+                                }
+
+                                for (BladeCommand overload : node.overloads()) {
+                                    // Don't reveal overloads the sender cannot use.
+                                    if (!overload.hasPermission(context)) continue;
+
+                                    overload.usageMessage().sendTo(context);
+                                }
                                 break;
 
                             case SHOW_COMMAND_HELP:
@@ -409,21 +411,10 @@ public final class BukkitContainer extends Command implements Container {
                     args
                 );
 
-                CommandInput input = Objects.requireNonNull(node.command()).tokenize(
-                    context.sender(),
-                    "/" + removeCommandQualifier(commandLine)
-                );
-
-                if (!input.mergeTokensToFormWholeLabel(Objects.requireNonNull(node.matchedLabel()))) {
-                    // Failed to merge label - can't suggest arguments.
-                    throw new BladeFatalError("Failed to parse command input for tab completion.");
-                }
-
-                context.updateArgumentsFromInput(input);
-
-                blade.suggestionProvider().suggest(
+                blade.suggestionProvider().suggestNode(
                     context,
-                    input,
+                    node,
+                    "/" + removeCommandQualifier(commandLine),
                     EnumSet.of(SuggestionType.ARGUMENTS),
                     suggestions
                 );
