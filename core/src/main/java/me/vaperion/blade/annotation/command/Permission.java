@@ -25,7 +25,7 @@ public @interface Permission {
      * <p>
      * If you prefix the permission with {@code "@"}, it will be treated as a permission predicate,
      * and checked accordingly against the registered permission predicates. If the predicate is not registered,
-     * the command will be executed without any permission check.
+     * the permission check fails closed and the command is denied (a warning is also logged).
      * <p>
      * Special values:
      * <ul>
