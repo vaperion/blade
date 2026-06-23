@@ -16,6 +16,16 @@ dependencies {
 
     implementation("net.fabricmc:fabric-loader:${libs.versions.fabric.loader.get()}")
 
+    val adventure = libs.versions.adventure.get()
+    implementation("net.kyori:adventure-api:$adventure")
+    implementation("net.kyori:adventure-key:$adventure")
+    implementation("net.kyori:adventure-text-serializer-gson:$adventure")
+    implementation("net.kyori:examination-api:1.3.0")
+    include("net.kyori:adventure-api:$adventure")
+    include("net.kyori:adventure-key:$adventure")
+    include("net.kyori:adventure-text-serializer-gson:$adventure")
+    include("net.kyori:examination-api:1.3.0")
+
     val apiModules = listOf(
         "fabric-api-base",
         "fabric-command-api-v2",

@@ -1,11 +1,13 @@
 package me.vaperion.blade.context;
 
 import me.vaperion.blade.command.BladeCommand;
+import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface Sender<T> {
+
     /**
      * Get the raw platform instance of this wrapped sender.
      * <p>
@@ -48,6 +50,24 @@ public interface Sender<T> {
      */
     @NotNull
     String name();
+
+    /**
+     * Send a {@link Component} to this sender.
+     *
+     * @param component the component to send
+     */
+    void sendMessage(@NotNull Component component);
+
+    /**
+     * Send multiple components to this sender.
+     *
+     * @param components the components to send
+     */
+    default void sendMessage(@NotNull Iterable<? extends Component> components) {
+        for (Component component : components) {
+            sendMessage(component);
+        }
+    }
 
     /**
      * Check if this sender has a specific permission.

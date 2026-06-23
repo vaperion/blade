@@ -2,7 +2,7 @@ package me.vaperion.blade.platform.api;
 
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Context;
-import me.vaperion.blade.exception.internal.BladeFatalError;
+import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @FunctionalInterface
-public interface HelpGenerator<Text> {
+public interface HelpGenerator {
     int RESULTS_PER_PAGE = 8;
 
     /**
@@ -21,7 +21,7 @@ public interface HelpGenerator<Text> {
      * @return a list of help text entries
      */
     @NotNull
-    List<Text> generate(@NotNull Context context, @NotNull List<BladeCommand> commands);
+    List<Component> generate(@NotNull Context context, @NotNull List<BladeCommand> commands);
 
     /**
      * Filters the provided list of commands based on visibility and a filter input.
@@ -50,14 +50,5 @@ public interface HelpGenerator<Text> {
         return filtered.isEmpty() && !visibleCommands.isEmpty()
             ? visibleCommands
             : filtered;
-    }
-
-    @SuppressWarnings("unused")
-    final class Default<T> implements HelpGenerator<T> {
-        @NotNull
-        @Override
-        public List<T> generate(@NotNull Context context, @NotNull List<BladeCommand> commands) {
-            throw new BladeFatalError("This command failed to execute as we couldn't find its registration.");
-        }
     }
 }

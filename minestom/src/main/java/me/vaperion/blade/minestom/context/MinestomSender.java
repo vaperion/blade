@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Sender;
 import me.vaperion.blade.minestom.BladeMinestomGlobal;
+import net.kyori.adventure.text.Component;
 import net.minestom.server.command.CommandSender;
 import net.minestom.server.command.ConsoleSender;
 import net.minestom.server.entity.Player;
@@ -36,6 +37,11 @@ public class MinestomSender implements Sender<CommandSender> {
         else if (commandSender instanceof ConsoleSender)
             return "Console";
         return "<unknown>";
+    }
+
+    @Override
+    public void sendMessage(@NotNull Component component) {
+        commandSender.sendMessage(component);
     }
 
     @Override

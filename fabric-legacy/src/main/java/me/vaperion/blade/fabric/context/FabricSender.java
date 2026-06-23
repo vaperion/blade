@@ -6,6 +6,8 @@ import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Sender;
 import me.vaperion.blade.fabric.BladeFabricPlatform;
 import me.vaperion.blade.fabric.ext.CommandSourceStackExt;
+import me.vaperion.blade.fabric.util.TextUtil;
+import net.kyori.adventure.text.Component;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.server.level.ServerPlayer;
@@ -41,6 +43,11 @@ public final class FabricSender implements Sender<CommandSourceStack> {
     @Override
     public String name() {
         return commandSource.getTextName();
+    }
+
+    @Override
+    public void sendMessage(@NotNull Component component) {
+        commandSource.sendSystemMessage(TextUtil.fromAdventure(component, commandSource.registryAccess()));
     }
 
     @Override

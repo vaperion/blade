@@ -14,6 +14,7 @@ import me.vaperion.blade.exception.internal.BladeInvocationError;
 import me.vaperion.blade.impl.node.ResolvedCommand;
 import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.minestom.context.MinestomSender;
+import me.vaperion.blade.platform.api.BladeMessages;
 import me.vaperion.blade.tokenizer.TokenizerError;
 import me.vaperion.blade.tokenizer.input.CommandInput;
 import me.vaperion.blade.tokenizer.input.InputOption;
@@ -21,7 +22,6 @@ import me.vaperion.blade.tree.CommandTreeNode;
 import me.vaperion.blade.util.ErrorMessage;
 import me.vaperion.blade.util.command.CommandExecutionWrapper;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.CommandSender;
 import net.minestom.server.command.builder.Command;
@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static me.vaperion.blade.util.BladeHelper.*;
-import static net.kyori.adventure.text.Component.text;
 
 @Getter
 public final class MinestomContainer extends Command implements Container {
@@ -129,8 +128,10 @@ public final class MinestomContainer extends Command implements Container {
 
         BladeCommand command = Objects.requireNonNull(node.command());
 
+        BladeMessages messages = blade.configuration().messages();
+
         if (!node.hasPermission(context)) {
-            sender.sendMessage(text(command.permissionMessage(), NamedTextColor.RED));
+            sender.sendMessage(messages.permissionMessage(command));
             return;
         }
 
@@ -147,7 +148,7 @@ public final class MinestomContainer extends Command implements Container {
                         switch (error.type()) {
                             case LINES:
                                 for (String line : error.lines()) {
-                                    sender.sendMessage(text(line, NamedTextColor.RED));
+                                    sender.sendMessage(messages.error(line));
                                 }
                                 break;
 
@@ -184,18 +185,18 @@ public final class MinestomContainer extends Command implements Container {
                     }
                 } catch (BladeParseError | BladeFatalError e) {
                     sender.sendMessage(
-                        text(e.getMessage(), NamedTextColor.RED)
+                        messages.error(e.getMessage())
                     );
                 } catch (BladeInvocationError e) {
                     sender.sendMessage(
-                        text(ERROR_MESSAGE, NamedTextColor.RED)
+                        messages.genericError()
                     );
 
                     blade.logger().error(e, "Blade failed to invoke the method for command `%s` executed by %s. This is most likely a bug in your plugin.",
                         label, sender.toString());
                 } catch (BladeImplementationError e) {
                     sender.sendMessage(
-                        text(ERROR_MESSAGE, NamedTextColor.RED)
+                        messages.genericError()
                     );
                     command.usageMessage().sendTo(context);
 
@@ -203,7 +204,7 @@ public final class MinestomContainer extends Command implements Container {
                         sender.toString(), label);
                 } catch (BladeInternalError e) {
                     sender.sendMessage(
-                        text(ERROR_MESSAGE, NamedTextColor.RED)
+                        messages.genericError()
                     );
                     command.usageMessage().sendTo(context);
 
@@ -211,7 +212,7 @@ public final class MinestomContainer extends Command implements Container {
                         sender.toString(), label);
                 } catch (TokenizerError error) {
                     sender.sendMessage(
-                        text(error.formatForChat(), NamedTextColor.RED)
+                        messages.error(error.formatForChat())
                     );
 
                     if (!error.type().isSilent()) {
@@ -251,7 +252,7 @@ public final class MinestomContainer extends Command implements Container {
             return;
         }
 
-        List<Component> lines = blade.<Component>configuration().helpGenerator().generate(context, allCommands);
+        List<Component> lines = blade.configuration().helpGenerator().generate(context, allCommands);
 
         lines.forEach(sender::sendMessage);
     }
@@ -334,21 +335,21 @@ public final class MinestomContainer extends Command implements Container {
             );
         } catch (BladeImplementationError e) {
             sender.sendMessage(
-                text(ERROR_MESSAGE, NamedTextColor.RED)
+                blade.configuration().messages().genericError()
             );
 
             blade.logger().error(e, "An error occurred while %s was tab completing the command `%s`. This is a bug in your plugin.",
                 sender.toString(), label);
         } catch (BladeInternalError e) {
             sender.sendMessage(
-                text(ERROR_MESSAGE, NamedTextColor.RED)
+                blade.configuration().messages().genericError()
             );
 
             blade.logger().error(e, "An error occurred while %s was tab completing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
                 sender.toString(), label);
         } catch (BladeFatalError ex) {
             sender.sendMessage(
-                text(ex.getMessage(), NamedTextColor.RED)
+                blade.configuration().messages().error(ex.getMessage())
             );
         } catch (TokenizerError error) {
             // Don't send tokenizer errors to the user during tab completion - just log them.

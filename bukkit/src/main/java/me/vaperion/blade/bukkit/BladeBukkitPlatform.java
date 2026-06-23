@@ -5,12 +5,12 @@ import me.vaperion.blade.Blade;
 import me.vaperion.blade.Blade.Builder.Binder;
 import me.vaperion.blade.bukkit.argument.OfflinePlayerArgument;
 import me.vaperion.blade.bukkit.argument.PlayerArgument;
-import me.vaperion.blade.bukkit.command.BukkitCommandFeedback;
 import me.vaperion.blade.bukkit.container.BukkitContainer;
-import me.vaperion.blade.bukkit.platform.BukkitHelpGenerator;
+import me.vaperion.blade.bukkit.context.BukkitSender;
 import me.vaperion.blade.bukkit.platform.BukkitLogger;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.ContainerCreator;
+import me.vaperion.blade.context.Sender;
 import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.log.BladeLogger;
 import me.vaperion.blade.platform.BladeConfiguration;
@@ -18,6 +18,7 @@ import me.vaperion.blade.platform.BladePlatform;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
+import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -29,7 +30,7 @@ import java.util.EnumSet;
 import java.util.Locale;
 
 @RequiredArgsConstructor
-public class BladeBukkitPlatform implements BladePlatform<String, Plugin, Server> {
+public class BladeBukkitPlatform implements BladePlatform<Plugin, Server> {
 
     private static final Method SYNC_COMMANDS;
 
@@ -79,15 +80,24 @@ public class BladeBukkitPlatform implements BladePlatform<String, Plugin, Server
         return BukkitContainer.CREATOR;
     }
 
+    /**
+     * Wrap a platform {@link CommandSender} into a Blade {@link Sender}.
+     *
+     * @param sender the platform sender
+     * @return the Blade sender
+     */
+    @NotNull
+    public Sender<CommandSender> wrapSender(@NotNull CommandSender sender) {
+        return new BukkitSender(sender);
+    }
+
     @Override
-    public void configure(Blade.@NotNull Builder<String, Plugin, Server> builder,
-                          @NotNull BladeConfiguration<String> configuration) {
+    public void configure(Blade.@NotNull Builder<Plugin, Server> builder,
+                          @NotNull BladeConfiguration configuration) {
         configuration.commandQualifier(plugin.getName().toLowerCase(Locale.ROOT));
-        configuration.helpGenerator(new BukkitHelpGenerator());
-        configuration.feedbackCreator(BukkitCommandFeedback::new);
         configuration.logger(new BukkitLogger(this));
 
-        Binder<String, Plugin, Server> binder = new Binder<>(builder, true);
+        Binder<Plugin, Server> binder = new Binder<>(builder, true);
         binder.bind(Player.class, new PlayerArgument());
         binder.bind(OfflinePlayer.class, new OfflinePlayerArgument());
     }

@@ -1,7 +1,6 @@
 package me.vaperion.blade.hytale;
 
 import com.hypixel.hytale.server.core.HytaleServer;
-import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.console.ConsoleSender;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.plugin.PluginBase;
@@ -13,9 +12,7 @@ import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.hytale.argument.PlayerArgument;
 import me.vaperion.blade.hytale.argument.PlayerRefArgument;
-import me.vaperion.blade.hytale.command.HytaleCommandFeedback;
 import me.vaperion.blade.hytale.container.HytaleContainer;
-import me.vaperion.blade.hytale.platform.HytaleHelpGenerator;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Locale;
 
 @RequiredArgsConstructor
-public class BladeHytalePlatform implements BladePlatform<Message, PluginBase, HytaleServer> {
+public class BladeHytalePlatform implements BladePlatform<PluginBase, HytaleServer> {
 
     protected final PluginBase plugin;
 
@@ -50,12 +47,9 @@ public class BladeHytalePlatform implements BladePlatform<Message, PluginBase, H
     }
 
     @Override
-    public void configure(Blade.@NotNull Builder<Message, PluginBase, HytaleServer> builder,
-                          @NotNull BladeConfiguration<Message> configuration) {
-        configuration.helpGenerator(new HytaleHelpGenerator());
-        configuration.feedbackCreator(HytaleCommandFeedback::new);
-
-        Binder<Message, PluginBase, HytaleServer> binder = new Binder<>(builder, true);
+    public void configure(Blade.@NotNull Builder<PluginBase, HytaleServer> builder,
+                          @NotNull BladeConfiguration configuration) {
+        Binder<PluginBase, HytaleServer> binder = new Binder<>(builder, true);
         binder.bind(Player.class, new PlayerArgument());
         binder.bind(PlayerRef.class, new PlayerRefArgument());
     }

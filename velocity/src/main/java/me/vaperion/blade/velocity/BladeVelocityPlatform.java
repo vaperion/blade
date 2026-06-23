@@ -12,17 +12,14 @@ import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
 import me.vaperion.blade.velocity.argument.PlayerArgument;
-import me.vaperion.blade.velocity.command.VelocityCommandFeedback;
 import me.vaperion.blade.velocity.container.VelocityContainer;
-import me.vaperion.blade.velocity.platform.VelocityHelpGenerator;
-import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Locale;
 
 @SuppressWarnings("unused")
 @RequiredArgsConstructor
-public class BladeVelocityPlatform implements BladePlatform<Component, PluginContainer, ProxyServer> {
+public class BladeVelocityPlatform implements BladePlatform<PluginContainer, ProxyServer> {
 
     private final PluginContainer pluginContainer;
     private final ProxyServer proxyServer;
@@ -43,13 +40,11 @@ public class BladeVelocityPlatform implements BladePlatform<Component, PluginCon
     }
 
     @Override
-    public void configure(Blade.@NotNull Builder<Component, PluginContainer, ProxyServer> builder,
-                          @NotNull BladeConfiguration<Component> configuration) {
+    public void configure(Blade.@NotNull Builder<PluginContainer, ProxyServer> builder,
+                          @NotNull BladeConfiguration configuration) {
         configuration.commandQualifier(pluginContainer.getDescription().getId());
-        configuration.helpGenerator(new VelocityHelpGenerator());
-        configuration.feedbackCreator(VelocityCommandFeedback::new);
 
-        Binder<Component, PluginContainer, ProxyServer> binder = new Binder<>(builder, true);
+        Binder<PluginContainer, ProxyServer> binder = new Binder<>(builder, true);
         binder.bind(Player.class, new PlayerArgument());
     }
 

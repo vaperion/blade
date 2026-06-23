@@ -3,11 +3,11 @@ package me.vaperion.blade.bukkit.container;
 import lombok.Getter;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.bukkit.BladeBukkitPlatform;
-import me.vaperion.blade.bukkit.context.BukkitSender;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.Container;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.context.Context;
+import me.vaperion.blade.context.Sender;
 import me.vaperion.blade.exception.BladeParseError;
 import me.vaperion.blade.exception.internal.BladeFatalError;
 import me.vaperion.blade.exception.internal.BladeImplementationError;
@@ -24,6 +24,7 @@ import me.vaperion.blade.util.ErrorMessage;
 import me.vaperion.blade.util.command.CommandExecutionWrapper;
 import me.vaperion.blade.util.command.RichSuggestionsBuilder;
 import me.vaperion.blade.util.command.SimpleRichSuggestionsBuilder;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -222,7 +223,7 @@ public final class BukkitContainer extends Command implements Container {
 
         Context context = new Context(
             blade,
-            new BukkitSender(sender),
+            wrap(sender),
             label,
             args
         );
@@ -241,7 +242,7 @@ public final class BukkitContainer extends Command implements Container {
             if (command.hidden()) {
                 sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
             } else {
-                sender.sendMessage(ChatColor.RED + command.permissionMessage());
+                context.sender().sendMessage(blade.configuration().messages().permissionMessage(command));
             }
             return true;
         }
@@ -259,7 +260,7 @@ public final class BukkitContainer extends Command implements Container {
                         switch (error.type()) {
                             case LINES:
                                 for (String line : error.lines()) {
-                                    sender.sendMessage(ChatColor.RED + line);
+                                    context.sender().sendMessage(blade.configuration().messages().error(line));
                                 }
                                 break;
 
@@ -295,26 +296,26 @@ public final class BukkitContainer extends Command implements Container {
                         }
                     }
                 } catch (BladeParseError | BladeFatalError e) {
-                    sender.sendMessage(ChatColor.RED + e.getMessage());
+                    context.sender().sendMessage(blade.configuration().messages().error(e.getMessage()));
                 } catch (BladeInvocationError e) {
-                    sender.sendMessage(ChatColor.RED + ERROR_MESSAGE);
+                    context.sender().sendMessage(blade.configuration().messages().genericError());
 
                     blade.logger().error(e, "Blade failed to invoke the method for command `%s` executed by %s. This is most likely a bug in your plugin.",
                         label, sender.getName());
                 } catch (BladeImplementationError e) {
-                    sender.sendMessage(ChatColor.RED + ERROR_MESSAGE);
+                    context.sender().sendMessage(blade.configuration().messages().genericError());
                     command.usageMessage().sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in your plugin.",
                         sender.getName(), label);
                 } catch (BladeInternalError e) {
-                    sender.sendMessage(ChatColor.RED + ERROR_MESSAGE);
+                    context.sender().sendMessage(blade.configuration().messages().genericError());
                     command.usageMessage().sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
                         sender.getName(), label);
                 } catch (TokenizerError error) {
-                    sender.sendMessage(ChatColor.RED + error.formatForChat());
+                    context.sender().sendMessage(blade.configuration().messages().error(error.formatForChat()));
                     command.usageMessage().sendTo(context);
 
                     if (!error.type().isSilent()) {
@@ -414,7 +415,7 @@ public final class BukkitContainer extends Command implements Container {
 
                 Context context = new Context(
                     blade,
-                    new BukkitSender(sender),
+                    wrap(sender),
                     node.matchedLabel(),
                     args
                 );
@@ -440,7 +441,7 @@ public final class BukkitContainer extends Command implements Container {
 
             Context context = new Context(
                 blade,
-                new BukkitSender(sender),
+                wrap(sender),
                 "",
                 args
             );
@@ -463,17 +464,17 @@ public final class BukkitContainer extends Command implements Container {
                 suggestions
             );
         } catch (BladeImplementationError e) {
-            sender.sendMessage(ChatColor.RED + ERROR_MESSAGE);
+            wrap(sender).sendMessage(blade.configuration().messages().genericError());
 
             blade.logger().error(e, "An error occurred while %s was tab completing the command `%s`. This is a bug in your plugin.",
                 sender.getName(), commandLine);
         } catch (BladeInternalError e) {
-            sender.sendMessage(ChatColor.RED + ERROR_MESSAGE);
+            wrap(sender).sendMessage(blade.configuration().messages().genericError());
 
             blade.logger().error(e, "An error occurred while %s was tab completing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
                 sender.getName(), commandLine);
         } catch (BladeFatalError ex) {
-            sender.sendMessage(ChatColor.RED + ex.getMessage());
+            wrap(sender).sendMessage(blade.configuration().messages().error(ex.getMessage()));
         } catch (TokenizerError error) {
             // Don't send tokenizer errors to the user during tab completion - just log them.
 
@@ -487,6 +488,11 @@ public final class BukkitContainer extends Command implements Container {
             blade.logger().error(t, "An error occurred while %s was tab completing the command `%s`.",
                 sender.getName(), commandLine);
         }
+    }
+
+    @NotNull
+    private Sender<CommandSender> wrap(@NotNull CommandSender sender) {
+        return blade.platformAs(BladeBukkitPlatform.class).wrapSender(sender);
     }
 
     private void sendHelpMessage(@NotNull CommandSender sender,
@@ -503,9 +509,9 @@ public final class BukkitContainer extends Command implements Container {
             return;
         }
 
-        List<String> lines = blade.<String>configuration().helpGenerator().generate(context, allCommands);
+        List<Component> lines = blade.configuration().helpGenerator().generate(context, allCommands);
 
-        lines.forEach(sender::sendMessage);
+        lines.forEach(context.sender()::sendMessage);
     }
 
     @Override

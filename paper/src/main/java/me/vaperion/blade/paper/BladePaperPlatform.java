@@ -2,9 +2,12 @@ package me.vaperion.blade.paper;
 
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.bukkit.BladeBukkitPlatform;
+import me.vaperion.blade.context.Sender;
 import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.paper.brigadier.BladePaperBrigadier;
 import me.vaperion.blade.paper.brigadier.LegacyBladePaperBrigadier;
+import me.vaperion.blade.paper.context.PaperSender;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,6 +16,11 @@ public class BladePaperPlatform extends BladeBukkitPlatform {
 
     public BladePaperPlatform(@NotNull Plugin plugin) {
         super(plugin);
+    }
+
+    @Override
+    public @NotNull Sender<CommandSender> wrapSender(@NotNull CommandSender sender) {
+        return new PaperSender(sender);
     }
 
     @Override

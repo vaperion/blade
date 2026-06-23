@@ -7,9 +7,13 @@ import me.vaperion.blade.annotation.command.Async;
 import me.vaperion.blade.annotation.command.Permission;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.log.BladeLogger;
+import me.vaperion.blade.platform.api.BladeMessages;
 import me.vaperion.blade.platform.api.CommandFeedbackCreator;
 import me.vaperion.blade.platform.api.HelpGenerator;
 import me.vaperion.blade.platform.api.TabCompleter;
+import me.vaperion.blade.platform.defaults.DefaultBladeMessages;
+import me.vaperion.blade.platform.defaults.DefaultCommandFeedbackCreator;
+import me.vaperion.blade.platform.defaults.DefaultHelpGenerator;
 import me.vaperion.blade.util.Preconditions;
 import me.vaperion.blade.util.command.CommandRegistrationPredicate;
 
@@ -21,7 +25,7 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 @Setter
 @Getter
-public final class BladeConfiguration<Text> {
+public final class BladeConfiguration {
 
     private static final ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool(
         r -> {
@@ -125,12 +129,17 @@ public final class BladeConfiguration<Text> {
     /**
      * The help generator used for generating help messages for commands.
      */
-    private HelpGenerator<Text> helpGenerator = new HelpGenerator.Default<>();
+    private HelpGenerator helpGenerator = new DefaultHelpGenerator();
 
     /**
      * The creator used for generating command feedback messages (usage and help).
      */
-    private CommandFeedbackCreator<Text> feedbackCreator = new CommandFeedbackCreator.Default<>();
+    private CommandFeedbackCreator feedbackCreator = new DefaultCommandFeedbackCreator();
+
+    /**
+     * The source of user-facing messages (permission denied, unknown command, errors).
+     */
+    private BladeMessages messages = new DefaultBladeMessages();
 
     /**
      * The logger Blade uses to log messages, warnings and errors.
@@ -152,6 +161,8 @@ public final class BladeConfiguration<Text> {
     public void validate() {
         Preconditions.checkNotNull(commandQualifier, "Command qualifier cannot be null.");
         Preconditions.checkNotNull(helpGenerator, "Help generator cannot be null.");
+        Preconditions.checkNotNull(feedbackCreator, "Feedback creator cannot be null.");
+        Preconditions.checkNotNull(messages, "Messages cannot be null.");
         Preconditions.checkNotNull(tabCompleter, "Tab completer cannot be null.");
         Preconditions.checkNotNull(commandRegistrationPredicate, "Command registration predicate cannot be null.");
     }

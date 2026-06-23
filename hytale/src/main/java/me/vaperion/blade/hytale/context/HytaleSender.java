@@ -4,9 +4,11 @@ import com.hypixel.hytale.server.core.command.system.CommandSender;
 import com.hypixel.hytale.server.core.console.ConsoleSender;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import eu.mikart.adventure.platform.hytale.HytaleComponentSerializer;
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Sender;
+import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,6 +34,11 @@ public class HytaleSender implements Sender<CommandSender> {
     @Override
     public @NotNull String name() {
         return commandSender.getUsername();
+    }
+
+    @Override
+    public void sendMessage(@NotNull Component component) {
+        commandSender.sendMessage(HytaleComponentSerializer.get().serialize(component));
     }
 
     @Override

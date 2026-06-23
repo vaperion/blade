@@ -44,20 +44,19 @@ public final class Blade {
      * Create a new Blade builder for the specified platform.
      *
      * @param platform the platform
-     * @param <Text>   the text type used by the platform
      * @param <Plugin> the plugin type used by the platform
      * @param <Server> the server type used by the platform
      * @return the Blade builder
      */
     @NotNull
     @Contract("_ -> new")
-    public static <Text, Plugin, Server> Builder<Text, Plugin, Server> forPlatform(
-        @NotNull BladePlatform<Text, Plugin, Server> platform) {
+    public static <Plugin, Server> Builder<Plugin, Server> forPlatform(
+        @NotNull BladePlatform<Plugin, Server> platform) {
         return new Builder<>(platform);
     }
 
-    private final BladePlatform<?, ?, ?> platform;
-    private final BladeConfiguration<?> configuration;
+    private final BladePlatform<?, ?> platform;
+    private final BladeConfiguration configuration;
 
     private final Map<String, PermissionPredicate> permissionPredicates = new HashMap<>();
 
@@ -74,13 +73,13 @@ public final class Blade {
     private final CommandSuggestionProvider suggestionProvider = new CommandSuggestionProvider(this);
     private final CommandExecutor executor = new CommandExecutor(this);
 
-    private Blade(Builder<?, ?, ?> builder) {
+    private Blade(Builder<?, ?> builder) {
         this.platform = builder.platform;
         this.configuration = builder.configuration;
 
         permissionPredicates.putAll(builder.permissionPredicates);
 
-        Binder<?, ?, ?> binder = new Binder<>(builder, true);
+        Binder<?, ?> binder = new Binder<>(builder, true);
         binder.bind(UUID.class, new UUIDArgument());
         binder.bind(String.class, new StringArgument());
         binder.bind(boolean.class, new BooleanArgument());
@@ -160,36 +159,35 @@ public final class Blade {
 
     @ApiStatus.Internal
     @NotNull
-    public <T extends BladePlatform<?, ?, ?>> T platformAs(@NotNull Class<T> platformClass) {
+    public <T extends BladePlatform<?, ?>> T platformAs(@NotNull Class<T> platformClass) {
         return platformClass.cast(platform);
     }
 
-    @SuppressWarnings("unchecked")
     @ApiStatus.Internal
     @NotNull
-    public <T> BladeConfiguration<T> configuration() {
-        return (BladeConfiguration<T>) configuration;
+    public BladeConfiguration configuration() {
+        return configuration;
     }
 
-    public static final class Builder<Text, Plugin, Server> {
+    public static final class Builder<Plugin, Server> {
         private final long startTime = System.currentTimeMillis();
 
-        private final BladePlatform<Text, Plugin, Server> platform;
-        private final BladeConfiguration<Text> configuration;
+        private final BladePlatform<Plugin, Server> platform;
+        private final BladeConfiguration configuration;
 
         private final Map<String, PermissionPredicate> permissionPredicates = new HashMap<>();
         private final List<ArgBinding<?>> bindings = new ArrayList<>();
         private final List<SndBinding<?>> senderBindings = new ArrayList<>();
 
-        private Builder(BladePlatform<Text, Plugin, Server> platform) {
+        private Builder(BladePlatform<Plugin, Server> platform) {
             this.platform = platform;
-            this.configuration = new BladeConfiguration<>();
+            this.configuration = new BladeConfiguration();
             platform.configure(this, this.configuration);
         }
 
         @NotNull
         @Contract("_ -> this")
-        public Builder<Text, Plugin, Server> config(@NotNull Consumer<BladeConfiguration<Text>> consumer) {
+        public Builder<Plugin, Server> config(@NotNull Consumer<BladeConfiguration> consumer) {
             consumer.accept(configuration);
             configuration.validate();
             return this;
@@ -197,18 +195,18 @@ public final class Blade {
 
         @NotNull
         @Contract("_ -> this")
-        public Builder<Text, Plugin, Server> bind(
-            @NotNull Consumer<Binder<Text, Plugin, Server>> consumer) {
-            Binder<Text, Plugin, Server> binder = new Binder<>(this, false);
+        public Builder<Plugin, Server> bind(
+            @NotNull Consumer<Binder<Plugin, Server>> consumer) {
+            Binder<Plugin, Server> binder = new Binder<>(this, false);
             consumer.accept(binder);
             return this;
         }
 
         @NotNull
         @Contract("_ -> this")
-        public Builder<Text, Plugin, Server> permission(
-            @NotNull Consumer<PredicateAdder<Text, Plugin, Server>> consumer) {
-            PredicateAdder<Text, Plugin, Server> adder = new PredicateAdder<>(this);
+        public Builder<Plugin, Server> permission(
+            @NotNull Consumer<PredicateAdder<Plugin, Server>> consumer) {
+            PredicateAdder<Plugin, Server> adder = new PredicateAdder<>(this);
             consumer.accept(adder);
             return this;
         }
@@ -220,8 +218,8 @@ public final class Blade {
         }
 
         @RequiredArgsConstructor
-        public static final class Binder<Text, Plugin, Server> {
-            private final Builder<Text, Plugin, Server> builder;
+        public static final class Binder<Plugin, Server> {
+            private final Builder<Plugin, Server> builder;
             private final boolean insertToBeginning;
 
             /**
@@ -379,8 +377,8 @@ public final class Blade {
         }
 
         @RequiredArgsConstructor
-        public static final class PredicateAdder<Text, Plugin, Server> {
-            private final Builder<Text, Plugin, Server> builder;
+        public static final class PredicateAdder<Plugin, Server> {
+            private final Builder<Plugin, Server> builder;
 
             public void predicate(@NotNull String id,
                                   @NotNull PermissionPredicate predicate) {

@@ -6,7 +6,7 @@ import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.ContainerCreator;
 import org.jetbrains.annotations.NotNull;
 
-public interface BladePlatform<Text, Plugin, Server> {
+public interface BladePlatform<Plugin, Server> {
     /**
      * Gets the plugin instance.
      *
@@ -38,8 +38,8 @@ public interface BladePlatform<Text, Plugin, Server> {
      * @param builder       the Blade builder
      * @param configuration the Blade configuration
      */
-    void configure(@NotNull Builder<Text, Plugin, Server> builder,
-                   @NotNull BladeConfiguration<Text> configuration);
+    void configure(@NotNull Builder<Plugin, Server> builder,
+                   @NotNull BladeConfiguration configuration);
 
     /**
      * Ingests the Blade instance after it has been built.

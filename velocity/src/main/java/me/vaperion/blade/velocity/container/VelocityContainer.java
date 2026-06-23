@@ -18,6 +18,7 @@ import me.vaperion.blade.exception.internal.BladeInternalError;
 import me.vaperion.blade.exception.internal.BladeInvocationError;
 import me.vaperion.blade.impl.node.ResolvedCommand;
 import me.vaperion.blade.impl.suggestions.SuggestionType;
+import me.vaperion.blade.platform.api.BladeMessages;
 import me.vaperion.blade.tokenizer.TokenizerError;
 import me.vaperion.blade.tokenizer.input.CommandInput;
 import me.vaperion.blade.tokenizer.input.InputOption;
@@ -27,7 +28,6 @@ import me.vaperion.blade.util.command.CommandExecutionWrapper;
 import me.vaperion.blade.velocity.BladeVelocityPlatform;
 import me.vaperion.blade.velocity.context.VelocitySender;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -36,16 +36,11 @@ import java.util.List;
 import java.util.Objects;
 
 import static me.vaperion.blade.util.BladeHelper.*;
-import static net.kyori.adventure.text.Component.text;
 
 @Getter
 public class VelocityContainer implements RawCommand, Container {
 
     public static final ContainerCreator<VelocityContainer> CREATOR = VelocityContainer::new;
-
-    private static final Component UNKNOWN_COMMAND_MESSAGE = text(
-        "Unknown command. Type \"/help\" for help."
-    );
 
     private final Blade blade;
     private final String label;
@@ -90,8 +85,10 @@ public class VelocityContainer implements RawCommand, Container {
             commandLine
         );
 
+        BladeMessages messages = blade.configuration().messages();
+
         if (node == null) {
-            sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
+            sender.sendMessage(messages.unknownCommand());
 
             if (blade.configuration().verbose()) {
                 blade.logger().info(
@@ -122,7 +119,7 @@ public class VelocityContainer implements RawCommand, Container {
         BladeCommand command = Objects.requireNonNull(node.command());
 
         if (!node.hasPermission(context)) {
-            sender.sendMessage(text(command.permissionMessage(), NamedTextColor.RED));
+            sender.sendMessage(messages.permissionMessage(command));
             return;
         }
 
@@ -139,7 +136,7 @@ public class VelocityContainer implements RawCommand, Container {
                         switch (error.type()) {
                             case LINES:
                                 for (String line : error.lines()) {
-                                    sender.sendMessage(text(line, NamedTextColor.RED));
+                                    sender.sendMessage(messages.error(line));
                                 }
                                 break;
 
@@ -176,18 +173,18 @@ public class VelocityContainer implements RawCommand, Container {
                     }
                 } catch (BladeParseError | BladeFatalError e) {
                     sender.sendMessage(
-                        text(e.getMessage(), NamedTextColor.RED)
+                        messages.error(e.getMessage())
                     );
                 } catch (BladeInvocationError e) {
                     sender.sendMessage(
-                        text(ERROR_MESSAGE, NamedTextColor.RED)
+                        messages.genericError()
                     );
 
                     blade.logger().error(e, "Blade failed to invoke the method for command `%s` executed by %s. This is most likely a bug in your plugin.",
                         label, sender.toString());
                 } catch (BladeImplementationError e) {
                     sender.sendMessage(
-                        text(ERROR_MESSAGE, NamedTextColor.RED)
+                        messages.genericError()
                     );
                     command.usageMessage().sendTo(context);
 
@@ -195,7 +192,7 @@ public class VelocityContainer implements RawCommand, Container {
                         sender.toString(), label);
                 } catch (BladeInternalError e) {
                     sender.sendMessage(
-                        text(ERROR_MESSAGE, NamedTextColor.RED)
+                        messages.genericError()
                     );
                     command.usageMessage().sendTo(context);
 
@@ -203,7 +200,7 @@ public class VelocityContainer implements RawCommand, Container {
                         sender.toString(), label);
                 } catch (TokenizerError error) {
                     sender.sendMessage(
-                        text(error.formatForChat(), NamedTextColor.RED)
+                        messages.error(error.formatForChat())
                     );
 
                     if (!error.type().isSilent()) {
@@ -293,21 +290,21 @@ public class VelocityContainer implements RawCommand, Container {
             );
         } catch (BladeImplementationError e) {
             sender.sendMessage(
-                text(ERROR_MESSAGE, NamedTextColor.RED)
+                blade.configuration().messages().genericError()
             );
 
             blade.logger().error(e, "An error occurred while %s was tab completing the command `%s`. This is a bug in your plugin.",
                 sender.toString(), label);
         } catch (BladeInternalError e) {
             sender.sendMessage(
-                text(ERROR_MESSAGE, NamedTextColor.RED)
+                blade.configuration().messages().genericError()
             );
 
             blade.logger().error(e, "An error occurred while %s was tab completing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
                 sender.toString(), label);
         } catch (BladeFatalError ex) {
             sender.sendMessage(
-                text(ex.getMessage(), NamedTextColor.RED)
+                blade.configuration().messages().error(ex.getMessage())
             );
         } catch (TokenizerError error) {
             // Don't send tokenizer errors to the user during tab completion - just log them.
@@ -336,11 +333,11 @@ public class VelocityContainer implements RawCommand, Container {
             node.collectCommandsInto(allCommands));
 
         if (allCommands.isEmpty() && sendUnknownCommandMessage) {
-            sender.sendMessage(UNKNOWN_COMMAND_MESSAGE);
+            sender.sendMessage(blade.configuration().messages().unknownCommand());
             return;
         }
 
-        List<Component> lines = blade.<Component>configuration().helpGenerator().generate(context, allCommands);
+        List<Component> lines = blade.configuration().helpGenerator().generate(context, allCommands);
 
         lines.forEach(sender::sendMessage);
     }

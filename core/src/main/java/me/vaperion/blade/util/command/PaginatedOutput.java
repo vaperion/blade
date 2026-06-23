@@ -1,6 +1,7 @@
 package me.vaperion.blade.util.command;
 
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -8,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
-public abstract class PaginatedOutput<Value, Text> {
+public abstract class PaginatedOutput<Value> {
 
     private final int resultsPerPage;
 
@@ -20,7 +21,7 @@ public abstract class PaginatedOutput<Value, Text> {
      * @return the formatted error message
      */
     @NotNull
-    public abstract List<Text> error(@NotNull Error error, Object... args);
+    public abstract List<Component> error(@NotNull Error error, Object... args);
 
     /**
      * Generates the header text for a specific page.
@@ -30,7 +31,7 @@ public abstract class PaginatedOutput<Value, Text> {
      * @return the header text for the specified page
      */
     @Nullable
-    public abstract List<Text> header(int page, int totalPages);
+    public abstract List<Component> header(int page, int totalPages);
 
     /**
      * Generates the footer text for a specific page.
@@ -40,7 +41,7 @@ public abstract class PaginatedOutput<Value, Text> {
      * @return the footer text for the specified page
      */
     @Nullable
-    public abstract List<Text> footer(int page, int totalPages);
+    public abstract List<Component> footer(int page, int totalPages);
 
     /**
      * Formats a single line of output for a given result and its index.
@@ -50,7 +51,7 @@ public abstract class PaginatedOutput<Value, Text> {
      * @return the formatted line of output
      */
     @Nullable
-    public abstract List<Text> line(Value result, int index);
+    public abstract List<Component> line(Value result, int index);
 
     /**
      * Generates a paginated output for a list of results.
@@ -60,7 +61,7 @@ public abstract class PaginatedOutput<Value, Text> {
      * @return the paginated output
      */
     @NotNull
-    public final List<Text> generatePage(@NotNull List<Value> results, int page) {
+    public final List<Component> generatePage(@NotNull List<Value> results, int page) {
         if (results.isEmpty()) {
             return error(Error.NO_RESULTS);
         }
@@ -73,18 +74,18 @@ public abstract class PaginatedOutput<Value, Text> {
         int startIndex = (page - 1) * resultsPerPage;
         int endIndex = Math.min(startIndex + resultsPerPage, results.size());
 
-        List<Text> lines = new ArrayList<>();
+        List<Component> lines = new ArrayList<>();
 
-        List<Text> header = header(page, totalPages);
+        List<Component> header = header(page, totalPages);
         if (header != null) lines.addAll(header);
 
         for (Value result : results.subList(startIndex, endIndex)) {
-            List<Text> line = line(result, startIndex + lines.size());
+            List<Component> line = line(result, startIndex + lines.size());
             if (line == null) continue;
             lines.addAll(line);
         }
 
-        List<Text> footer = footer(page, totalPages);
+        List<Component> footer = footer(page, totalPages);
         if (footer != null) lines.addAll(footer);
 
         return lines;

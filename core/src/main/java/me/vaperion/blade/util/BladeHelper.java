@@ -5,6 +5,8 @@ import me.vaperion.blade.annotation.command.Command;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.context.Sender;
 import me.vaperion.blade.sender.internal.SndProvider;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.flattener.ComponentFlattener;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -144,6 +146,13 @@ public interface BladeHelper {
         }
 
         return input;
+    }
+
+    @NotNull
+    static String plainText(@NotNull Component component) {
+        StringBuilder builder = new StringBuilder();
+        ComponentFlattener.basic().flatten(component, builder::append);
+        return builder.toString();
     }
 
     @NotNull

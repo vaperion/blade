@@ -10,7 +10,7 @@ import me.vaperion.blade.test.platform.TestPlugin;
 import me.vaperion.blade.test.platform.TestServer;
 import org.jetbrains.annotations.NotNull;
 
-public final class BladeTestPlatform implements BladePlatform<String, TestPlugin, TestServer> {
+public final class BladeTestPlatform implements BladePlatform<TestPlugin, TestServer> {
 
     @NotNull
     public static Blade createInstance() {
@@ -33,8 +33,8 @@ public final class BladeTestPlatform implements BladePlatform<String, TestPlugin
     }
 
     @Override
-    public void configure(Blade.@NotNull Builder<String, TestPlugin, TestServer> builder,
-                          @NotNull BladeConfiguration<String> configuration) {
+    public void configure(Blade.@NotNull Builder<TestPlugin, TestServer> builder,
+                          @NotNull BladeConfiguration configuration) {
         // No-op
     }
 

@@ -24,7 +24,6 @@ import me.vaperion.blade.tree.CommandTreeNode;
 import me.vaperion.blade.util.ErrorMessage;
 import me.vaperion.blade.util.command.CommandExecutionWrapper;
 import me.vaperion.blade.util.command.RichSuggestionsBuilder;
-import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
@@ -109,9 +108,7 @@ public final class FabricContainer implements Container {
         BladeCommand command = Objects.requireNonNull(node.command());
 
         if (!node.hasPermission(context)) {
-            sender.sendSystemMessage(
-                Component.literal(command.permissionMessage()).withStyle(ChatFormatting.RED)
-            );
+            context.sender().sendMessage(blade.configuration().messages().permissionMessage(command));
             return true;
         }
 
@@ -128,9 +125,7 @@ public final class FabricContainer implements Container {
                         switch (error.type()) {
                             case LINES:
                                 for (String line : error.lines()) {
-                                    sender.sendSystemMessage(
-                                        Component.literal(line).withStyle(ChatFormatting.RED)
-                                    );
+                                    context.sender().sendMessage(blade.configuration().messages().error(line));
                                 }
                                 break;
 
@@ -166,35 +161,26 @@ public final class FabricContainer implements Container {
                         }
                     }
                 } catch (BladeParseError | BladeFatalError e) {
-                    sender.sendSystemMessage(
-                        Component.literal(e.getMessage()).withStyle(ChatFormatting.RED)
-                    );
+                    context.sender().sendMessage(blade.configuration().messages().error(e.getMessage()));
                 } catch (BladeInvocationError e) {
-                    sender.sendSystemMessage(
-                        Component.literal(ERROR_MESSAGE).withStyle(ChatFormatting.RED)
-                    );
+                    context.sender().sendMessage(blade.configuration().messages().genericError());
 
                     blade.logger().error(e, "Blade failed to invoke the method for command `%s` executed by %s. This is most likely a bug in your plugin.",
                         label, sender.getTextName());
                 } catch (BladeImplementationError e) {
-                    sender.sendSystemMessage(
-                        Component.literal(ERROR_MESSAGE).withStyle(ChatFormatting.RED)
-                    );
+                    context.sender().sendMessage(blade.configuration().messages().genericError());
                     command.usageMessage().sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in your plugin.",
                         sender.getTextName(), label);
                 } catch (BladeInternalError e) {
-                    sender.sendSystemMessage(
-                        Component.literal(ERROR_MESSAGE).withStyle(ChatFormatting.RED)
-                    );
+                    context.sender().sendMessage(blade.configuration().messages().genericError());
                     command.usageMessage().sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
                         sender.getTextName(), label);
                 } catch (TokenizerError error) {
-                    sender.sendSystemMessage(Component.literal(error.formatForChat())
-                        .withStyle(ChatFormatting.RED));
+                    context.sender().sendMessage(blade.configuration().messages().error(error.formatForChat()));
                     command.usageMessage().sendTo(context);
 
                     if (!error.type().isSilent()) {
@@ -299,17 +285,17 @@ public final class FabricContainer implements Container {
                 suggestions
             );
         } catch (BladeImplementationError e) {
-            sender.sendSystemMessage(Component.literal(ERROR_MESSAGE).withStyle(ChatFormatting.RED));
+            new FabricSender(blade, sender).sendMessage(blade.configuration().messages().genericError());
 
             blade.logger().error(e, "An error occurred while %s was tab completing the command `%s`. This is a bug in your plugin.",
                 sender.getTextName(), label);
         } catch (BladeInternalError e) {
-            sender.sendSystemMessage(Component.literal(ERROR_MESSAGE).withStyle(ChatFormatting.RED));
+            new FabricSender(blade, sender).sendMessage(blade.configuration().messages().genericError());
 
             blade.logger().error(e, "An error occurred while %s was tab completing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
                 sender.getTextName(), label);
         } catch (BladeFatalError ex) {
-            sender.sendSystemMessage(Component.literal(ex.getMessage()).withStyle(ChatFormatting.RED));
+            new FabricSender(blade, sender).sendMessage(blade.configuration().messages().error(ex.getMessage()));
         } catch (TokenizerError error) {
             // Don't send tokenizer errors to the user during tab completion - just log them.
 
@@ -339,9 +325,9 @@ public final class FabricContainer implements Container {
             return;
         }
 
-        var lines = blade.<Component>configuration().helpGenerator().generate(context, allCommands);
+        var lines = blade.configuration().helpGenerator().generate(context, allCommands);
 
-        lines.forEach(sender::sendSystemMessage);
+        lines.forEach(context.sender()::sendMessage);
     }
 
 }

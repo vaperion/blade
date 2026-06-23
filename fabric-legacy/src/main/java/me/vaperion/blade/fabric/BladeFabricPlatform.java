@@ -8,17 +8,14 @@ import me.vaperion.blade.Blade.Builder.Binder;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.fabric.argument.ServerPlayerArgument;
-import me.vaperion.blade.fabric.command.FabricCommandFeedback;
 import me.vaperion.blade.fabric.container.BladeFabricBrigadier;
 import me.vaperion.blade.fabric.container.FabricContainer;
 import me.vaperion.blade.fabric.permissions.PermissionsProvider;
 import me.vaperion.blade.fabric.permissions.impl.LuckoPermissionsProvider;
 import me.vaperion.blade.fabric.permissions.impl.VanillaPermissionsProvider;
-import me.vaperion.blade.fabric.platform.FabricHelpGenerator;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
 import net.fabricmc.loader.api.ModContainer;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Locale;
 
 @RequiredArgsConstructor
-public class BladeFabricPlatform implements BladePlatform<Component, ModContainer, MinecraftServer> {
+public class BladeFabricPlatform implements BladePlatform<ModContainer, MinecraftServer> {
 
     protected final ModContainer mod;
     protected Blade blade;
@@ -64,13 +61,11 @@ public class BladeFabricPlatform implements BladePlatform<Component, ModContaine
     }
 
     @Override
-    public void configure(Blade.@NotNull Builder<Component, ModContainer, MinecraftServer> builder,
-                          @NotNull BladeConfiguration<Component> configuration) {
+    public void configure(Blade.@NotNull Builder<ModContainer, MinecraftServer> builder,
+                          @NotNull BladeConfiguration configuration) {
         configuration.commandQualifier(mod.getMetadata().getName().toLowerCase(Locale.ROOT));
-        configuration.helpGenerator(new FabricHelpGenerator());
-        configuration.feedbackCreator(FabricCommandFeedback::new);
 
-        Binder<Component, ModContainer, MinecraftServer> binder = new Binder<>(builder, true);
+        Binder<ModContainer, MinecraftServer> binder = new Binder<>(builder, true);
         binder.bind(ServerPlayer.class, new ServerPlayerArgument());
     }
 

@@ -3,6 +3,8 @@ package me.vaperion.blade.bukkit.context;
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Sender;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
@@ -10,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @RequiredArgsConstructor
-public final class BukkitSender implements Sender<CommandSender> {
+public class BukkitSender implements Sender<CommandSender> {
     private final CommandSender commandSender;
 
     @NotNull
@@ -33,6 +35,11 @@ public final class BukkitSender implements Sender<CommandSender> {
     @Override
     public String name() {
         return commandSender.getName();
+    }
+
+    @Override
+    public void sendMessage(@NotNull Component component) {
+        commandSender.sendMessage(LegacyComponentSerializer.legacySection().serialize(component));
     }
 
     @Override

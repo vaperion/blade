@@ -1,36 +1,40 @@
-package me.vaperion.blade.minestom.command;
+package me.vaperion.blade.platform.defaults;
 
 import me.vaperion.blade.annotation.parameter.Flag;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.command.CommandFeedback;
 import me.vaperion.blade.command.parameter.DefinedArgument;
 import me.vaperion.blade.command.parameter.DefinedFlag;
-import me.vaperion.blade.context.Context;
+import me.vaperion.blade.platform.api.CommandFeedbackCreator;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.minestom.server.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
 import static net.kyori.adventure.text.Component.empty;
 import static net.kyori.adventure.text.Component.text;
 
-public final class MinestomCommandFeedback implements CommandFeedback<Component> {
+public class DefaultCommandFeedbackCreator implements CommandFeedbackCreator {
 
-    private final Component component;
+    @Override
+    public @NotNull CommandFeedback create(@NotNull BladeCommand command, boolean isUsage) {
+        return new ComponentFeedback(build(command, isUsage));
+    }
 
-    public MinestomCommandFeedback(@NotNull BladeCommand command, boolean isUsage) {
+    @NotNull
+    protected Component build(@NotNull BladeCommand command, boolean isUsage) {
+        Component description = text(command.description(), NamedTextColor.GRAY);
+
         TextComponent.Builder builder = text();
 
         builder.append(text((isUsage ? "Usage: " : "") + "/", NamedTextColor.RED)
-                .hoverEvent(HoverEvent.showText(text(command.description(), NamedTextColor.GRAY))))
+                .hoverEvent(HoverEvent.showText(description)))
             .append(text(command.mainLabel(), NamedTextColor.RED));
 
         if (!command.customUsage().isEmpty()) {
-            builder.append(text(command.customUsage(), NamedTextColor.RED));
-            this.component = builder.build();
-            return;
+            builder.append(text(" " + command.customUsage(), NamedTextColor.RED));
+            return builder.asComponent();
         }
 
         // Add flag parameters
@@ -39,22 +43,21 @@ public final class MinestomCommandFeedback implements CommandFeedback<Component>
             Flag flag = definedFlag.flag();
 
             if (first) {
-                builder.append(text(" (", NamedTextColor.RED))
-                    .hoverEvent(HoverEvent.showText(text(command.description(), NamedTextColor.GRAY)));
+                builder.append(text(" (", NamedTextColor.RED)
+                    .hoverEvent(HoverEvent.showText(description)));
                 first = false;
             } else {
-                builder.append(text(" | ", NamedTextColor.RED))
-                    .hoverEvent(HoverEvent.showText(text(command.description(), NamedTextColor.GRAY)));
+                builder.append(text(" | ", NamedTextColor.RED)
+                    .hoverEvent(HoverEvent.showText(description)));
             }
 
-            builder
-                .append(text("-" + flag.value() + (definedFlag.isBooleanFlag() ? "" : " <" + definedFlag.name() + ">"), NamedTextColor.AQUA))
-                .hoverEvent(HoverEvent.showText(text(flag.description(), NamedTextColor.GRAY)));
+            builder.append(text("-" + flag.value() + (definedFlag.isBooleanFlag() ? "" : " <" + definedFlag.name() + ">"), NamedTextColor.AQUA)
+                .hoverEvent(HoverEvent.showText(text(flag.description(), NamedTextColor.GRAY))));
         }
 
         if (!first) {
-            builder.append(text(")", NamedTextColor.RED))
-                .hoverEvent(HoverEvent.showText(text(command.description(), NamedTextColor.GRAY)));
+            builder.append(text(")", NamedTextColor.RED)
+                .hoverEvent(HoverEvent.showText(description)));
         }
 
         // Add real parameters
@@ -71,16 +74,19 @@ public final class MinestomCommandFeedback implements CommandFeedback<Component>
             builder.append(text(" " + command.extraUsageData().trim(), NamedTextColor.RED));
         }
 
-        this.component = builder.build();
+        return builder.asComponent();
     }
 
-    @Override
-    public @NotNull Component message() {
-        return this.component;
-    }
+    public static final class ComponentFeedback implements CommandFeedback {
+        private final Component component;
 
-    @Override
-    public void sendTo(@NotNull Context context) {
-        ((CommandSender) context.sender().rawSender()).sendMessage(this.component);
+        public ComponentFeedback(@NotNull Component component) {
+            this.component = component;
+        }
+
+        @Override
+        public @NotNull Component message() {
+            return component;
+        }
     }
 }

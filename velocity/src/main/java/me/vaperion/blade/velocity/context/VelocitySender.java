@@ -6,6 +6,7 @@ import com.velocitypowered.api.proxy.Player;
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Sender;
+import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,6 +36,11 @@ public class VelocitySender implements Sender<CommandSource> {
         else if (commandSource instanceof ConsoleCommandSource)
             return "Console";
         return "<unknown>";
+    }
+
+    @Override
+    public void sendMessage(@NotNull Component component) {
+        commandSource.sendMessage(component);
     }
 
     @Override

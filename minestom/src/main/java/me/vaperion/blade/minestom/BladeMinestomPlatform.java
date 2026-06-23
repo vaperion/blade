@@ -7,12 +7,9 @@ import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.minestom.api.PermissionChecker;
 import me.vaperion.blade.minestom.argument.PlayerArgument;
-import me.vaperion.blade.minestom.command.MinestomCommandFeedback;
 import me.vaperion.blade.minestom.container.MinestomContainer;
-import me.vaperion.blade.minestom.platform.MinestomHelpGenerator;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
-import net.kyori.adventure.text.Component;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.ConsoleSender;
 import net.minestom.server.entity.Player;
@@ -21,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Locale;
 
 @RequiredArgsConstructor
-public class BladeMinestomPlatform implements BladePlatform<Component, MinecraftServer, MinecraftServer> {
+public class BladeMinestomPlatform implements BladePlatform<MinecraftServer, MinecraftServer> {
 
     protected final MinecraftServer server;
     protected final PermissionChecker permissionChecker;
@@ -52,12 +49,9 @@ public class BladeMinestomPlatform implements BladePlatform<Component, Minecraft
     }
 
     @Override
-    public void configure(Blade.@NotNull Builder<Component, MinecraftServer, MinecraftServer> builder,
-                          @NotNull BladeConfiguration<Component> configuration) {
-        configuration.helpGenerator(new MinestomHelpGenerator());
-        configuration.feedbackCreator(MinestomCommandFeedback::new);
-
-        Binder<Component, MinecraftServer, MinecraftServer> binder = new Binder<>(builder, true);
+    public void configure(Blade.@NotNull Builder<MinecraftServer, MinecraftServer> builder,
+                          @NotNull BladeConfiguration configuration) {
+        Binder<MinecraftServer, MinecraftServer> binder = new Binder<>(builder, true);
         binder.bind(Player.class, new PlayerArgument());
     }
 

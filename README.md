@@ -1,12 +1,11 @@
 # Blade
 
 > [!IMPORTANT]
-> Blade has gone through a large internal refactor and some APIs have changed.
-
-> [!IMPORTANT]
-> Blade is now published to Maven Central. Please use the new group ID `io.github.vaperion.blade` (instead of
-> `com.github.vaperion.blade`). Versioning has been reset to 1.0.0 for this
-> release.
+> As of `1.1.0`, Blade uses [Kyori Adventure](https://docs.papermc.io/adventure/)
+> `Component`s on all platforms instead of platform-specific text types.
+> Each platform converts these to its native text when sending. If you
+> implemented `CommandFeedback`, `HelpGenerator`, `BladePlatform` or `Sender` yourself,
+> you'll need to update your code for this change.
 
 Blade is an easy-to-use command framework based on annotations.
 
@@ -30,6 +29,11 @@ and [YourKit YouMonitor](https://www.yourkit.com/youmonitor/).
 ### Bukkit
 
 Use the `bukkit` artifact. Supports Java 8+.
+
+> [!NOTE]
+> Blade depends on Kyori Adventure, which legacy Spigot does not ship.
+> When shading Blade into your plugin, relocate `net.kyori` to avoid classpath
+> conflicts with other plugins or the server.
 
 ### Paper
 

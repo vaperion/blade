@@ -1,7 +1,6 @@
 package me.vaperion.blade.hytale.container;
 
 import com.hypixel.hytale.server.core.HytaleServer;
-import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.*;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import lombok.Getter;
@@ -18,21 +17,20 @@ import me.vaperion.blade.exception.internal.BladeInvocationError;
 import me.vaperion.blade.hytale.context.HytaleSender;
 import me.vaperion.blade.impl.node.ResolvedCommand;
 import me.vaperion.blade.tokenizer.TokenizerError;
-import me.vaperion.blade.tokenizer.input.CommandInput;
 import me.vaperion.blade.tree.CommandTreeNode;
 import me.vaperion.blade.util.ErrorMessage;
 import me.vaperion.blade.util.command.CommandExecutionWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hypixel.hytale.server.core.Message.raw;
-import static me.vaperion.blade.util.BladeHelper.*;
+import static me.vaperion.blade.util.BladeHelper.removeCommandQualifier;
+import static me.vaperion.blade.util.BladeHelper.removePrefix;
 
 @Getter
 public final class HytaleContainer extends AbstractCommand implements Container {
@@ -115,9 +113,7 @@ public final class HytaleContainer extends AbstractCommand implements Container 
         BladeCommand command = Objects.requireNonNull(node.command());
 
         if (!node.hasPermission(context)) {
-            sender.sendMessage(
-                raw(command.permissionMessage()).color(Color.RED)
-            );
+            context.sender().sendMessage(blade.configuration().messages().permissionMessage(command));
 
             return VOID_FUTURE;
         }
@@ -135,9 +131,7 @@ public final class HytaleContainer extends AbstractCommand implements Container 
                         switch (error.type()) {
                             case LINES:
                                 for (String line : error.lines()) {
-                                    sender.sendMessage(
-                                        raw(line).color(Color.RED)
-                                    );
+                                    context.sender().sendMessage(blade.configuration().messages().error(line));
                                 }
                                 break;
 
@@ -173,36 +167,26 @@ public final class HytaleContainer extends AbstractCommand implements Container 
                         }
                     }
                 } catch (BladeParseError | BladeFatalError e) {
-                    sender.sendMessage(
-                        raw(e.getMessage()).color(Color.RED)
-                    );
+                    context.sender().sendMessage(blade.configuration().messages().error(e.getMessage()));
                 } catch (BladeInvocationError e) {
-                    sender.sendMessage(
-                        raw(ERROR_MESSAGE).color(Color.RED)
-                    );
+                    context.sender().sendMessage(blade.configuration().messages().genericError());
 
                     blade.logger().error(e, "Blade failed to invoke the method for command `%s` executed by %s. This is most likely a bug in your plugin.",
                         label, sender.toString());
                 } catch (BladeImplementationError e) {
-                    sender.sendMessage(
-                        raw(ERROR_MESSAGE).color(Color.RED)
-                    );
+                    context.sender().sendMessage(blade.configuration().messages().genericError());
                     command.usageMessage().sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in your plugin.",
                         sender.toString(), label);
                 } catch (BladeInternalError e) {
-                    sender.sendMessage(
-                        raw(ERROR_MESSAGE).color(Color.RED)
-                    );
+                    context.sender().sendMessage(blade.configuration().messages().genericError());
                     command.usageMessage().sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
                         sender.toString(), label);
                 } catch (TokenizerError error) {
-                    sender.sendMessage(
-                        raw(error.formatForChat()).color(Color.RED)
-                    );
+                    context.sender().sendMessage(blade.configuration().messages().error(error.formatForChat()));
 
                     if (!error.type().isSilent()) {
                         blade.logger().error(
@@ -259,8 +243,8 @@ public final class HytaleContainer extends AbstractCommand implements Container 
             return;
         }
 
-        List<Message> lines = blade.<Message>configuration().helpGenerator().generate(context, allCommands);
+        List<net.kyori.adventure.text.Component> lines = blade.configuration().helpGenerator().generate(context, allCommands);
 
-        lines.forEach(sender::sendMessage);
+        lines.forEach(context.sender()::sendMessage);
     }
 }

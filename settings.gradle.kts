@@ -32,6 +32,7 @@ dependencyResolutionManagement {
             plugin("blossom", "net.kyori.blossom").versionRef("blossom")
 
             version("annotations", "26.0.2")
+            version("adventure", "4.9.1")
             version("paper.legacy", "1.20.4-R0.1-SNAPSHOT")
             version("paper.new", "1.20.6-R0.1-SNAPSHOT")
             version("velocity", "3.0.1")

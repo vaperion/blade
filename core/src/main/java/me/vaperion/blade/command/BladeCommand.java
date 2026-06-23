@@ -59,9 +59,9 @@ public final class BladeCommand {
     private final List<SndProvider<?>> senderProviders = new ArrayList<>();
 
     @Getter(AccessLevel.NONE)
-    private final LoadedValue<CommandFeedback<?>> usageMessage = new LoadedValue<>();
+    private final LoadedValue<CommandFeedback> usageMessage = new LoadedValue<>();
     @Getter(AccessLevel.NONE)
-    private final LoadedValue<CommandFeedback<?>> helpMessage = new LoadedValue<>();
+    private final LoadedValue<CommandFeedback> helpMessage = new LoadedValue<>();
 
     public BladeCommand(@NotNull Blade blade,
                         @Nullable Object instance,
@@ -217,7 +217,7 @@ public final class BladeCommand {
      * @return the usage message
      */
     @NotNull
-    public CommandFeedback<?> usageMessage() {
+    public CommandFeedback usageMessage() {
         return usageMessage.ensureGetOrLoad(
             () -> blade.configuration().feedbackCreator().create(this, true));
     }
@@ -228,7 +228,7 @@ public final class BladeCommand {
      * @return the help message
      */
     @NotNull
-    public CommandFeedback<?> helpMessage() {
+    public CommandFeedback helpMessage() {
         return helpMessage.ensureGetOrLoad(
             () -> blade.configuration().feedbackCreator().create(this, false));
     }
