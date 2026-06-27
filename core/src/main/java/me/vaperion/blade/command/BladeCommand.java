@@ -274,7 +274,29 @@ public final class BladeCommand {
     public CommandInput tokenize(@NotNull Sender<?> sender,
                                  @NotNull String input,
                                  @NotNull InputOption... options) {
+        return tokenize(sender, input, null, options);
+    }
+
+    /**
+     * Tokenizes the given input string according to this command's parameters, consuming the
+     * given whole label up front so that per-parameter quote parsing aligns correctly even for
+     * multi-word (sub)command labels.
+     *
+     * @param sender     the sender executing the command
+     * @param input      the input string to tokenize
+     * @param wholeLabel the resolved whole label, or {@code null} to infer the first word only
+     * @param options    the input options to use during tokenization
+     * @return the tokenized command input
+     */
+    @NotNull
+    public CommandInput tokenize(@NotNull Sender<?> sender,
+                                 @NotNull String input,
+                                 @Nullable String wholeLabel,
+                                 @NotNull InputOption... options) {
         CommandInput commandInput = new CommandInput(blade, this, input, options);
+        if (wholeLabel != null) {
+            commandInput.useWholeLabel(wholeLabel);
+        }
         commandInput.tokenize();
         return commandInput;
     }

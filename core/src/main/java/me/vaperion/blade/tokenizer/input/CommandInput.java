@@ -2,7 +2,7 @@ package me.vaperion.blade.tokenizer.input;
 
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.command.BladeCommand;
-import me.vaperion.blade.command.BladeParameter;
+import me.vaperion.blade.command.parameter.DefinedArgument;
 import me.vaperion.blade.command.parameter.DefinedFlag;
 import me.vaperion.blade.tokenizer.StringTokenizer;
 import me.vaperion.blade.tokenizer.TokenizerError;
@@ -43,6 +43,9 @@ public final class CommandInput {
     private final StringTokenizer tokenizer;
     private final List<Token> tokens = new ArrayList<>();
     private boolean tokenized = false;
+
+    @Nullable
+    private String wholeLabel;
 
     public CommandInput(@NotNull Blade blade,
                         @Nullable BladeCommand command,
@@ -188,6 +191,27 @@ public final class CommandInput {
     }
 
     /**
+     * Provide the already-resolved whole label (which may span multiple words)
+     * so tokenization consumes it as the label in a single pass.
+     * <p>
+     * Without this, only the first word is treated as the label and the remaining label words
+     * are emitted as argument tokens (to be merged afterwards via
+     * {@link #mergeTokensToFormWholeLabel(String)}).
+     * <p>
+     * Must be called before {@link #tokenize()}.
+     *
+     * @param wholeLabel the resolved whole label
+     */
+    public void useWholeLabel(@NotNull String wholeLabel) {
+        if (tokenized) {
+            throw new IllegalStateException("Cannot set the whole label after tokenization.");
+        }
+
+        String trimmed = wholeLabel.trim();
+        this.wholeLabel = trimmed.isEmpty() ? null : trimmed;
+    }
+
+    /**
      * Ensure that the input has been tokenized.
      *
      * @throws TokenizerError if a tokenization error occurs
@@ -212,7 +236,14 @@ public final class CommandInput {
         tokenizer.expect('/');
         tokenizer.skip();
 
-        String label = tokenizer.takeUnquotedString();
+        String label;
+        if (wholeLabel != null) {
+            String consumedLabel = consumeWholeLabel(wholeLabel);
+            // Fall back if the input doesn't actually start with the expected whole label.
+            label = consumedLabel != null ? consumedLabel : tokenizer.takeUnquotedString();
+        } else {
+            label = tokenizer.takeUnquotedString();
+        }
         add(new LabelToken(label.toLowerCase(Locale.ROOT)));
 
         while (tokenizer.hasNext()) {
@@ -258,14 +289,62 @@ public final class CommandInput {
      * @return true if the next parameter is quoted, false otherwise
      */
     private boolean nextParameterIsQuoted() {
-        int argIndex = arguments().size();
-
-        if (command == null || command.parameters().size() <= argIndex) {
+        if (command == null) {
             return false;
         }
 
-        BladeParameter parameter = command.parameters().get(argIndex);
-        return parameter.isQuoted();
+        int argIndex = arguments().size();
+        List<DefinedArgument> commandArguments = command.arguments();
+
+        if (commandArguments.size() <= argIndex) {
+            return false;
+        }
+
+        return commandArguments.get(argIndex).isQuoted();
+    }
+
+    /**
+     * Consume the given whole label from the tokenizer, validating that the input actually
+     * starts with it.
+     *
+     * @param wholeLabel the whole label to consume
+     * @return the consumed label, or {@code null} if the input does not start with the expected label
+     */
+    @Nullable
+    private String consumeWholeLabel(@NotNull String wholeLabel) {
+        String[] words = wholeLabel.split("\\s+");
+        StringBuilder consumed = new StringBuilder();
+
+        tokenizer.saveCursor();
+
+        for (int i = 0; i < words.length; i++) {
+            if (i > 0) {
+                if (!tokenizer.peekWhitespace()) {
+                    // Missing separator (or end of input) before the next label word.
+                    tokenizer.restoreCursor();
+                    return null;
+                }
+
+                tokenizer.skipWhitespace();
+                consumed.append(' ');
+            }
+
+            if (!tokenizer.hasNext()) {
+                tokenizer.restoreCursor();
+                return null;
+            }
+
+            String word = tokenizer.takeUnquotedString();
+            if (!word.equalsIgnoreCase(words[i])) {
+                tokenizer.restoreCursor();
+                return null;
+            }
+
+            consumed.append(word);
+        }
+
+        tokenizer.dropSavedCursor();
+        return consumed.toString();
     }
 
     /**
@@ -404,7 +483,16 @@ public final class CommandInput {
 
         LabelToken label = label().orElse(null);
 
-        if (label == null || !parts[0].equalsIgnoreCase(label.name())) {
+        if (label == null) {
+            return false;
+        }
+
+        if (label.name().equalsIgnoreCase(wholeLabel)) {
+            // The whole label was already consumed during tokenization, nothing to merge.
+            return true;
+        }
+
+        if (!parts[0].equalsIgnoreCase(label.name())) {
             // If the label doesn't match the input, we can't merge.
             return false;
         }

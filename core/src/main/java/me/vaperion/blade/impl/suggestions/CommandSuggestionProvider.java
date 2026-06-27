@@ -93,7 +93,7 @@ public final class CommandSuggestionProvider {
 
         for (BladeCommand command : overloads) {
             try {
-                CommandInput input = command.tokenize(context.sender(), slashedInput);
+                CommandInput input = command.tokenize(context.sender(), slashedInput, matchedLabel);
 
                 if (!input.mergeTokensToFormWholeLabel(matchedLabel)) {
                     if (single) {

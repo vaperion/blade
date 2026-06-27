@@ -378,6 +378,7 @@ public final class CommandExecutor {
                                          @NotNull EnumSet<InputOption> options,
                                          @NotNull String matchedLabel) {
         CommandInput input = new CommandInput(blade, cmd, rawInput, options);
+        input.useWholeLabel(matchedLabel);
         input.tokenize();
 
         if (!input.mergeTokensToFormWholeLabel(matchedLabel)) {
