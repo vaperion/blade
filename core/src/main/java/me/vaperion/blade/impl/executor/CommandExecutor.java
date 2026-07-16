@@ -29,6 +29,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -672,26 +673,34 @@ public final class CommandExecutor {
                 cmd.instance(),
                 args
             );
+        } catch (InvocationTargetException e) {
+            throw invocationFailure(cmd, args, e.getTargetException());
         } catch (Throwable t) {
-            if (t instanceof BladeFatalError ||
-                t instanceof BladeImplementationError ||
-                t instanceof BladeInternalError ||
-                t instanceof BladeInvocationError ||
-                t instanceof BladeParseError ||
-                t instanceof BladeUsageMessage) {
-                // Rethrow internal errors as-is
-                throw (RuntimeException) t;
-            }
-
-            throw new BladeInvocationError(
-                String.format(
-                    "Command invocation failed (method: %s.%s, args: %s)",
-                    cmd.method().getDeclaringClass().getName(),
-                    cmd.method().getName(),
-                    Arrays.toString(args)
-                ),
-                t);
+            throw invocationFailure(cmd, args, t);
         }
+    }
+
+    @NotNull
+    private RuntimeException invocationFailure(@NotNull BladeCommand cmd,
+                                               @NotNull Object[] args,
+                                               @NotNull Throwable cause) {
+        if (cause instanceof BladeFatalError ||
+            cause instanceof BladeImplementationError ||
+            cause instanceof BladeInternalError ||
+            cause instanceof BladeInvocationError ||
+            cause instanceof BladeParseError ||
+            cause instanceof BladeUsageMessage) {
+            return (RuntimeException) cause;
+        }
+
+        return new BladeInvocationError(
+            String.format(
+                "Command invocation failed (method: %s.%s, args: %s)",
+                cmd.method().getDeclaringClass().getName(),
+                cmd.method().getName(),
+                Arrays.toString(args)
+            ),
+            cause);
     }
 
     @ApiStatus.Internal
