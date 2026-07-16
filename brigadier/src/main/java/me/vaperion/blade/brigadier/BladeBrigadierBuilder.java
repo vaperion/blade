@@ -275,10 +275,10 @@ public final class BladeBrigadierBuilder<T, S> {
 
             for (int i = 0; i < max; i++) {
                 int aScore = i < a.arguments().size()
-                    ? brigadierPermissiveness(a.arguments().get(i))
+                    ? brigadierPermissiveness(a, a.arguments().get(i))
                     : -1;
                 int bScore = i < b.arguments().size()
-                    ? brigadierPermissiveness(b.arguments().get(i))
+                    ? brigadierPermissiveness(b, b.arguments().get(i))
                     : -1;
 
                 if (aScore != bScore) {
@@ -291,7 +291,10 @@ public final class BladeBrigadierBuilder<T, S> {
         return ordered;
     }
 
-    private int brigadierPermissiveness(@NotNull DefinedArgument argument) {
+    private int brigadierPermissiveness(@NotNull BladeCommand command,
+                                        @NotNull DefinedArgument argument) {
+        if (command.usesBladeContext()) return 1000;
+
         Class<?> clazz = argument.type();
 
         if (clazz == String.class) {
@@ -470,6 +473,11 @@ public final class BladeBrigadierBuilder<T, S> {
                                                       @NotNull DefinedArgument argument,
                                                       @NotNull List<String> argumentPrefix,
                                                       boolean visibleOnly) {
+        if (command.usesBladeContext()) {
+            // always treat as greedy
+            return (ArgumentType<Object>) (ArgumentType<?>) StringArgumentType.greedyString();
+        }
+
         if (hasConflictingBrigadierType(command, node, argumentPrefix, visibleOnly)) {
             ArgumentType<?> type = argument.isGreedy()
                 ? StringArgumentType.greedyString()
@@ -529,6 +537,8 @@ public final class BladeBrigadierBuilder<T, S> {
     private ArgumentType<Object> mapBrigadierArgument(@NotNull BladeCommand command,
                                                       @NotNull BladeParameter parameter) {
         Class<?> clazz = parameter.type();
+
+        // default to string
         ArgumentType<?> type = StringArgumentType.string();
 
         if (clazz == String.class) {

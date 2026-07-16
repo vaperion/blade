@@ -19,11 +19,13 @@ import java.util.stream.Collectors;
 public class ArgumentProviderResolver {
 
     private static final List<Class<? extends Annotation>> INTERNAL_ANNOTATIONS = Arrays.asList(
-        Provider.class, Data.class, Flag.class, Name.class,
-        Opt.class, Range.class, Sender.class, Greedy.class,
+        // Command
+        Async.class, Command.class, Description.class, ExtraUsage.class, Help.class,
+        Hidden.class, MainLabel.class, Permission.class, Quoted.class, Usage.class,
 
-        Async.class, Command.class, Description.class, ExtraUsage.class, Hidden.class,
-        Quoted.class, Permission.class, Usage.class, MainLabel.class
+        // Parameter
+        Data.class, Flag.class, Greedy.class, Name.class,
+        Opt.class, Provider.class, Range.class, Sender.class
     );
 
     private final Blade blade;
