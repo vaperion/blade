@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.Blade;
+import me.vaperion.blade.annotation.command.Description;
 import me.vaperion.blade.annotation.command.Quoted;
 import me.vaperion.blade.annotation.parameter.Greedy;
 import me.vaperion.blade.annotation.parameter.Opt;
@@ -54,6 +55,24 @@ public class BladeParameter {
         }
 
         return Collections.emptyList();
+    }
+
+    /**
+     * Returns the description of this parameter.
+     *
+     * @return the description, or an empty string if not present
+     */
+    @NotNull
+    public String description() {
+        if (element != null) {
+            Description description = element.getAnnotation(Description.class);
+
+            if (description != null && description.value() != null) {
+                return description.value();
+            }
+        }
+
+        return "";
     }
 
     /**

@@ -14,6 +14,7 @@ import me.vaperion.blade.command.parameter.DefinedArgument;
 import me.vaperion.blade.command.parameter.DefinedFlag;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.context.Sender;
+import me.vaperion.blade.platform.api.CommandLocalizer;
 import me.vaperion.blade.sender.internal.SndProvider;
 import me.vaperion.blade.tokenizer.input.CommandInput;
 import me.vaperion.blade.tokenizer.input.InputOption;
@@ -28,6 +29,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static me.vaperion.blade.util.Preconditions.*;
@@ -62,6 +64,13 @@ public final class BladeCommand {
     private final LoadedValue<CommandFeedback> usageMessage = new LoadedValue<>();
     @Getter(AccessLevel.NONE)
     private final LoadedValue<CommandFeedback> helpMessage = new LoadedValue<>();
+
+    @Getter(AccessLevel.NONE)
+    @ToString.Exclude
+    private final Map<Locale, CommandFeedback> localizedUsageMessages = new ConcurrentHashMap<>();
+    @Getter(AccessLevel.NONE)
+    @ToString.Exclude
+    private final Map<Locale, CommandFeedback> localizedHelpMessages = new ConcurrentHashMap<>();
 
     public BladeCommand(@NotNull Blade blade,
                         @Nullable Object instance,
@@ -231,6 +240,44 @@ public final class BladeCommand {
     public CommandFeedback helpMessage() {
         return helpMessage.ensureGetOrLoad(
             () -> blade.configuration().feedbackCreator().create(this, false));
+    }
+
+    /**
+     * Gets or loads the usage message for this command, localized for the given context's sender.
+     *
+     * @param context the context whose sender the message is localized for
+     * @return the usage message
+     */
+    @NotNull
+    public CommandFeedback usageMessage(@NotNull Context context) {
+        CommandLocalizer localizer = blade.configuration().localizer();
+
+        if (localizer instanceof CommandLocalizer.Default) {
+            return usageMessage();
+        }
+
+        return localizedUsageMessages.computeIfAbsent(
+            localizer.localeOf(context.sender()),
+            $ -> blade.configuration().feedbackCreator().create(this, true, context));
+    }
+
+    /**
+     * Gets or loads the help message for this command, localized for the given context's sender.
+     *
+     * @param context the context whose sender the message is localized for
+     * @return the help message
+     */
+    @NotNull
+    public CommandFeedback helpMessage(@NotNull Context context) {
+        CommandLocalizer localizer = blade.configuration().localizer();
+
+        if (localizer instanceof CommandLocalizer.Default) {
+            return helpMessage();
+        }
+
+        return localizedHelpMessages.computeIfAbsent(
+            localizer.localeOf(context.sender()),
+            $ -> blade.configuration().feedbackCreator().create(this, false, context));
     }
 
     /**

@@ -131,7 +131,7 @@ public final class FabricContainer implements Container {
 
                             case SHOW_COMMAND_USAGE:
                                 if (error.command() != null) {
-                                    error.command().usageMessage().sendTo(context);
+                                    error.command().usageMessage(context).sendTo(context);
                                     break;
                                 }
 
@@ -139,7 +139,7 @@ public final class FabricContainer implements Container {
                                     // Don't reveal overloads the sender cannot use.
                                     if (!overload.hasPermission(context)) continue;
 
-                                    overload.usageMessage().sendTo(context);
+                                    overload.usageMessage(context).sendTo(context);
                                 }
                                 break;
 
@@ -169,19 +169,19 @@ public final class FabricContainer implements Container {
                         label, sender.getTextName());
                 } catch (BladeImplementationError e) {
                     context.sender().sendMessage(blade.configuration().messages().genericError());
-                    command.usageMessage().sendTo(context);
+                    command.usageMessage(context).sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in your plugin.",
                         sender.getTextName(), label);
                 } catch (BladeInternalError e) {
                     context.sender().sendMessage(blade.configuration().messages().genericError());
-                    command.usageMessage().sendTo(context);
+                    command.usageMessage(context).sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
                         sender.getTextName(), label);
                 } catch (TokenizerError error) {
                     context.sender().sendMessage(blade.configuration().messages().error(error.formatForChat()));
-                    command.usageMessage().sendTo(context);
+                    command.usageMessage(context).sendTo(context);
 
                     if (!error.type().isSilent()) {
                         blade.logger().error(

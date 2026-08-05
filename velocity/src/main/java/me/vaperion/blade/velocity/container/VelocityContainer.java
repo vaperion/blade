@@ -142,7 +142,7 @@ public class VelocityContainer implements RawCommand, Container {
 
                             case SHOW_COMMAND_USAGE:
                                 if (error.command() != null) {
-                                    error.command().usageMessage().sendTo(context);
+                                    error.command().usageMessage(context).sendTo(context);
                                     break;
                                 }
 
@@ -150,7 +150,7 @@ public class VelocityContainer implements RawCommand, Container {
                                     // Don't reveal overloads the sender cannot use.
                                     if (!overload.hasPermission(context)) continue;
 
-                                    overload.usageMessage().sendTo(context);
+                                    overload.usageMessage(context).sendTo(context);
                                 }
                                 break;
 
@@ -186,7 +186,7 @@ public class VelocityContainer implements RawCommand, Container {
                     sender.sendMessage(
                         messages.genericError()
                     );
-                    command.usageMessage().sendTo(context);
+                    command.usageMessage(context).sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in your plugin.",
                         sender.toString(), label);
@@ -194,7 +194,7 @@ public class VelocityContainer implements RawCommand, Container {
                     sender.sendMessage(
                         messages.genericError()
                     );
-                    command.usageMessage().sendTo(context);
+                    command.usageMessage(context).sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
                         sender.toString(), label);

@@ -7,10 +7,7 @@ import me.vaperion.blade.annotation.command.Async;
 import me.vaperion.blade.annotation.command.Permission;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.log.BladeLogger;
-import me.vaperion.blade.platform.api.BladeMessages;
-import me.vaperion.blade.platform.api.CommandFeedbackCreator;
-import me.vaperion.blade.platform.api.HelpGenerator;
-import me.vaperion.blade.platform.api.TabCompleter;
+import me.vaperion.blade.platform.api.*;
 import me.vaperion.blade.platform.defaults.DefaultBladeMessages;
 import me.vaperion.blade.platform.defaults.DefaultCommandFeedbackCreator;
 import me.vaperion.blade.platform.defaults.DefaultHelpGenerator;
@@ -142,6 +139,11 @@ public final class BladeConfiguration {
     private BladeMessages messages = new DefaultBladeMessages();
 
     /**
+     * The localizer used to translate messages per sender.
+     */
+    private CommandLocalizer localizer = new CommandLocalizer.Default();
+
+    /**
      * The logger Blade uses to log messages, warnings and errors.
      */
     private BladeLogger logger = BladeLogger.DEFAULT;
@@ -163,6 +165,7 @@ public final class BladeConfiguration {
         Preconditions.checkNotNull(helpGenerator, "Help generator cannot be null.");
         Preconditions.checkNotNull(feedbackCreator, "Feedback creator cannot be null.");
         Preconditions.checkNotNull(messages, "Messages cannot be null.");
+        Preconditions.checkNotNull(localizer, "Localizer cannot be null.");
         Preconditions.checkNotNull(tabCompleter, "Tab completer cannot be null.");
         Preconditions.checkNotNull(commandRegistrationPredicate, "Command registration predicate cannot be null.");
     }

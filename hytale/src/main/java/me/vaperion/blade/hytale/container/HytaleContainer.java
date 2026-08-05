@@ -137,7 +137,7 @@ public final class HytaleContainer extends AbstractCommand implements Container 
 
                             case SHOW_COMMAND_USAGE:
                                 if (error.command() != null) {
-                                    error.command().usageMessage().sendTo(context);
+                                    error.command().usageMessage(context).sendTo(context);
                                     break;
                                 }
 
@@ -145,7 +145,7 @@ public final class HytaleContainer extends AbstractCommand implements Container 
                                     // Don't reveal overloads the sender cannot use.
                                     if (!overload.hasPermission(context)) continue;
 
-                                    overload.usageMessage().sendTo(context);
+                                    overload.usageMessage(context).sendTo(context);
                                 }
                                 break;
 
@@ -175,13 +175,13 @@ public final class HytaleContainer extends AbstractCommand implements Container 
                         label, sender.toString());
                 } catch (BladeImplementationError e) {
                     context.sender().sendMessage(blade.configuration().messages().genericError());
-                    command.usageMessage().sendTo(context);
+                    command.usageMessage(context).sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in your plugin.",
                         sender.toString(), label);
                 } catch (BladeInternalError e) {
                     context.sender().sendMessage(blade.configuration().messages().genericError());
-                    command.usageMessage().sendTo(context);
+                    command.usageMessage(context).sendTo(context);
 
                     blade.logger().error(e, "An internal error occurred while %s was executing the command `%s`. This is a bug in Blade, not your plugin. Please report it.",
                         sender.toString(), label);

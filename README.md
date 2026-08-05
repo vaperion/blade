@@ -211,3 +211,35 @@ public class MyPlugin extends JavaPlugin {
     }
 }
 ```
+
+### Localizing your commands
+
+Blade can localize user-facing messages.
+
+```java
+public class ExampleLocalizer implements CommandLocalizer {
+    @Override
+    public @NotNull Locale localeOf(@NotNull Sender<?> sender) {
+        Player player = sender.parseAs(Player.class);
+        return player != null ? player.locale() : Locale.US;
+    }
+
+    @Override
+    public @NotNull String commandDescription(@NotNull Sender<?> sender,
+                                              @NotNull BladeCommand command,
+                                              @NotNull String fallback) {
+        return ExampleI18n.get(localeOf(sender), "commands." + command.mainLabel() + ".description", fallback);
+    }
+}
+```
+
+```java
+Blade.forPlatform(new BladeBukkitPlatform(this))
+    .config(cfg -> cfg.localizer(new ExampleLocalizer()))
+    .build();
+```
+
+A few notes:
+
+- Rendered usage and help messages are cached per `localeOf` result.
+- Brigadier node names (the client-side `<arg>` hints) stay unlocalized.

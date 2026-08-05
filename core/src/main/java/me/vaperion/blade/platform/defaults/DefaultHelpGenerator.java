@@ -3,6 +3,7 @@ package me.vaperion.blade.platform.defaults;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.platform.api.BladeMessages;
+import me.vaperion.blade.platform.api.CommandLocalizer;
 import me.vaperion.blade.platform.api.HelpGenerator;
 import me.vaperion.blade.util.command.PaginatedOutput;
 import net.kyori.adventure.text.Component;
@@ -75,7 +76,8 @@ public class DefaultHelpGenerator implements HelpGenerator {
 
             @Override
             public @NotNull List<Component> line(BladeCommand result, int index) {
-                return Collections.singletonList(DefaultHelpGenerator.this.line(result, result.helpMessage().message()));
+                return Collections.singletonList(
+                    DefaultHelpGenerator.this.line(context, result, result.helpMessage(context).message()));
             }
         }.generatePage(commands, page);
     }
@@ -110,13 +112,34 @@ public class DefaultHelpGenerator implements HelpGenerator {
 
     @NotNull
     protected Component line(@NotNull BladeCommand command, @NotNull Component usage) {
+        return formatLine(usage, command.description());
+    }
+
+    @NotNull
+    protected Component line(@NotNull Context context,
+                             @NotNull BladeCommand command,
+                             @NotNull Component usage) {
+        CommandLocalizer localizer = context.blade().configuration().localizer();
+
+        if (localizer instanceof CommandLocalizer.Default) {
+            return line(command, usage);
+        }
+
+        String description = localizer.commandDescription(
+            context.sender(), command, command.description());
+
+        return formatLine(usage, description);
+    }
+
+    @NotNull
+    private Component formatLine(@NotNull Component usage, @NotNull String description) {
         Component line = text()
             .append(text(" - ", NamedTextColor.AQUA))
             .append(text(plainText(usage), NamedTextColor.YELLOW))
             .asComponent();
 
-        if (!command.description().isEmpty()) {
-            line = line.append(text(" - " + command.description(), NamedTextColor.GRAY));
+        if (!description.isEmpty()) {
+            line = line.append(text(" - " + description, NamedTextColor.GRAY));
         }
 
         return line;
