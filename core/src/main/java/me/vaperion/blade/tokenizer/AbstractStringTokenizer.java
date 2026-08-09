@@ -65,7 +65,11 @@ public abstract class AbstractStringTokenizer {
      * Expects the current character to be whitespace.
      */
     public void expectWhitespace() throws TokenizerError {
-        expect(WHITESPACE_PRED);
+        if (peekWhitespace()) {
+            return;
+        }
+
+        throw TokenizerError.expectedWhitespace(this, peek());
     }
 
     /**
@@ -79,6 +83,26 @@ public abstract class AbstractStringTokenizer {
         }
 
         throw TokenizerError.unexpectedCharacter(this, expected, peek());
+    }
+
+    /**
+     * Expects the current character to match one of the given characters.
+     *
+     * @param expected the accepted characters
+     */
+    public void expectOneOf(char @NotNull ... expected) throws TokenizerError {
+        if (expected.length == 0) {
+            throw new IllegalArgumentException("At least one expected character is required.");
+        }
+
+        char actual = peek();
+        for (char candidate : expected) {
+            if (actual == candidate) {
+                return;
+            }
+        }
+
+        throw TokenizerError.expectedOneOf(this, expected, actual);
     }
 
     /**

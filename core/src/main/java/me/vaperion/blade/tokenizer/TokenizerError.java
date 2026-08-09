@@ -4,6 +4,8 @@ import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.StringJoiner;
+
 @Getter
 @SuppressWarnings("unused")
 public class TokenizerError extends RuntimeException {
@@ -15,6 +17,34 @@ public class TokenizerError extends RuntimeException {
             tokenizer,
             0,
             "unexpected end of input"
+        );
+    }
+
+    @NotNull
+    public static TokenizerError expectedWhitespace(@NotNull AbstractStringTokenizer tokenizer,
+                                                    char actual) {
+        return new TokenizerError(
+            Type.EXPECTED_WHITESPACE,
+            tokenizer,
+            0,
+            String.format("expected whitespace but found '%c'", actual)
+        );
+    }
+
+    @NotNull
+    public static TokenizerError expectedOneOf(@NotNull AbstractStringTokenizer tokenizer,
+                                               char @NotNull [] expected,
+                                               char actual) {
+        StringJoiner formattedExpected = new StringJoiner(", ", "[", "]");
+        for (char character : expected) {
+            formattedExpected.add(formatCharacter(character));
+        }
+
+        return new TokenizerError(
+            Type.EXPECTED_ONE_OF,
+            tokenizer,
+            0,
+            String.format("expected one of %s but found %s", formattedExpected, formatCharacter(actual))
         );
     }
 
@@ -88,6 +118,23 @@ public class TokenizerError extends RuntimeException {
     }
 
     @NotNull
+    private static String formatCharacter(char character) {
+        switch (character) {
+            case '\\':
+            case '\'':
+                return "'\\" + character + "'";
+            case '\n':
+                return "'\\n'";
+            case '\r':
+                return "'\\r'";
+            case '\t':
+                return "'\\t'";
+            default:
+                return "'" + character + "'";
+        }
+    }
+
+    @NotNull
     public String formatForChat() {
         return String.format(
             "Syntax error at position %d: %s",
@@ -101,17 +148,19 @@ public class TokenizerError extends RuntimeException {
         UNEXPECTED_END,
         UNEXPECTED_CHARACTER,
         REQUIRED_N_CHARACTERS,
-        MISSING_FLAG_VALUE(true),
+        EXPECTED_WHITESPACE(false),
+        EXPECTED_ONE_OF(false),
+        MISSING_FLAG_VALUE(false),
         ;
 
-        private final boolean isSilent;
+        private final boolean shouldLog;
 
         Type() {
-            this(false);
+            this(true);
         }
 
-        Type(boolean isSilent) {
-            this.isSilent = isSilent;
+        Type(boolean shouldLog) {
+            this.shouldLog = shouldLog;
         }
     }
 

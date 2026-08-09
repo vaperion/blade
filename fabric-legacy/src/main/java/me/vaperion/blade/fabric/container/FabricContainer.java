@@ -183,7 +183,7 @@ public final class FabricContainer implements Container {
                     context.sender().sendMessage(blade.configuration().messages().error(error.formatForChat()));
                     command.usageMessage(context).sendTo(context);
 
-                    if (!error.type().isSilent()) {
+                    if (error.type().shouldLog()) {
                         blade.logger().error(
                             "Failed to parse %s's command input for command `%s`: %s",
                             sender.getTextName(),
@@ -296,15 +296,8 @@ public final class FabricContainer implements Container {
                 sender.getTextName(), label);
         } catch (BladeFatalError ex) {
             new FabricSender(blade, sender).sendMessage(blade.configuration().messages().error(ex.getMessage()));
-        } catch (TokenizerError error) {
-            // Don't send tokenizer errors to the user during tab completion - just log them.
-
-            if (!error.type().isSilent()) {
-                blade.logger().error(
-                    "Failed to parse %s's command input for command `%s`: %s",
-                    sender.getTextName(),
-                    label, TokenizerError.generateFancyMessage(error));
-            }
+        } catch (TokenizerError ignored) {
+            // Incomplete input is normal during tab completion.
         } catch (Throwable t) {
             blade.logger().error(t, "An error occurred while %s was tab completing the command `%s`.",
                 sender.getTextName(), label);

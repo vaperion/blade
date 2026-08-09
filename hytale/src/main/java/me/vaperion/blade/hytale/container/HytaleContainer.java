@@ -188,7 +188,7 @@ public final class HytaleContainer extends AbstractCommand implements Container 
                 } catch (TokenizerError error) {
                     context.sender().sendMessage(blade.configuration().messages().error(error.formatForChat()));
 
-                    if (!error.type().isSilent()) {
+                    if (error.type().shouldLog()) {
                         blade.logger().error(
                             "Failed to parse %s's command input for command `%s`: %s",
                             sender.toString(),
