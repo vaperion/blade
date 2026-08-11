@@ -61,7 +61,7 @@ subprojects {
 
         pom {
             name.set(project.name)
-            description.set("Blade is an easy-to-use command framework based on annotations.")
+            description.set("Blade is an annotation-based command framework for Minecraft servers, supporting Paper, Bukkit, Velocity, Fabric, Minestom, Hytale and Brigadier.")
 
             inceptionYear.set("2021")
             url.set("https://github.com/vaperion/blade/")

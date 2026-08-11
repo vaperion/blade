@@ -7,11 +7,10 @@
 > implemented `CommandFeedback`, `HelpGenerator`, `BladePlatform` or `Sender` yourself,
 > you'll need to update your code for this change.
 
-Blade is an easy-to-use command framework based on annotations.
+Blade is an annotation-based command framework for Minecraft Paper, Bukkit, Velocity, Fabric Minestom, and Hytale, with native Brigadier integration.
 
 If you make any changes or improvements to the project, please consider making a pull request to merge your changes back
-into the upstream project.
-If you find any issues please open an issue.
+into the upstream project. If you find any issues please open an issue.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
