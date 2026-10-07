@@ -49,7 +49,8 @@ public final class BladePaperBrigadier implements Listener {
 
         this.builder = new BladeBrigadierBuilder<>(blade,
             CommandSourceStack::getSender,
-            BukkitSender::new);
+            BukkitSender::new,
+            new PaperArgumentTypes());
 
         this.delegate = new BladeBrigadierDelegate<>(blade,
             (ctx, builder, container) ->

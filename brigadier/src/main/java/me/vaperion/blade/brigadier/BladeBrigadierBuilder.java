@@ -8,7 +8,6 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
-import lombok.RequiredArgsConstructor;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.annotation.parameter.Range;
 import me.vaperion.blade.command.BladeCommand;
@@ -26,13 +25,28 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-@SuppressWarnings("ClassCanBeRecord")
-@RequiredArgsConstructor
 public final class BladeBrigadierBuilder<T, S> {
 
     private final Blade blade;
     private final Function<T, S> converter;
     private final Function<S, Sender<S>> wrapper;
+    private final BrigadierArgumentTypeMapper argumentTypes;
+
+    public BladeBrigadierBuilder(@NotNull Blade blade,
+                                 @NotNull Function<T, S> converter,
+                                 @NotNull Function<S, Sender<S>> wrapper) {
+        this(blade, converter, wrapper, BrigadierArgumentTypeMapper.none());
+    }
+
+    public BladeBrigadierBuilder(@NotNull Blade blade,
+                                 @NotNull Function<T, S> converter,
+                                 @NotNull Function<S, Sender<S>> wrapper,
+                                 @NotNull BrigadierArgumentTypeMapper argumentTypes) {
+        this.blade = blade;
+        this.converter = converter;
+        this.wrapper = wrapper;
+        this.argumentTypes = argumentTypes;
+    }
 
     @NotNull
     public LiteralCommandNode<T> buildLiteral(
@@ -530,6 +544,10 @@ public final class BladeBrigadierBuilder<T, S> {
         if (clazz == double.class || clazz == Double.class) return "double" + range;
         if (clazz == boolean.class || clazz == Boolean.class) return "boolean";
 
+        if (argumentTypes.map(argument) != null) {
+            return "native:" + clazz.getName();
+        }
+
         return "custom-string";
     }
 
@@ -537,6 +555,12 @@ public final class BladeBrigadierBuilder<T, S> {
     private ArgumentType<Object> mapBrigadierArgument(@NotNull BladeCommand command,
                                                       @NotNull BladeParameter parameter) {
         Class<?> clazz = parameter.type();
+
+        ArgumentType<?> nativeType = argumentTypes.map(parameter);
+        if (nativeType != null) {
+            //noinspection unchecked
+            return (ArgumentType<Object>) nativeType;
+        }
 
         // default to string
         ArgumentType<?> type = StringArgumentType.string();
