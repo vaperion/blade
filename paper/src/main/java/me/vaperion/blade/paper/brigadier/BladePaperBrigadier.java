@@ -5,6 +5,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import com.mojang.brigadier.tree.RootCommandNode;
 import io.papermc.paper.command.brigadier.CommandRegistrationFlag;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -23,6 +24,7 @@ import me.vaperion.blade.tree.CommandTreeNode;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Listener;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
@@ -245,7 +247,9 @@ public final class BladePaperBrigadier implements Listener {
             ? customClientLiteral
             : literal;
 
-        syncRegisteredClientNode(literal,
+        RootCommandNode<CommandSourceStack> root = registrar.getDispatcher().getRoot();
+
+        syncRegisteredClientNode(root, literal,
             copyLiteral(literal.getLiteral(), clientLiteral));
 
         CommandNode<CommandSourceStack> registeredPlain = registrar.getDispatcher()
@@ -253,7 +257,7 @@ public final class BladePaperBrigadier implements Listener {
             .getChild(literal.getLiteral());
 
         if (registeredPlain != null && registeredPlain != literal) {
-            syncRegisteredClientNode(registeredPlain,
+            syncRegisteredClientNode(root, registeredPlain,
                 copyLiteral(literal.getLiteral(), clientLiteral));
         }
 
@@ -262,7 +266,7 @@ public final class BladePaperBrigadier implements Listener {
             .getChild(namespace + ":" + literal.getLiteral());
 
         if (registeredNamespaced != null) {
-            syncRegisteredClientNode(registeredNamespaced,
+            syncRegisteredClientNode(root, registeredNamespaced,
                 copyLiteral(namespace + ":" + literal.getLiteral(), clientLiteral));
         }
     }
@@ -272,13 +276,51 @@ public final class BladePaperBrigadier implements Listener {
             node.children().values().stream().anyMatch(this::hasHiddenCommand);
     }
 
-    private void syncRegisteredClientNode(@NotNull CommandNode<CommandSourceStack> node,
+    private void syncRegisteredClientNode(@NotNull RootCommandNode<CommandSourceStack> root,
+                                          @NotNull CommandNode<CommandSourceStack> node,
                                           @NotNull LiteralCommandNode<CommandSourceStack> clientNode) {
         BrigadierCompat.setClientNode(node, clientNode);
 
         CommandNode<CommandSourceStack> unwrapped = BrigadierCompat.getUnwrappedCached(node);
-        if (unwrapped != null) {
-            BrigadierCompat.setClientNode(unwrapped, clientNode);
+        if (unwrapped == null) {
+            return;
+        }
+
+        LiteralCommandNode<CommandSourceStack> unwrappedClientNode = unwrapClientNode(root, clientNode);
+        if (unwrappedClientNode == null) {
+            return;
+        }
+
+        BrigadierCompat.setClientNode(unwrapped, unwrappedClientNode);
+    }
+
+    private static volatile Method UNWRAP_NODE;
+
+    private static boolean UNWRAP_SUPPORTED = true;
+
+    @Nullable
+    private LiteralCommandNode<CommandSourceStack> unwrapClientNode(@NotNull RootCommandNode<CommandSourceStack> root,
+                                                                    @NotNull LiteralCommandNode<CommandSourceStack> clientNode) {
+        if (!UNWRAP_SUPPORTED) {
+            return null;
+        }
+
+        try {
+            if (UNWRAP_NODE == null) {
+                UNWRAP_NODE = Class.forName("io.papermc.paper.command.brigadier.ApiMirrorRootNode")
+                    .getDeclaredMethod("unwrapNode", CommandNode.class);
+
+                UNWRAP_NODE.setAccessible(true);
+            }
+
+            //noinspection unchecked
+            return (LiteralCommandNode<CommandSourceStack>) UNWRAP_NODE.invoke(root, clientNode);
+        } catch (Throwable ignored) {
+            UNWRAP_SUPPORTED = false;
+
+            blade.logger().warn("Failed to unwrap brigadier client node. Native argument types may not be sent to the client correctly. This is likely due to an incompatible Paper version.");
+
+            return null;
         }
     }
 
