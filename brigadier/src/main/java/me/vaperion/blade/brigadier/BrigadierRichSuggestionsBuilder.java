@@ -4,6 +4,7 @@ import com.mojang.brigadier.LiteralMessage;
 import com.mojang.brigadier.Message;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import me.vaperion.blade.util.command.RichSuggestionsBuilder;
+import me.vaperion.blade.util.command.SuggestionQuoting;
 import me.vaperion.blade.util.command.SuggestionTooltip;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,18 +16,21 @@ public final class BrigadierRichSuggestionsBuilder implements RichSuggestionsBui
     private final SuggestionsBuilder builder;
     private final me.vaperion.blade.util.command.SuggestionsBuilder legacy;
     private Predicate<String> filter;
+    private boolean quoteWhenNeeded;
 
     public BrigadierRichSuggestionsBuilder(@NotNull SuggestionsBuilder builder) {
-        this(builder, s -> true);
+        this(builder, s -> true, false);
     }
 
     private BrigadierRichSuggestionsBuilder(
         @NotNull SuggestionsBuilder builder,
-        @NotNull Predicate<String> filter) {
+        @NotNull Predicate<String> filter,
+        boolean quoteWhenNeeded) {
         this.builder = builder;
         this.legacy = new me.vaperion.blade.util.command.SuggestionsBuilder();
         this.filter = filter;
         this.legacy.setFilter(filter);
+        this.quoteWhenNeeded = quoteWhenNeeded;
     }
 
     @Override
@@ -55,7 +59,7 @@ public final class BrigadierRichSuggestionsBuilder implements RichSuggestionsBui
             return;
         }
 
-        builder.suggest(text);
+        builder.suggest(emit(text));
     }
 
     @Override
@@ -65,11 +69,11 @@ public final class BrigadierRichSuggestionsBuilder implements RichSuggestionsBui
         }
 
         if (tooltip == null) {
-            builder.suggest(text);
+            builder.suggest(emit(text));
             return;
         }
 
-        builder.suggest(text, mapTooltip(tooltip));
+        builder.suggest(emit(text), mapTooltip(tooltip));
     }
 
     @Override
@@ -106,7 +110,7 @@ public final class BrigadierRichSuggestionsBuilder implements RichSuggestionsBui
 
     @Override
     public @NotNull RichSuggestionsBuilder createOffset(int start) {
-        return new BrigadierRichSuggestionsBuilder(builder.createOffset(start), filter);
+        return new BrigadierRichSuggestionsBuilder(builder.createOffset(start), filter, quoteWhenNeeded);
     }
 
     @Override
@@ -136,14 +140,23 @@ public final class BrigadierRichSuggestionsBuilder implements RichSuggestionsBui
     }
 
     @Override
+    public void setQuoteWhenNeeded(boolean quoteWhenNeeded) {
+        this.quoteWhenNeeded = quoteWhenNeeded;
+    }
+
+    @Override
     public void flushLegacy() {
         for (String suggestion : legacy.build()) {
             if (!suggestion.equals(builder.getRemaining())) {
-                builder.suggest(suggestion);
+                builder.suggest(emit(suggestion));
             }
         }
 
         legacy.clear();
+    }
+
+    private @NotNull String emit(@NotNull String text) {
+        return quoteWhenNeeded ? SuggestionQuoting.quoteIfNeeded(text) : text;
     }
 
     private @NotNull Message mapTooltip(@Nullable SuggestionTooltip tooltip) {

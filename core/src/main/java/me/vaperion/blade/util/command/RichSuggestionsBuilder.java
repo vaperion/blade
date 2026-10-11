@@ -133,6 +133,13 @@ public interface RichSuggestionsBuilder {
     }
 
     /**
+     * Sets whether string suggestions are quoted when they contain characters an unquoted argument cannot hold.
+     *
+     * @param quoteWhenNeeded true to quote suggestions as needed, false to emit them verbatim
+     */
+    void setQuoteWhenNeeded(boolean quoteWhenNeeded);
+
+    /**
      * Flushes legacy suggestions into this builder.
      */
     default void flushLegacy() {

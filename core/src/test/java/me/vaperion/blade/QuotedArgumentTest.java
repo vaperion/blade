@@ -2,6 +2,7 @@ package me.vaperion.blade;
 
 import me.vaperion.blade.context.Context;
 import me.vaperion.blade.impl.node.ResolvedCommand;
+import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.test.BladeTestPlatform;
 import me.vaperion.blade.test.commands.QuotedCommands;
 import me.vaperion.blade.test.platform.TestSender;
@@ -12,6 +13,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 
 public class QuotedArgumentTest {
@@ -79,6 +84,57 @@ public class QuotedArgumentTest {
 
         Assertions.assertEquals(1, QuotedCommands.INVOCATIONS.size());
         Assertions.assertEquals("id=hello world,worldName=overworld", QuotedCommands.INVOCATIONS.get(0));
+    }
+
+    @Test
+    public void quotedArgumentSuggestionsAreQuotedWhenNeeded() {
+        Blade blade = register();
+
+        Assertions.assertEquals(
+            new HashSet<>(Arrays.asList("spawn", "\"hub/main\"", "\"end city\"", "\"say \\\"hi\\\"\"")),
+            new HashSet<>(suggest(blade, "warp", "/warp "))
+        );
+    }
+
+    @Test
+    public void quotedArgumentSuggestionsFilterOnUnquotedInput() {
+        Blade blade = register();
+
+        Assertions.assertEquals(
+            Collections.singletonList("\"hub/main\""),
+            suggest(blade, "warp", "/warp \"hu")
+        );
+    }
+
+    @Test
+    public void quotedSuggestionParsesBackToSuggestedValue() {
+        Blade blade = register();
+
+        execute(blade, "warp \"say \\\"hi\\\"\"");
+
+        Assertions.assertEquals(1, QuotedCommands.INVOCATIONS.size());
+        Assertions.assertEquals("name=say \"hi\"", QuotedCommands.INVOCATIONS.get(0));
+    }
+
+    @Test
+    public void unquotedArgumentSuggestionsStayVerbatim() {
+        Blade blade = register();
+
+        Assertions.assertEquals(
+            new HashSet<>(Arrays.asList("spawn", "hub/main", "end city", "say \"hi\"")),
+            new HashSet<>(suggest(blade, "goto", "/goto "))
+        );
+    }
+
+    @NotNull
+    private List<String> suggest(@NotNull Blade blade, @NotNull String label, @NotNull String input) {
+        ResolvedCommand node = blade.nodeResolver().resolve("/" + label);
+
+        Assertions.assertNotNull(node);
+
+        Context context = new Context(blade, new TestSender(), label, new String[]{ "" });
+
+        return blade.suggestionProvider().suggestNode(context, node, input, SuggestionType.ARGUMENTS);
     }
 
     @NotNull

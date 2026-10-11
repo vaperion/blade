@@ -4,6 +4,8 @@ import me.vaperion.blade.annotation.command.Command;
 import me.vaperion.blade.annotation.command.Quoted;
 import me.vaperion.blade.annotation.parameter.Name;
 import me.vaperion.blade.annotation.parameter.Opt;
+import me.vaperion.blade.annotation.parameter.Provider;
+import me.vaperion.blade.test.providers.WarpNameProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,6 +42,16 @@ public final class QuotedCommands {
 
     @Command({ "hi", "hello world" })
     public static void greet(@Quoted @Name("name") @NotNull String name) {
+        INVOCATIONS.add("name=" + name);
+    }
+
+    @Command("warp")
+    public static void warp(@Quoted @Name("name") @Provider(WarpNameProvider.class) @NotNull String name) {
+        INVOCATIONS.add("name=" + name);
+    }
+
+    @Command("goto")
+    public static void gotoWarp(@Name("name") @Provider(WarpNameProvider.class) @NotNull String name) {
         INVOCATIONS.add("name=" + name);
     }
 }

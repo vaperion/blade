@@ -17,14 +17,16 @@ public final class SimpleRichSuggestionsBuilder implements RichSuggestionsBuilde
     private final SuggestionsBuilder legacy;
     private final Set<String> suggestions = new LinkedHashSet<>();
     private Predicate<String> filter;
+    private boolean quoteWhenNeeded;
 
     public SimpleRichSuggestionsBuilder(@NotNull String input, int start) {
-        this(input, start, s -> true);
+        this(input, start, s -> true, false);
     }
 
     private SimpleRichSuggestionsBuilder(@NotNull String input,
                                          int start,
-                                         @NotNull Predicate<String> filter) {
+                                         @NotNull Predicate<String> filter,
+                                         boolean quoteWhenNeeded) {
         this.input = input;
         this.start = start;
         this.remaining = input.substring(start);
@@ -32,6 +34,7 @@ public final class SimpleRichSuggestionsBuilder implements RichSuggestionsBuilde
         this.legacy = new SuggestionsBuilder();
         this.filter = filter;
         this.legacy.setFilter(filter);
+        this.quoteWhenNeeded = quoteWhenNeeded;
     }
 
     @Override
@@ -60,7 +63,7 @@ public final class SimpleRichSuggestionsBuilder implements RichSuggestionsBuilde
             return;
         }
 
-        suggestions.add(text);
+        suggestions.add(emit(text));
     }
 
     @Override
@@ -86,7 +89,7 @@ public final class SimpleRichSuggestionsBuilder implements RichSuggestionsBuilde
 
     @Override
     public @NotNull RichSuggestionsBuilder createOffset(int start) {
-        return new SimpleRichSuggestionsBuilder(input, start, filter);
+        return new SimpleRichSuggestionsBuilder(input, start, filter, quoteWhenNeeded);
     }
 
     @Override
@@ -116,8 +119,16 @@ public final class SimpleRichSuggestionsBuilder implements RichSuggestionsBuilde
     }
 
     @Override
+    public void setQuoteWhenNeeded(boolean quoteWhenNeeded) {
+        this.quoteWhenNeeded = quoteWhenNeeded;
+    }
+
+    @Override
     public void flushLegacy() {
-        suggestions.addAll(legacy.build());
+        for (String suggestion : legacy.build()) {
+            suggestions.add(emit(suggestion));
+        }
+
         legacy.clear();
     }
 
@@ -125,5 +136,10 @@ public final class SimpleRichSuggestionsBuilder implements RichSuggestionsBuilde
     @Unmodifiable
     public List<String> build() {
         return new ArrayList<>(suggestions);
+    }
+
+    @NotNull
+    private String emit(@NotNull String text) {
+        return quoteWhenNeeded ? SuggestionQuoting.quoteIfNeeded(text) : text;
     }
 }

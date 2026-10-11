@@ -375,6 +375,10 @@ public final class CommandSuggestionProvider {
             ));
         }
 
+        // Quote-parsed arguments can hold values an unquoted argument cannot, so their
+        // suggestions are quoted as needed to stay accepted once inserted.
+        builder.setQuoteWhenNeeded(command.parseQuotes() || argument.isQuoted());
+
         try {
             provider.suggestRich(context, inputArgument, builder);
             builder.flushLegacy();
@@ -391,6 +395,7 @@ public final class CommandSuggestionProvider {
             throw error;
         } finally {
             builder.setFilter(null);
+            builder.setQuoteWhenNeeded(false);
         }
     }
 
