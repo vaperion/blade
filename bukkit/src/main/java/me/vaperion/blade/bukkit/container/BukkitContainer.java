@@ -380,6 +380,17 @@ public final class BukkitContainer extends Command implements Container {
         tabComplete(sender, commandLine, false, suggestions);
     }
 
+    @NotNull
+    private EnumSet<SuggestionType> suggestionTypes(@NotNull String commandLine) {
+        String unqualified = removeCommandQualifier(commandLine).trim();
+        int space = unqualified.indexOf(' ');
+        String root = (space < 0 ? unqualified : unqualified.substring(0, space)).toLowerCase(Locale.ROOT);
+
+        return blade.platformAs(BladeBukkitPlatform.class).brigadierSuggestsSubcommands(root)
+            ? EnumSet.of(SuggestionType.ARGUMENTS)
+            : EnumSet.allOf(SuggestionType.class);
+    }
+
     public void tabComplete(@NotNull CommandSender sender,
                             @NotNull String commandLine,
                             boolean isBukkitCommand,
@@ -398,20 +409,15 @@ public final class BukkitContainer extends Command implements Container {
         }
 
         try {
-            EnumSet<SuggestionType> platformTypes = blade.platformAs(BladeBukkitPlatform.class).suggestionTypes();
+            EnumSet<SuggestionType> types = suggestionTypes(commandLine);
 
             if (!node.isStub()) {
-                // Found exact command, we can suggest arguments here.
+                // Found exact command, we can suggest arguments and the subcommands here.
 
                 String[] args = splitSuggestionArguments(removePrefix(
                     removeCommandQualifier(commandLine),
                     node.matchedLabelOr("")
                 ));
-
-                if (!platformTypes.contains(SuggestionType.ARGUMENTS)) {
-                    // Platform doesn't support argument suggestions.
-                    return;
-                }
 
                 Context context = new Context(
                     blade,
@@ -424,7 +430,7 @@ public final class BukkitContainer extends Command implements Container {
                     context,
                     node,
                     "/" + removeCommandQualifier(commandLine),
-                    EnumSet.of(SuggestionType.ARGUMENTS),
+                    types,
                     suggestions
                 );
                 return;
@@ -432,8 +438,8 @@ public final class BukkitContainer extends Command implements Container {
 
             // Only found command stub - suggest subcommands.
 
-            if (!platformTypes.contains(SuggestionType.SUBCOMMANDS)) {
-                // Platform doesn't support subcommand suggestions.
+            if (!types.contains(SuggestionType.SUBCOMMANDS)) {
+                // Brigadier already shows them.
                 return;
             }
 

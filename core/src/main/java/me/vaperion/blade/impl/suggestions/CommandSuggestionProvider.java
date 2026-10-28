@@ -223,7 +223,7 @@ public final class CommandSuggestionProvider {
                                     @NotNull String baseCommand,
                                     @NotNull RichSuggestionsBuilder builder) {
         CommandTree tree = blade.commandTree();
-        CommandTreeNode rootNode = tree.root(baseCommand);
+        CommandTreeNode rootNode = tree.root(firstWord(baseCommand));
 
         if (rootNode == null) return;
 
@@ -247,6 +247,12 @@ public final class CommandSuggestionProvider {
                 builder.suggest(childLabel);
             }
         }
+    }
+
+    @NotNull
+    private static String firstWord(@NotNull String label) {
+        int space = label.indexOf(' ');
+        return space < 0 ? label : label.substring(0, space);
     }
 
     private boolean hasAccessibleCommand(@NotNull CommandTreeNode node,

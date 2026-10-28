@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -41,6 +42,7 @@ public final class BladePaperBrigadier implements Listener {
     private final Blade blade;
     private final BladeBrigadierBuilder<CommandSourceStack, CommandSender> builder;
     private final BladeBrigadierDelegate<CommandSourceStack, BukkitContainer> delegate;
+    private final Set<String> registeredRoots = new HashSet<>();
 
     public BladePaperBrigadier(@NotNull Blade blade) throws ClassNotFoundException,
                                                             NoSuchFieldException,
@@ -95,6 +97,8 @@ public final class BladePaperBrigadier implements Listener {
 
     private void registerCommands(@NotNull Commands registrar) {
         blade.commandTree().roots().forEach((label, node) -> {
+            registeredRoots.add(label.toLowerCase(Locale.ROOT));
+
             LiteralCommandNode<CommandSourceStack> literal = builder.buildLiteral(
                 node,
                 label,
@@ -118,6 +122,16 @@ public final class BladePaperBrigadier implements Listener {
             registrar.register(literal);
             syncRegisteredClientNodes(registrar, commandNamespace, node, literal);
         });
+    }
+
+    /**
+     * Whether a Brigadier literal was registered for the given root.
+     *
+     * @param rootLabel the root command label
+     * @return true if this hook registered the root
+     */
+    public boolean handlesRoot(@NotNull String rootLabel) {
+        return registeredRoots.contains(rootLabel.toLowerCase(Locale.ROOT));
     }
 
     @NotNull

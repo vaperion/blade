@@ -3,7 +3,6 @@ package me.vaperion.blade.paper;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.bukkit.BladeBukkitPlatform;
 import me.vaperion.blade.context.Sender;
-import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.paper.brigadier.BladePaperBrigadier;
 import me.vaperion.blade.paper.brigadier.LegacyBladePaperBrigadier;
 import me.vaperion.blade.paper.context.PaperSender;
@@ -14,6 +13,9 @@ import org.jetbrains.annotations.NotNull;
 @SuppressWarnings("unused")
 public class BladePaperPlatform extends BladeBukkitPlatform {
 
+    private BladePaperBrigadier brigadier;
+    private LegacyBladePaperBrigadier legacyBrigadier;
+
     public BladePaperPlatform(@NotNull Plugin plugin) {
         super(plugin);
     }
@@ -21,6 +23,15 @@ public class BladePaperPlatform extends BladeBukkitPlatform {
     @Override
     public @NotNull Sender<CommandSender> wrapSender(@NotNull CommandSender sender) {
         return new PaperSender(sender);
+    }
+
+    @Override
+    public boolean brigadierSuggestsSubcommands(@NotNull String rootLabel) {
+        if (brigadier != null) {
+            return brigadier.handlesRoot(rootLabel);
+        }
+
+        return legacyBrigadier != null && legacyBrigadier.handlesRoot(rootLabel);
     }
 
     @Override
@@ -33,9 +44,6 @@ public class BladePaperPlatform extends BladeBukkitPlatform {
             success = initLegacy(blade);
 
         if (success) {
-            // brigadier handles this
-            this.suggestionTypes.remove(SuggestionType.SUBCOMMANDS);
-
             blade.logger().info("Successfully hooked into Brigadier.");
         } else {
             blade.logger().info("Brigadier support not available, falling back to standard suggestions.");
@@ -44,7 +52,7 @@ public class BladePaperPlatform extends BladeBukkitPlatform {
 
     private boolean init(@NotNull Blade blade) {
         try {
-            new BladePaperBrigadier(blade);
+            brigadier = new BladePaperBrigadier(blade);
 
             return true;
         } catch (ClassNotFoundException | NoClassDefFoundError
@@ -59,7 +67,7 @@ public class BladePaperPlatform extends BladeBukkitPlatform {
 
     private boolean initLegacy(@NotNull Blade blade) {
         try {
-            new LegacyBladePaperBrigadier(blade);
+            legacyBrigadier = new LegacyBladePaperBrigadier(blade);
 
             return true;
         } catch (ClassNotFoundException | NoClassDefFoundError ignored) {

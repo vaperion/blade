@@ -3,7 +3,6 @@ package me.vaperion.blade.paper;
 import me.vaperion.blade.Blade;
 import me.vaperion.blade.bukkit.BladeBukkitPlatform;
 import me.vaperion.blade.context.Sender;
-import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.paper.brigadier.LegacyBladePaperBrigadier;
 import me.vaperion.blade.paper.context.PaperSender;
 import org.bukkit.command.CommandSender;
@@ -12,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("unused")
 public class BladePaperPlatform extends BladeBukkitPlatform {
+
+    private LegacyBladePaperBrigadier legacyBrigadier;
 
     public BladePaperPlatform(@NotNull Plugin plugin) {
         super(plugin);
@@ -23,15 +24,17 @@ public class BladePaperPlatform extends BladeBukkitPlatform {
     }
 
     @Override
+    public boolean brigadierSuggestsSubcommands(@NotNull String rootLabel) {
+        return legacyBrigadier != null && legacyBrigadier.handlesRoot(rootLabel);
+    }
+
+    @Override
     public void ingestBlade(@NotNull Blade blade) {
         super.ingestBlade(blade);
 
         boolean success = initLegacy(blade);
 
         if (success) {
-            // brigadier handles this
-            this.suggestionTypes.remove(SuggestionType.SUBCOMMANDS);
-
             blade.logger().info("Successfully hooked into Brigadier.");
         } else {
             blade.logger().info("Brigadier support not available, falling back to standard suggestions.");
@@ -40,7 +43,7 @@ public class BladePaperPlatform extends BladeBukkitPlatform {
 
     private boolean initLegacy(@NotNull Blade blade) {
         try {
-            new LegacyBladePaperBrigadier(blade);
+            legacyBrigadier = new LegacyBladePaperBrigadier(blade);
 
             return true;
         } catch (ClassNotFoundException | NoClassDefFoundError ignored) {

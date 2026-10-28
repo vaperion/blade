@@ -11,7 +11,6 @@ import me.vaperion.blade.bukkit.platform.BukkitLogger;
 import me.vaperion.blade.command.BladeCommand;
 import me.vaperion.blade.container.ContainerCreator;
 import me.vaperion.blade.context.Sender;
-import me.vaperion.blade.impl.suggestions.SuggestionType;
 import me.vaperion.blade.log.BladeLogger;
 import me.vaperion.blade.platform.BladeConfiguration;
 import me.vaperion.blade.platform.BladePlatform;
@@ -22,11 +21,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Method;
-import java.util.EnumSet;
 import java.util.Locale;
 
 @RequiredArgsConstructor
@@ -52,17 +49,20 @@ public class BladeBukkitPlatform implements BladePlatform<Plugin, Server> {
 
     protected final Plugin plugin;
     protected Blade blade;
-    protected EnumSet<SuggestionType> suggestionTypes = EnumSet.allOf(SuggestionType.class);
 
     @Override
     public void ingestBlade(@NotNull Blade blade) {
         this.blade = blade;
     }
 
-    @ApiStatus.Internal
-    @NotNull
-    public EnumSet<SuggestionType> suggestionTypes() {
-        return suggestionTypes;
+    /**
+     * Whether Brigadier handles subcommand suggestion instead of Blade.
+     *
+     * @param rootLabel the lowercase root command label
+     * @return true if Brigadier suggests the root's subcommands
+     */
+    public boolean brigadierSuggestsSubcommands(@NotNull String rootLabel) {
+        return false;
     }
 
     @Override
